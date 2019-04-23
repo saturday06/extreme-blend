@@ -4,6 +4,8 @@ set -ex
 
 cd "$(dirname "$0")"
 
+export LIBGL_ALWAYS_SOFTWARE=true
+
 run=env
 if [ -z $DBUS_SESSION_BUS_ADDRESS ] && which dbus-launch; then
   run=dbus-launch  
