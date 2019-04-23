@@ -2,8 +2,10 @@
 
 set -ex
 
+cd "$(dirname "$0")"
+
 run=env
-if [ -z $DBUS_SESSION_BUS_ADDRESS ]; then
+if [ -z $DBUS_SESSION_BUS_ADDRESS ] && which dbus-launch; then
   run=dbus-launch  
 fi
 
