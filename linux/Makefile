@@ -1,8 +1,10 @@
-export XDG_RUNTIME_DIR ?= /tmp
+$(shell mkdir -p $(HOME)/.local/run)
+export XDG_RUNTIME_DIR ?= $(HOME)/.local/run
 export LIBGL_ALWAYS_SOFTWARE ?= true
+RUN = $(shell if test -z "$(DBUS_SESSION_BUS_ADDRESS)" && which dbus-launch > /dev/null; then echo dbus-launch; else echo env; fi)
 
 run: build/server
-	build/server
+	$(RUN) build/server
 
 build/server: build/build.ninja *.cpp *.h
 	ninja -C build
