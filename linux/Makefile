@@ -1,7 +1,7 @@
 run: build/server
 	build/server
 
-build/server: *.cpp *.h
+build/server: build/build.ninja *.cpp *.h
 	ninja -C build
 
 build/build.ninja:
