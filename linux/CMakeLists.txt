@@ -76,29 +76,26 @@ add_dependencies(compositor_benchmark external-benchmark)
 
 add_custom_command(
   OUTPUT external/include/wayland-server-header.h
-  DEPENDS /usr/share/wayland/wayland.xml
+  DEPENDS external-directory /usr/share/wayland/wayland.xml
   COMMAND ${wayland_scanner_executable} server-header /usr/share/wayland/wayland.xml external/include/wayland-server-header.h
 )
 
 add_custom_command(
   OUTPUT external/source/wayland-code.c
-  DEPENDS /usr/share/wayland/wayland.xml
+  DEPENDS external-directory /usr/share/wayland/wayland.xml
   COMMAND ${wayland_scanner_executable} code /usr/share/wayland/wayland.xml external/source/wayland-code.c
 )
 
 add_custom_command(
   OUTPUT external/include/xdg-shell-unstable-v6-server-header.h
-  DEPENDS /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
+  DEPENDS external-directory /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
   COMMAND ${wayland_scanner_executable} server-header /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml external/include/xdg-shell-unstable-v6-server-header.h
 )
 
 add_custom_command(
   OUTPUT external/source/xdg-shell-unstable-v6-code.c
-  DEPENDS /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
+  DEPENDS external-directory /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
   COMMAND ${wayland_scanner_executable} code /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml external/source/xdg-shell-unstable-v6-code.c
 )
 
-add_custom_target(
-  build-time-make-directory ALL
-  COMMAND ${CMAKE_COMMAND} -E make_directory external/include external/source
-)
+add_custom_target(external-directory ALL COMMAND ${CMAKE_COMMAND} -E make_directory external/include external/source)
