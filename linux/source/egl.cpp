@@ -9,6 +9,52 @@
 #include <cassert>
 
 bool egl_init(wl_display* wl_disp) {
+    auto get_platform_display =
+        reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+            eglGetProcAddress("eglGetPlatformDisplayEXT"));
+    assert (get_platform_display);
+
+    EGLDisplay egl_display =
+      get_platform_display(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, NULL);
+    assert(egl_display != EGL_NO_DISPLAY);
+
+    EGLint major, minor;
+    auto egl_init_ret = eglInitialize(egl_display, &major, &minor);
+    assert(egl_init_ret);
+
+    auto bind_display = reinterpret_cast<PFNEGLBINDWAYLANDDISPLAYWL>(
+        eglGetProcAddress("eglBindWaylandDisplayWL"));
+    assert(bind_display);
+
+    bind_display(egl_display, wl_disp);
+
+    return true;
+}
+
+bool egl_init3(wl_display* wl_disp) {
+    auto get_platform_display =
+        reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+            eglGetProcAddress("eglGetPlatformDisplayEXT"));
+    assert (get_platform_display);
+
+    EGLDisplay egl_display =
+      get_platform_display(EGL_PLATFORM_GBM_MESA, EGL_DEFAULT_DISPLAY, NULL);
+    assert(egl_display != EGL_NO_DISPLAY);
+
+    EGLint major, minor;
+    auto egl_init_ret = eglInitialize(egl_display, &major, &minor);
+    assert(egl_init_ret);
+
+    auto bind_display = reinterpret_cast<PFNEGLBINDWAYLANDDISPLAYWL>(
+        eglGetProcAddress("eglBindWaylandDisplayWL"));
+    assert(bind_display);
+
+    bind_display(egl_display, wl_disp);
+
+    return true;
+}
+
+bool egl_init2(wl_display* wl_disp) {
 
     assert(wl_disp);
 
