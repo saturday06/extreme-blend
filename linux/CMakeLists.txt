@@ -9,7 +9,6 @@ if(NOT $ENV{PKG_CONFIG_PATH} STREQUAL "") # TODO: prettify
   set(pkg_config_path_leading_separator ":")
 endif()
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}${pkg_config_path_leading_separator}${CMAKE_CURRENT_BINARY_DIR}/external/lib/pkgconfig")
-message($ENV{PKG_CONFIG_PATH})
 
 find_package(Threads)
 find_package(PkgConfig)
@@ -97,4 +96,9 @@ add_custom_command(
   OUTPUT external/source/xdg-shell-unstable-v6-code.c
   DEPENDS /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
   COMMAND ${wayland_scanner_executable} code /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml external/source/xdg-shell-unstable-v6-code.c
+)
+
+add_custom_target(
+  build-time-make-directory ALL
+  COMMAND ${CMAKE_COMMAND} -E make_directory external/include external/source
 )
