@@ -9,6 +9,7 @@ if(NOT $ENV{PKG_CONFIG_PATH} STREQUAL "") # TODO: prettify
   set(pkg_config_path_leading_separator ":")
 endif()
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}${pkg_config_path_leading_separator}${CMAKE_CURRENT_BINARY_DIR}/external/lib/pkgconfig")
+message($ENV{PKG_CONFIG_PATH})
 
 find_package(Threads)
 find_package(PkgConfig)
@@ -47,8 +48,8 @@ add_executable(compositor_benchmark ${compositor_sources} ${benchmark_sources})
 target_compile_definitions(compositor_test PUBLIC CUSTOM_MAIN)
 target_compile_definitions(compositor_benchmark PUBLIC CUSTOM_MAIN)
 
-target_link_libraries(compositor_test gtestd gtest_maind)
-target_link_libraries(compositor_benchmark gtestd gtest_maind benchmark)
+target_link_libraries(compositor_test gtest gtest_main)
+target_link_libraries(compositor_benchmark gtest gtest_main benchmark)
 
 enable_testing()
 add_test(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/compositor_test)
@@ -60,7 +61,7 @@ ExternalProject_Add(
   URL https://github.com/google/googletest/archive/release-1.8.1.tar.gz
   URL_MD5 2e6fbeb6a91310a16efe181886c59596
   PREFIX external/build/googletest
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=Debug
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
 add_dependencies(compositor_test external-googletest)
 
