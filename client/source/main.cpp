@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <wayland-client.h>
 
-int main(void)
-{
+#ifndef ULTIMATE_DESKTOP_CLIENT_CUSTOM_MAIN
+
+int main(void) {
     struct wl_display *display;
 
     display = wl_display_connect(NULL);
@@ -20,3 +21,5 @@ int main(void)
 
     return 0;
 }
+
+#endif
