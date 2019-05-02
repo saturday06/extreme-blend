@@ -1,9 +1,9 @@
 #include "shell.h"
 #include "shell-surface.h"
 
-#include <xdg-shell-server-protocol.h>
 #include <cassert>
 #include <cstdio>
+#include <xdg-shell-unstable-v6-server-header.h>
 
 static struct zxdg_shell_v6_interface shell_interface = {
     &Shell::destroy, &Shell::create_positioner, &Shell::get_xdg_surface,

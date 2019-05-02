@@ -1,9 +1,9 @@
 #include "shell-surface.h"
 #include "toplevel.h"
 
-#include <xdg-shell-server-protocol.h>
 #include <cassert>
 #include <cstdio>
+#include <xdg-shell-unstable-v6-server-header.h>
 
 static struct zxdg_surface_v6_interface shell_surface_interface = {
     &ShellSurface::destroy, &ShellSurface::get_toplevel,

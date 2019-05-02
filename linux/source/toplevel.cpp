@@ -1,6 +1,6 @@
 #include "toplevel.h"
 
-#include <xdg-shell-server-protocol.h>
+#include <xdg-shell-unstable-v6-server-header.h>
 #include <cassert>
 #include <cstdio>
 

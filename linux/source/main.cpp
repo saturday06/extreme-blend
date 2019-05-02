@@ -10,6 +10,8 @@
 
 bool egl_init(wl_display* wl_disp);
 
+#ifndef CUSTOM_MAIN
+
 int main(int argc, char *argv[])
 {
     wl_display* display = wl_display_create();
@@ -28,3 +30,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+#endif
