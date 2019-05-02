@@ -5,6 +5,12 @@ include(CheckCXXCompilerFlag)
 
 set(CMAKE_CXX_STANDARD 14)
 
+if(NOT $ENV{PKG_CONFIG_PATH} STREQUAL "")
+  set(pkg_config_path_leading_separator ":")
+endif()
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}${pkg_config_path_leading_separator}${CMAKE_CURRENT_BINARY_DIR}/external/lib/pkgconfig")
+message($ENV{PKG_CONFIG_PATH})
+
 find_package(Threads)
 find_package(PkgConfig)
 
@@ -41,6 +47,7 @@ ExternalProject_Add(external-googletest
 add_dependencies(compositor_test external-googletest)
 
 ExternalProject_Add(external-benchmark
+  DEPENDS external-googletest
   URL https://github.com/google/benchmark/archive/v1.4.1.tar.gz
   URL_MD5 482dddb22bec43f5507a000456d6bb88
   PREFIX external/build/benchmark
