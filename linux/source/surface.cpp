@@ -4,11 +4,11 @@
 #include <cstdio>
 
 static struct wl_surface_interface surface_interface = {
-    &Surface::destroy,           &Surface::attach,
-    &Surface::damage,            &Surface::frame,
-    &Surface::set_opaque_region, &Surface::set_input_region,
-    &Surface::commit,            &Surface::set_buffer_transform,
-    &Surface::set_buffer_scale,  &Surface::damage_buffer};
+        &Surface::destroy, &Surface::attach,
+        &Surface::damage, &Surface::frame,
+        &Surface::set_opaque_region, &Surface::set_input_region,
+        &Surface::commit, &Surface::set_buffer_transform,
+        &Surface::set_buffer_scale, &Surface::damage_buffer};
 
 static void destroy_surface(wl_resource *resource) {
     auto surface = static_cast<Surface *>(wl_resource_get_user_data(resource));
@@ -17,7 +17,7 @@ static void destroy_surface(wl_resource *resource) {
 
 Surface::Surface(wl_client *client, uint32_t id) {
     wl_resource *resource =
-        wl_resource_create(client, &wl_surface_interface, 4, id);
+            wl_resource_create(client, &wl_surface_interface, 4, id);
     assert(resource);
 
     wl_resource_set_implementation(resource, &surface_interface, this,

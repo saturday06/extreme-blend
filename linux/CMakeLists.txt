@@ -21,7 +21,7 @@ execute_process(
 
 include_directories(${PKG_CONFIG_FOUND_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/include)
 link_directories(${PKG_CONFIG_FOUND_LIBRARY_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/lib)
-link_libraries(${PKG_CONFIG_FOUND_LIBRARIES})
+link_libraries(${PKG_CONFIG_FOUND_LIBRARIES} Threads::Threads glog gflags)
 
 aux_source_directory(source sources)
 aux_source_directory(external/source external_sources)
@@ -56,6 +56,26 @@ add_test(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/compositor_t
 include(ExternalProject)
 
 ExternalProject_Add(
+  external-gflags
+  URL https://github.com/gflags/gflags/archive/v2.2.2.zip
+  URL_MD5 ff856ff64757f1381f7da260f79ba79b
+  PREFIX external/build/gflags
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
+)
+
+ExternalProject_Add(
+  external-glog
+  DEPENDS external-gflags
+  URL https://github.com/google/glog/archive/v0.4.0.tar.gz
+  URL_MD5 0daea8785e6df922d7887755c3d100d0
+  PREFIX external/build/glog
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
+)
+add_dependencies(compositor external-glog)
+add_dependencies(compositor_test external-glog)
+add_dependencies(compositor_benchmark external-glog)
+
+ExternalProject_Add(
   external-googletest
   URL https://github.com/google/googletest/archive/release-1.8.1.tar.gz
   URL_MD5 2e6fbeb6a91310a16efe181886c59596
@@ -65,12 +85,12 @@ ExternalProject_Add(
 add_dependencies(compositor_test external-googletest)
 
 ExternalProject_Add(
-  external-benchmark
-  DEPENDS external-googletest
-  URL https://github.com/google/benchmark/archive/v1.4.1.tar.gz
-  URL_MD5 482dddb22bec43f5507a000456d6bb88
-  PREFIX external/build/benchmark
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        external-benchmark
+        DEPENDS external-googletest
+        URL https://github.com/google/benchmark/archive/v1.4.1.tar.gz
+        URL_MD5 482dddb22bec43f5507a000456d6bb88
+        PREFIX external/build/benchmark
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
 add_dependencies(compositor_benchmark external-benchmark)
 

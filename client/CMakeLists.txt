@@ -17,7 +17,7 @@ pkg_check_modules(PKG_CONFIG_FOUND REQUIRED egl glesv2 x11 xcb x11-xcb wayland-c
 
 include_directories(${PKG_CONFIG_FOUND_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/include)
 link_directories(${PKG_CONFIG_FOUND_LIBRARY_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/lib)
-link_libraries(${PKG_CONFIG_FOUND_LIBRARIES})
+link_libraries(Threads::Threads ${PKG_CONFIG_FOUND_LIBRARIES})
 
 aux_source_directory(source sources)
 aux_source_directory(external/source external_sources)
