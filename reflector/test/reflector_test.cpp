@@ -1,3 +1,6 @@
+#include <extreme-blend/reflector.h>
+#include <gtest/gtest.h>
+#include <glog/logging.h>
 #include <stdio.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,39 +9,33 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-
 #include <wayland-client.h>
 
-int main2(void);
+using namespace ExtremeBlend;
 
-#ifndef ULTIMATE_DESKTOP_CLIENT_CUSTOM_MAIN
+class CompositorFixture : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        reflector.reset(new Reflector());
+    };
 
-int main(void) {
-    return main2();
-}
+    virtual void TearDown() {
+        reflector.reset();
+    };
 
-#endif
+    std::unique_ptr<Reflector> reflector;
+};
 
-#if 0
-
-int main2(void) {
+TEST_F(CompositorFixture, foo) {
     struct wl_display *display;
 
     display = wl_display_connect(NULL);
     if (!display) {
-        printf("can not connect\n");
-        return 1;
+        ASSERT_TRUE(false);
     }
 
-    printf("connect\n");
-
     wl_display_disconnect(display);
-
-    printf("disconnect\n");
-
-    return 0;
 }
-#endif
 
 struct wl_display *display = NULL;
 struct wl_compositor *compositor = NULL;
@@ -53,13 +50,11 @@ int WIDTH = 640, HEIGHT = 480;
 
 static void shm_format(void *data, struct wl_shm *wl_shm, uint32_t format) {
     fprintf(stderr, "Format: %d\n", format);
-
 }
 
 static wl_shm_listener shm_listener = {
         shm_format
 };
-
 
 static void global_registry_handler(
         void *data,
@@ -176,13 +171,9 @@ void create_window() {
     wl_surface_commit(surface);
 }
 
-int main2(void) {
+TEST_F(CompositorFixture, bar) {
     display = wl_display_connect(NULL);
-    if (display == NULL) {
-        fprintf(stderr, "Can't connect to display\n");
-        exit(1);
-    }
-    printf("connected to display\n");
+    ASSERT_TRUE(display != NULL);
 
     struct wl_registry *registry = wl_display_get_registry(display);
     wl_registry_add_listener(registry, &registry_listener, NULL);
@@ -190,32 +181,16 @@ int main2(void) {
     wl_display_dispatch(display);
     wl_display_roundtrip(display);
 
-    if (compositor == NULL) {
-        printf("Can't find compositor\n");
-        return 1;
-    }
-
-    if (shell == NULL) {
-        printf("Can't find shell\n");
-        return 1;
-    }
-
-    if (shm == NULL) {
-        printf("Can't find shm\n");
-        return 1;
-    }
+    ASSERT_TRUE(compositor != NULL);
+    ASSERT_TRUE(shell != NULL);
+    ASSERT_TRUE(shm != NULL);
 
     surface = wl_compositor_create_surface(compositor);
-    if (surface == NULL) {
-        fprintf(stderr, "Can't create surface\n");
-        return 1;
-    }
+    ASSERT_TRUE(surface != NULL);
 
     shell_surface = wl_shell_get_shell_surface(shell, surface);
-    if (shell_surface == NULL) {
-        printf("Can't create shell surface\n");
-        return 1;
-    }
+    ASSERT_TRUE(shell_surface != NULL);
+
     wl_shell_surface_set_toplevel(shell_surface);
     wl_shell_surface_add_listener(shell_surface, &shell_surface_listener, NULL);
 
@@ -227,6 +202,4 @@ int main2(void) {
     }
 
     wl_display_disconnect(display);
-    printf("disconnected from display\n");
-    return 0;
 }

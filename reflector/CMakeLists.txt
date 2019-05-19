@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2)
-project(ultimate-desktop-linux C CXX)
+project(extreme-blend-reflector C CXX)
 
 include(CheckCXXCompilerFlag)
 
@@ -18,8 +18,9 @@ execute_process(
   COMMAND ${PKG_CONFIG_EXECUTABLE} wayland-scanner --variable wayland_scanner OUTPUT_VARIABLE wayland_scanner_executable
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+pkg_check_modules(PKG_CONFIG_TEST_FOUND REQUIRED wayland-client)
 
-include_directories(${PKG_CONFIG_FOUND_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/include)
+include_directories(${PKG_CONFIG_FOUND_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/external/include)
 link_directories(${PKG_CONFIG_FOUND_LIBRARY_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/lib)
 link_libraries(${PKG_CONFIG_FOUND_LIBRARIES} Threads::Threads glog gflags)
 
@@ -47,7 +48,8 @@ add_executable(compositor_benchmark ${compositor_sources} ${benchmark_sources})
 target_compile_definitions(compositor_test PUBLIC CUSTOM_MAIN)
 target_compile_definitions(compositor_benchmark PUBLIC CUSTOM_MAIN)
 
-target_link_libraries(compositor_test gtest gtest_main)
+target_link_directories(compositor_test PRIVATE ${PKG_CONFIG_TEST_FOUND_LIBRARY_DIRS})
+target_link_libraries(compositor_test ${PKG_CONFIG_TEST_FOUND_LIBRARIES} gtest)
 target_link_libraries(compositor_benchmark gtest gtest_main benchmark)
 
 enable_testing()
