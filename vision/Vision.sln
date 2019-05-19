@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vision", "Vision\Vision.fsproj", "{BE1B21AE-C228-4338-8C84-D0B25C65C0FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc", "Grpc\Grpc.csproj", "{7A1718ED-60B0-4C3E-9014-BDF46A2C89CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vision.Grpc", "Vision.Grpc\Vision.Grpc.csproj", "{7A1718ED-60B0-4C3E-9014-BDF46A2C89CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

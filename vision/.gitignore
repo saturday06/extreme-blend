@@ -3,5 +3,5 @@
 /packages/
 /Vision/bin/
 /Vision/obj/
-/Grpc/bin/
-/Grpc/obj/
+/Vision.Grpc/bin/
+/Vision.Grpc/obj/
