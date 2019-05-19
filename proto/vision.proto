@@ -1,19 +1,19 @@
 syntax = "proto3";
 
-package Vision.Grpc.Proto;
+package ExtremeBlend.Proto;
 
 // The greeting service definition.
 service Vision {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello (YHelloRequest) returns (YHelloReply) {}
 }
 
 // The request message containing the user's name.
-message HelloRequest {
+message YHelloRequest {
   string name = 1;
 }
 
 // The response message containing the greetings.
-message HelloReply {
+message YHelloReply {
   string message = 1;
 }

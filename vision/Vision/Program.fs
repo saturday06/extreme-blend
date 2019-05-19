@@ -1,7 +1,7 @@
 ﻿open System
 open System.Threading.Tasks
 open Grpc.Core
-open Reflector.Grpc.Proto
+open ExtremeBlend.Proto
 
 [<EntryPoint>]
 let main argv =
