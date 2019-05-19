@@ -11,36 +11,34 @@
 bool egl_init(wl_display *wl_disp);
 
 class DisplayLoop {
-    wl_display* display;
+    std::unique_ptr<Compositor> compositor;
+    std::unique_ptr<Shell> shell;
+    std::unique_ptr<wl_display, decltype(&wl_display_destroy)> display;
 public:
-    DisplayLoop(int terminate_readable_fd): display(NULL) {
-        wl_log_set_handler_server([](const char* fmt, va_list args) {
-            vprintf(fmt, args);
-            LOG(INFO) << fmt;
-        });
-        display = wl_display_create();
+    DisplayLoop(int terminate_readable_fd): display(wl_display_create(), wl_display_destroy) {
         if (!display) {
             LOG(ERROR) << "Failed to create display";
         }
 
-        if (!egl_init(display)) {
+        if (!egl_init(display.get())) {
             LOG(INFO) << "Failed to init egl";
         }
 
-        const char *socket_name = wl_display_add_socket_auto(display);
+        const char *socket_name = wl_display_add_socket_auto(display.get());
         if (!socket_name) {
             LOG(ERROR) << "Failed to create socket";
+            display.reset();
             return;
         }
 
-        auto compositor = std::make_unique<Compositor>(display);
-        auto shell = std::make_unique<Shell>(display);
+        compositor = std::make_unique<Compositor>(display.get());
+        shell = std::make_unique<Shell>(display.get());
 
-        auto l = wl_display_get_event_loop((display));
+        auto l = wl_display_get_event_loop((display.get()));
         wl_event_loop_add_fd(l, terminate_readable_fd, WL_EVENT_READABLE, [](int, uint32_t, void* data){
             wl_display_terminate(reinterpret_cast<wl_display*>(data));
             return 0;
-        }, display);
+        }, display.get());
 
         LOG(INFO) << "Hello, Wayland";
     }
@@ -50,8 +48,7 @@ public:
             LOG(ERROR) << "No display";
             return;
         }
-        wl_display_run(display);
-        wl_display_destroy(display);
+        wl_display_run(display.get());
     }
 };
 

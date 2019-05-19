@@ -26,16 +26,15 @@ protected:
     std::unique_ptr<Reflector> reflector;
 };
 
-TEST_F(CompositorFixture, foo) {
-    struct wl_display *display;
 
-    display = wl_display_connect(NULL);
-    if (!display) {
-        ASSERT_TRUE(false);
-    }
-
-    wl_display_disconnect(display);
-}
+//TEST_F(CompositorFixture, foo) {
+//    struct wl_display *display;
+//    display = wl_display_connect(NULL);
+//    if (!display) {
+//        ASSERT_TRUE(false);
+//    }
+//    wl_display_disconnect(display);
+//}
 
 struct wl_display *display = NULL;
 struct wl_compositor *compositor = NULL;
@@ -62,7 +61,7 @@ static void global_registry_handler(
         uint32_t id,
         const char *interface,
         uint32_t version) {
-    printf("global_registry_handler %s %d\n", interface, id);
+    LOG(INFO) << "global_registry_handler " << interface << " " << id;
     if (strcmp(interface, "wl_compositor") == 0) {
         compositor = (struct wl_compositor *) wl_registry_bind(registry, id, &wl_compositor_interface, 1);
     } else if (strcmp(interface, "wl_shell") == 0) {
