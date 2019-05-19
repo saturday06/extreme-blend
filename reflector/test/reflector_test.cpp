@@ -109,7 +109,7 @@ static const struct wl_shell_surface_listener shell_surface_listener = {
 };
 
 int os_create_anonymous_file(int size) {
-    static const char fmt[] = "/weston-shared-XXXXXX";
+    static const char fmt[] = "/shared-XXXXXX";
     const char *path = NULL;
     char *name = NULL;
     int fd = -1;
