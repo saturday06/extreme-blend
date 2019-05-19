@@ -52,6 +52,10 @@ public:
     }
 };
 
+void ExtremeBlend::Reflector::wait_for_exit() {
+    loop_thread.join();
+}
+
 ExtremeBlend::Reflector::~Reflector() {
     char terminate_message[] = "terminate";
     write(terminate_writable_fd, terminate_message, strlen(terminate_message));

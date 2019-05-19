@@ -18,6 +18,7 @@ namespace ExtremeBlend {
 
         Reflector &operator=(const Reflector &) = delete;
 
+        void wait_for_exit();
     private:
         std::thread loop_thread;
         int terminate_readable_fd;

@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     }
 
     std::vector<char> xdg_runtime_dir_template;
-    {
+    if (false) {
         std::unique_ptr<char, void (*)(char *)> cwd_ptr(get_current_dir_name(), [](char *data) { free(data); });
         if (!cwd_ptr) {
             perror(argv[0]);
@@ -23,6 +23,9 @@ int main(int argc, char** argv) {
         xdg_runtime_dir_template.insert(xdg_runtime_dir_template.end(), cwd.begin(), cwd.end());
         std::string dir = "/run-XXXXXX";
         xdg_runtime_dir_template.insert(xdg_runtime_dir_template.end(), dir.begin(), dir.end());
+    } else {
+        std::string tmp = "/tmp/eb-XXXXXX";
+        xdg_runtime_dir_template.insert(xdg_runtime_dir_template.end(), tmp.begin(), tmp.end());
     }
 
     char* xdg_runtime_dir = mkdtemp(&xdg_runtime_dir_template[0]);

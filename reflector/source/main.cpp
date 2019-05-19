@@ -9,6 +9,7 @@
 #include "shell.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <extreme-blend/reflector.h>
 
 bool egl_init(wl_display *wl_disp);
 
@@ -23,11 +24,24 @@ int main(int argc, char *argv[]) {
 #endif
 
 int main2(int argc, char *argv[]) {
+    if (setenv("WAYLAND_DEBUG", "1", 1)) {
+        perror(argv[0]);
+        return 1;
+    }
+
+    if (setenv("XDG_RUNTIME_DIR", "/tmp", 1)) {
+        perror(argv[0]);
+        return 1;
+    }
+
     google::InitGoogleLogging(argv[0]);
     FLAGS_logtostderr = true;
     //google::ParseCommandLineFlags(&argc, &argv, true);
     LOG(INFO) << "start";
-
+    ExtremeBlend::Reflector r;
+    r.wait_for_exit();
+    return 0;
+/*
     wl_display *display = wl_display_create();
 
     if (!egl_init(display)) {
@@ -41,5 +55,5 @@ int main2(int argc, char *argv[]) {
     auto shell = std::make_unique<Shell>(display);
 
     LOG(INFO) << "hello, wayland";
-    wl_display_run(display);
+    wl_display_run(display); */
 }
