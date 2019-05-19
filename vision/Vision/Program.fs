@@ -1,7 +1,12 @@
 ﻿// Learn more about F# at http://fsharp.org
-// See the 'F# Tutorial' project for more help.
+
+open System
+open System.Threading.Tasks
+open Grpc.Core
+open Reflector.Grpc.Proto
 
 [<EntryPoint>]
-let main argv = 
-    printfn "%A" argv
+let main argv =
+    let channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure)
+    printfn "Hello World from F#!"
     0 // return an integer exit code
