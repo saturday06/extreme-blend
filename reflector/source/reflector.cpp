@@ -1,8 +1,8 @@
 #include <assert.h>
 #include "extreme-blend/reflector.h"
-#include "shell.h"
+#include "zxdg_shell_v6.h"
 #include "compositor.h"
-#include "shell.h"
+#include "zxdg_shell_v6.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
@@ -12,7 +12,7 @@ bool egl_init(wl_display *wl_disp);
 
 class DisplayLoop {
     std::unique_ptr<Compositor> compositor;
-    std::unique_ptr<Shell> shell;
+    std::unique_ptr<ZxdgShellV6> shell;
     std::unique_ptr<wl_display, decltype(&wl_display_destroy)> display;
 public:
     DisplayLoop(int terminate_readable_fd): display(wl_display_create(), wl_display_destroy) {
@@ -32,7 +32,7 @@ public:
         }
 
         compositor = std::make_unique<Compositor>(display.get());
-        shell = std::make_unique<Shell>(display.get());
+        shell = std::make_unique<ZxdgShellV6>(display.get());
 
         auto l = wl_display_get_event_loop((display.get()));
         wl_event_loop_add_fd(l, terminate_readable_fd, WL_EVENT_READABLE, [](int, uint32_t, void* data){

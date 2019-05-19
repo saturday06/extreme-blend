@@ -2,9 +2,9 @@
 
 #include <wayland-server.h>
 
-class ShellSurface {
+class ZxdgSurfaceV6 {
 public:
-    ShellSurface(wl_client* client, uint32_t id);
+    ZxdgSurfaceV6(wl_client* client, uint32_t id);
 
     static void destroy(wl_client* client, wl_resource* resource);
 

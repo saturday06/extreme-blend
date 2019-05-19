@@ -6,7 +6,7 @@
 #include <wayland-server.h>
 
 #include "compositor.h"
-#include "shell.h"
+#include "zxdg_shell_v6.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <extreme-blend/reflector.h>
@@ -52,7 +52,7 @@ int main2(int argc, char *argv[]) {
     assert(socket_name);
 
     auto compositor = std::make_unique<Compositor>(display);
-    auto shell = std::make_unique<Shell>(display);
+    auto shell = std::make_unique<ZxdgShellV6>(display);
 
     LOG(INFO) << "hello, wayland";
     wl_display_run(display); */
