@@ -1,4 +1,6 @@
-﻿open System
+﻿module ExtremeBlend.Vision
+
+open System
 open System.Threading.Tasks
 open Grpc.Core
 open ExtremeBlend.Proto

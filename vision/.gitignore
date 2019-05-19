@@ -1,7 +1,4 @@
 /.vs/
 /.vscode/
-/packages/
-/Vision/bin/
-/Vision/obj/
-/Vision.Grpc/bin/
-/Vision.Grpc/obj/
+/*/bin/
+/*/obj/
