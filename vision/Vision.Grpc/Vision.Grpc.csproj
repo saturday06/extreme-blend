@@ -2,10 +2,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Protos/reflector.proto" />
-    <None Remove="Protos/vision.proto" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
@@ -14,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos/reflector.proto" />
-    <Protobuf Include="Protos/vision.proto" />
+    <Protobuf Include="../../proto/reflector.proto" Link="reflector.proto" />
+    <Protobuf Include="../../proto/Protos/vision.proto" Link="vision.proto" />
   </ItemGroup>
 </Project>
