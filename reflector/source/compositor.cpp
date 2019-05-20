@@ -1,4 +1,3 @@
-
 #include "compositor.h"
 #include "surface.h"
 #include <cassert>
