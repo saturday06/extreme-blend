@@ -3,21 +3,21 @@
 #include <wayland-server.h>
 
 class ZxdgShellV6 {
-    wl_display* display_;
+  wl_display *display_;
 
 public:
-    ZxdgShellV6(wl_display* display);
+  ZxdgShellV6(wl_display *display);
 
-    static void global_bind(wl_client* client, void* data, uint32_t version,
-                            uint32_t id);
+  static void global_bind(wl_client *client, void *data, uint32_t version,
+                          uint32_t id);
 
-    static void destroy(struct wl_client* client, wl_resource* resource);
+  static void destroy(struct wl_client *client, wl_resource *resource);
 
-    static void create_positioner(wl_client* client, wl_resource* resource,
-                                  uint32_t id);
+  static void create_positioner(wl_client *client, wl_resource *resource,
+                                uint32_t id);
 
-    static void get_xdg_surface(wl_client* client, wl_resource* resource,
-                                uint32_t id, wl_resource* surface);
+  static void get_xdg_surface(wl_client *client, wl_resource *resource,
+                              uint32_t id, wl_resource *surface);
 
-    static void pong(wl_client* client, wl_resource* resource, uint32_t serial);
+  static void pong(wl_client *client, wl_resource *resource, uint32_t serial);
 };

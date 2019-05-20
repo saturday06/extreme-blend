@@ -8,23 +8,24 @@
 #include <wayland-server.h>
 
 namespace ExtremeBlend {
-    class Reflector {
-    public:
-        Reflector();
+class Reflector {
+public:
+  Reflector();
 
-        ~Reflector();
+  ~Reflector();
 
-        Reflector(const Reflector &) = delete;
+  Reflector(const Reflector &) = delete;
 
-        Reflector &operator=(const Reflector &) = delete;
+  Reflector &operator=(const Reflector &) = delete;
 
-        void wait_for_exit();
-    private:
-        std::thread loop_thread;
-        int terminate_readable_fd;
-        int terminate_writable_fd;
-    };
-}
+  void wait_for_exit();
+
+private:
+  std::thread loop_thread;
+  int terminate_readable_fd;
+  int terminate_writable_fd;
+};
+} // namespace ExtremeBlend
 
 #endif
 
