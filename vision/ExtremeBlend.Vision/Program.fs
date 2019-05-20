@@ -1,4 +1,4 @@
-﻿module ExtremeBlend.Vision
+module ExtremeBlend.Vision
 
 open System
 open System.Threading.Tasks
