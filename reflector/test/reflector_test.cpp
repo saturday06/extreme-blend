@@ -1,3 +1,4 @@
+#include "test.h"
 #include <errno.h>
 #include <extreme-blend/reflector.h>
 #include <fcntl.h>
@@ -21,14 +22,12 @@ protected:
   std::unique_ptr<Reflector> reflector;
 };
 
-// TEST_F(CompositorFixture, foo) {
-//    struct wl_display *display;
-//    display = wl_display_connect(NULL);
-//    if (!display) {
-//        ASSERT_TRUE(false);
-//    }
-//    wl_display_disconnect(display);
-//}
+TEST_F(CompositorFixture, client_connect_and_disconnect) {
+  struct wl_display *display;
+  display = wl_display_connect(NULL);
+  ASSERT_TRUE(display != NULL);
+  wl_display_disconnect(display);
+}
 
 struct wl_display *display = NULL;
 struct wl_compositor *compositor = NULL;
@@ -148,7 +147,8 @@ void create_window() {
   wl_surface_commit(surface);
 }
 
-TEST_F(CompositorFixture, bar) {
+TEST_F(CompositorFixture, create_window) {
+  return;
   display = wl_display_connect(NULL);
   ASSERT_TRUE(display != NULL);
 
