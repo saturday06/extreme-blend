@@ -89,7 +89,7 @@ ExtremeBlend::Reflector::Reflector()
       std::lock_guard<std::mutex> lock(display_ready_mutex);
       display_ready = true;
     }
-    display_ready_cond.notify_all();
+    display_ready_cond.notify_one();
 
     display_loop.run();
   });
