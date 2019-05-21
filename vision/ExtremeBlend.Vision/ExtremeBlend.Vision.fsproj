@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ExtremeBlend.Vision.Grpc\ExtremeBlend.Vision.Grpc.csproj" />
+    <ProjectReference Include="../ExtremeBlend.Vision.Grpc/ExtremeBlend.Vision.Grpc.csproj" />
   </ItemGroup>
 
 </Project>
