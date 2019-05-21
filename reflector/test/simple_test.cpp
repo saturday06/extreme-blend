@@ -91,7 +91,7 @@ struct simple_client *simple_client_create() {
       registry_handle_global, NULL};
 
   simple_client *client =
-      reinterpret_cast<simple_client *>(malloc(sizeof(struct simple_client)));
+      reinterpret_cast<simple_client *>(calloc(sizeof(struct simple_client), 1));
 
   if (client == NULL) {
     return NULL;
@@ -108,8 +108,12 @@ struct simple_client *simple_client_create() {
   }
   wl_registry_add_listener(client->registry, &registry_listener, client);
 
-  wl_display_roundtrip(client->display);
   wl_display_dispatch(client->display);
+  wl_display_roundtrip(client->display);
+
+  if (!client->compositor || !client->shell || !client->shm) {
+    return client;
+  }
 
   client->width = 600;
   client->height = 500;
