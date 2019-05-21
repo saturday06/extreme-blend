@@ -78,24 +78,17 @@ ExtremeBlend::Reflector::Reflector()
   terminate_readable_fd = fds[0];
   terminate_writable_fd = fds[1];
 
-  bool display_ready = false;
   std::mutex display_ready_mutex;
-  std::condition_variable display_ready_cond;
+  std::condition_variable display_ready;
 
   loop_thread = std::thread([&]() {
     DisplayLoop display_loop(terminate_readable_fd);
-
-    {
-      std::lock_guard<std::mutex> lock(display_ready_mutex);
-      display_ready = true;
-    }
-    display_ready_cond.notify_one();
-
+    display_ready.notify_one();
     display_loop.run();
   });
 
   {
     std::unique_lock<std::mutex> lock(display_ready_mutex);
-    display_ready_cond.wait(lock, [&] { return display_ready; });
+    display_ready.wait(lock);
   }
 }
