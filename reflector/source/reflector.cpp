@@ -84,11 +84,13 @@ ExtremeBlend::Reflector::Reflector()
 
   loop_thread = std::thread([&]() {
     DisplayLoop display_loop(terminate_readable_fd);
+
     {
       std::lock_guard<std::mutex> lock(display_ready_mutex);
       display_ready = true;
-      display_ready_cond.notify_all();
     }
+    display_ready_cond.notify_all();
+
     display_loop.run();
   });
 
