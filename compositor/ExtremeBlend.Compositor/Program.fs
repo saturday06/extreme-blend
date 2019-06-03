@@ -11,9 +11,10 @@ let rec thread (socket : Socket) =
     let buf : byte [] = Array.zeroCreate (4096 * 16)
     let len = socket.Receive(buf)
     if len > 0 then
-        Console.Write("Received {0} bytes", len)
+        Console.WriteLine("Received {0} bytes", len)
         for i in 0..(len - 1) do
-            Console.Write("{0:X} ", buf.[i])
+            Console.Write("{0:X2} ", buf.[i])
+        Console.WriteLine(";")
         thread (socket)
 
 [<EntryPoint>]
