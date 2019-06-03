@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ExtremeBlend.Compositor", "ExtremeBlend.Vision\ExtremeBlend.Compositor.fsproj", "{E44FA433-D4FF-48FF-B287-6F35E6216915}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExtremeBlend.Vision.Grpc", "ExtremeBlend.Vision.Grpc\ExtremeBlend.Vision.Grpc.csproj", "{72ED4634-73FF-42A0-A1F9-91137BD8BB4D}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ExtremeBlend.Compositor", "ExtremeBlend.Compositor\ExtremeBlend.Compositor.fsproj", "{E44FA433-D4FF-48FF-B287-6F35E6216915}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{E44FA433-D4FF-48FF-B287-6F35E6216915}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E44FA433-D4FF-48FF-B287-6F35E6216915}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E44FA433-D4FF-48FF-B287-6F35E6216915}.Release|Any CPU.Build.0 = Release|Any CPU
-		{72ED4634-73FF-42A0-A1F9-91137BD8BB4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{72ED4634-73FF-42A0-A1F9-91137BD8BB4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{72ED4634-73FF-42A0-A1F9-91137BD8BB4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{72ED4634-73FF-42A0-A1F9-91137BD8BB4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
