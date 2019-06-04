@@ -4,12 +4,13 @@ open System
 open System.IO
 open System.Net
 open System.Net.Sockets
+open System.Text
 open System.Threading
 
 let handleRequest (socket : Socket, senderObjectId : uint32, opcode : uint16,
                    argsBuf : byte []) : unit =
     match senderObjectId with
-    | 1u ->
+    | 2u ->
         Console.Write("wl_display ")
         match opcode with
         | 0us ->
@@ -29,7 +30,25 @@ let handleRequest (socket : Socket, senderObjectId : uint32, opcode : uint16,
                 let registry = BitConverter.ToUInt32(argsBuf, 0)
                 Console.Write("registry=0x{0:X4}({0}) ", registry)
         | _ -> Console.Write("unknown opcode ")
-    | _ -> Console.WriteLine("unknown sender object")
+    | _ ->
+        let senderObjectIdBytes = BitConverter.GetBytes(senderObjectId : uint32)
+        let codeBytes = BitConverter.GetBytes(0u) // invalid object
+        let messageBytes =
+            Encoding.ASCII.GetBytes("invalid_object\x00".PadLeft(4, '\x00'))
+        let messageBytesLen = BitConverter.GetBytes(messageBytes.Length : int32)
+        let len =
+            8 + senderObjectIdBytes.Length + codeBytes.Length
+            + messageBytesLen.Length + messageBytes.Length
+        if len > 0xffff then
+            Console.Write("message len {0} is greater than 0xffff", len)
+        socket.Send(BitConverter.GetBytes(senderObjectId : uint32)) |> ignore
+        socket.Send(BitConverter.GetBytes((uint32 len <<< 16) ||| 2u // invalid_object
+                                                                     )) |> ignore
+        socket.Send(senderObjectIdBytes) |> ignore
+        socket.Send(codeBytes) |> ignore
+        socket.Send(messageBytesLen) |> ignore
+        socket.Send(messageBytes) |> ignore
+        Console.WriteLine("unknown sender object")
     Console.WriteLine(";")
     ()
 
