@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2)
-project(extreme-blend-reflector C CXX)
+project(extreme-blend-compositor-test C CXX)
 
 include(CheckCXXCompilerFlag)
 
@@ -13,43 +13,33 @@ set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}${pkg_config_path_leading_separat
 find_package(Threads)
 find_package(PkgConfig)
 
-pkg_check_modules(PKG_CONFIG_FOUND REQUIRED wayland-client egl glesv2 x11 xcb x11-xcb wayland-scanner)
+pkg_check_modules(PKG_CONFIG_FOUND REQUIRED egl glesv2 wayland-client wayland-scanner)
 execute_process(
   COMMAND ${PKG_CONFIG_EXECUTABLE} wayland-scanner --variable wayland_scanner OUTPUT_VARIABLE wayland_scanner_executable
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-pkg_check_modules(PKG_CONFIG_TEST_FOUND REQUIRED wayland-client)
 
 include_directories(${PKG_CONFIG_FOUND_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/external/include)
 link_directories(${PKG_CONFIG_FOUND_LIBRARY_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/external/lib)
 link_libraries(${PKG_CONFIG_FOUND_LIBRARIES} Threads::Threads glog gflags)
 
-aux_source_directory(source sources)
 aux_source_directory(external/source external_sources)
 aux_source_directory(test test_sources)
 aux_source_directory(benchmark benchmark_sources)
-aux_source_directory(include include_sources)
 
 set(
   compositor_sources
-  ${sources}
   ${external_sources}
-  ${include_sources}
   external/include/wayland-server-header.h
   external/source/wayland-code.c
   external/include/xdg-shell-unstable-v6-server-header.h
   external/source/xdg-shell-unstable-v6-code.c
 )
 
-add_executable(compositor ${compositor_sources})
 add_executable(compositor_test ${compositor_sources} ${test_sources})
 add_executable(compositor_benchmark ${compositor_sources} ${benchmark_sources})
 
-target_compile_definitions(compositor_test PUBLIC CUSTOM_MAIN)
-target_compile_definitions(compositor_benchmark PUBLIC CUSTOM_MAIN)
-
-target_link_directories(compositor_test PRIVATE ${PKG_CONFIG_TEST_FOUND_LIBRARY_DIRS})
-target_link_libraries(compositor_test ${PKG_CONFIG_TEST_FOUND_LIBRARIES} gtest)
+target_link_libraries(compositor_test gtest)
 target_link_libraries(compositor_benchmark gtest gtest_main benchmark)
 
 enable_testing()
@@ -73,7 +63,6 @@ ExternalProject_Add(
   PREFIX external/build/glog
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/external -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
-add_dependencies(compositor external-glog)
 add_dependencies(compositor_test external-glog)
 add_dependencies(compositor_benchmark external-glog)
 
@@ -121,3 +110,10 @@ add_custom_command(
 )
 
 add_custom_target(external-directory ALL COMMAND ${CMAKE_COMMAND} -E make_directory external/include external/source)
+
+
+foreach(file ${test_sources} ${benchmark_sources})
+  set(format_sources ${format_sources} ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+endforeach()
+
+add_custom_target(format ALL COMMAND clang-format -i -verbose ${format_sources})

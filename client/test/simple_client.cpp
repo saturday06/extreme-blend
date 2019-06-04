@@ -1,14 +1,28 @@
+#include "test.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <glog/logging.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
+
+class SimpleCompositorFixture : public ::testing::Test {
+protected:
+  virtual void SetUp(){
+      // reflector.reset(new Reflector());
+  };
+
+  virtual void TearDown(){
+      // reflector.reset();
+  };
+
+  // std::unique_ptr<Reflector> reflector;
+};
 
 struct simple_client {
   struct wl_display *display;
@@ -52,11 +66,11 @@ static void create_shm_buffer(struct simple_client *client) {
   stride = client->width * 4;
   size = stride * client->height;
 
-  fd = 0; //os_create_anonymous_file(size);
-  assert(fd >= 0);
+  fd = os_create_anonymous_file(size);
+  ASSERT_TRUE(fd >= 0);
 
   client->data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  assert(client->data != MAP_FAILED);
+  ASSERT_NE(client->data, MAP_FAILED);
 
   pool = wl_shm_create_pool(client->shm, fd, size);
   client->buffer = wl_shm_pool_create_buffer(
@@ -77,8 +91,8 @@ struct simple_client *simple_client_create() {
   static struct wl_registry_listener registry_listener = {
       registry_handle_global, NULL};
 
-  simple_client *client =
-      reinterpret_cast<simple_client *>(calloc(sizeof(struct simple_client), 1));
+  simple_client *client = reinterpret_cast<simple_client *>(
+      calloc(sizeof(struct simple_client), 1));
 
   if (client == NULL) {
     return NULL;
@@ -130,24 +144,16 @@ struct simple_client *simple_client_create() {
   return client;
 }
 
-int main2() {
+TEST_F(SimpleCompositorFixture, simple) {
   struct simple_client *client = simple_client_create();
-  assert(client != NULL);
-  assert(client->compositor != NULL);
-  assert(client->shell != NULL);
-  assert(client->shell_surface != NULL);
-  assert(client->shm != NULL);
+  ASSERT_TRUE(client != NULL);
+  ASSERT_TRUE(client->compositor != NULL);
+  ASSERT_TRUE(client->shell != NULL);
+  ASSERT_TRUE(client->shell_surface != NULL);
+  ASSERT_TRUE(client->shm != NULL);
 
   while (wl_display_dispatch(client->display) != -1) {
     sleep(1);
   }
   free(client);
-  return 0;
 }
-
-
-#ifndef CUSTOM_MAIN
-int main() {
-  return main2();
-}
-#endif
