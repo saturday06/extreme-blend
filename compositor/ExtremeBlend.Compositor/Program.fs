@@ -33,16 +33,19 @@ let handleRequest (socket : Socket, senderObjectId : uint32, opcode : uint16,
     | _ ->
         let senderObjectIdBytes = BitConverter.GetBytes(senderObjectId : uint32)
         let codeBytes = BitConverter.GetBytes(0u) // invalid object
+        let message = "invalid_object\x00"
         let messageBytes =
-            Encoding.ASCII.GetBytes("invalid_object\x00".PadLeft(4, '\x00'))
+            Encoding.ASCII.GetBytes
+                (message.PadRight((message.Length + 3) / 4 * 4, '\x00'))
         let messageBytesLen = BitConverter.GetBytes(messageBytes.Length : int32)
         let len =
             8 + senderObjectIdBytes.Length + codeBytes.Length
             + messageBytesLen.Length + messageBytes.Length
+        Console.Write("len={0} ", len)
         if len > 0xffff then
             Console.Write("message len {0} is greater than 0xffff", len)
         socket.Send(BitConverter.GetBytes(senderObjectId : uint32)) |> ignore
-        socket.Send(BitConverter.GetBytes((uint32 len <<< 16) ||| 2u // invalid_object
+        socket.Send(BitConverter.GetBytes((uint32 len <<< 16) ||| 0u // invalid_object
                                                                      )) |> ignore
         socket.Send(senderObjectIdBytes) |> ignore
         socket.Send(codeBytes) |> ignore
