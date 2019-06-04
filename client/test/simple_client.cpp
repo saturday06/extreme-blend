@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+#include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,18 +11,27 @@
 #include <unistd.h>
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
+#include <string>
+#include <regex>
 
 class SimpleCompositorFixture : public ::testing::Test {
 protected:
-  virtual void SetUp(){
-      // reflector.reset(new Reflector());
+  virtual void SetUp() {
+    std::string command = "cscript.exe /nologo \"" +
+      std::regex_replace(__FILE__, std::regex("/[^/]+$"), "") + "/compositor.js\"";
+    file = popen(command.c_str(), "r");
+    ASSERT_TRUE(file != NULL);
+    sleep(3); // TODO:
   };
 
-  virtual void TearDown(){
-      // reflector.reset();
+  virtual void TearDown() {
+    if (file != NULL) {
+      fclose(file);
+    }
   };
 
-  // std::unique_ptr<Reflector> reflector;
+  FILE *file;
+  // pid_t pid;
 };
 
 struct simple_client {

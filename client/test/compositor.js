@@ -1,0 +1,2 @@
+WScript.Echo("foo");
+

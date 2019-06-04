@@ -13,6 +13,11 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  if (setenv("WAYLAND_DISPLAY", "/mnt/c/temp/temp.unixsock", 1)) {
+    perror(argv[0]);
+    return 1;
+  }
+
   std::vector<char> xdg_runtime_dir_template;
   if (false) {
     std::unique_ptr<char, void (*)(char *)> cwd_ptr(
