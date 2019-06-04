@@ -10,7 +10,7 @@ open System.Threading
 let handleRequest (socket : Socket, senderObjectId : uint32, opcode : uint16,
                    argsBuf : byte []) : unit =
     match senderObjectId with
-    | 2u ->
+    | 1u ->
         Console.Write("wl_display ")
         match opcode with
         | 0us ->
@@ -37,20 +37,24 @@ let handleRequest (socket : Socket, senderObjectId : uint32, opcode : uint16,
         let messageBytes =
             Encoding.ASCII.GetBytes
                 (message.PadRight((message.Length + 3) / 4 * 4, '\x00'))
-        let messageBytesLen = BitConverter.GetBytes(messageBytes.Length : int32)
-        let len =
+        let messageBytesLenBytes =
+            BitConverter.GetBytes(messageBytes.Length : int32)
+        let totalLen =
             8 + senderObjectIdBytes.Length + codeBytes.Length
-            + messageBytesLen.Length + messageBytes.Length
-        Console.Write("len={0} ", len)
-        if len > 0xffff then
-            Console.Write("message len {0} is greater than 0xffff", len)
-        socket.Send(BitConverter.GetBytes(senderObjectId : uint32)) |> ignore
-        socket.Send(BitConverter.GetBytes((uint32 len <<< 16) ||| 0u // invalid_object
-                                                                     )) |> ignore
-        socket.Send(senderObjectIdBytes) |> ignore
-        socket.Send(codeBytes) |> ignore
-        socket.Send(messageBytesLen) |> ignore
-        socket.Send(messageBytes) |> ignore
+            + messageBytesLenBytes.Length + messageBytes.Length
+        Console.Write("len={0} ", totalLen)
+        if totalLen > 0xffff then
+            Console.Write("message len {0} is greater than 0xffff", totalLen)
+        use memoryStream = new MemoryStream()
+        memoryStream.Write(new ReadOnlySpan<byte>(senderObjectIdBytes))
+        memoryStream.Write
+            (new ReadOnlySpan<byte>(BitConverter.GetBytes
+                                        ((uint32 totalLen <<< 16) ||| 0u)))
+        memoryStream.Write(new ReadOnlySpan<byte>(senderObjectIdBytes))
+        memoryStream.Write(new ReadOnlySpan<byte>(codeBytes))
+        memoryStream.Write(new ReadOnlySpan<byte>(messageBytesLenBytes))
+        memoryStream.Write(new ReadOnlySpan<byte>(messageBytes))
+        socket.Send(memoryStream.ToArray()) |> ignore
         Console.WriteLine("unknown sender object")
     Console.WriteLine(";")
     ()

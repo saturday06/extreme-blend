@@ -21,7 +21,7 @@ protected:
       std::regex_replace(__FILE__, std::regex("/[^/]+$"), "") + "/compositor.js\"";
     file = popen(command.c_str(), "r");
     ASSERT_TRUE(file != NULL);
-    sleep(3); // TODO:
+    sleep(1); // TODO:
   };
 
   virtual void TearDown() {
