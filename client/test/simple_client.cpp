@@ -3,22 +3,24 @@
 #include <fcntl.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+#include <regex>
 #include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
-#include <string>
-#include <regex>
 
 class SimpleCompositorFixture : public ::testing::Test {
 protected:
   virtual void SetUp() {
-    std::string command = "cscript.exe /nologo \"" +
-      std::regex_replace(__FILE__, std::regex("/[^/]+$"), "") + "/compositor.js\"";
+    std::string command =
+        "cscript.exe /nologo \"" +
+        std::regex_replace(__FILE__, std::regex("/[^/]+$"), "") +
+        "/compositor.js\"";
     file = popen(command.c_str(), "r");
     ASSERT_TRUE(file != NULL);
     sleep(1); // TODO:
