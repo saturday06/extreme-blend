@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="IWaylandProtocol.fs" />
+    <Compile Include="ObjectNotFound.fs" />
+    <Compile Include="WlDisplay.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

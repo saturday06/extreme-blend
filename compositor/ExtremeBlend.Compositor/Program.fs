@@ -1,77 +1,19 @@
 module ExtremeBlend.Compositor
 
+open ExtremeBlend.Compositor.IWaylandProtocol
+open ExtremeBlend.Compositor.ObjectNotFound
+open ExtremeBlend.Compositor.WlDisplay
 open System
 open System.Collections.Generic
 open System.IO
-open System.Net
 open System.Net.Sockets
 open System.Text
 open System.Threading
 
-type IWaylandProtocol =
-    abstract Invoke : Socket * uint32 * uint16 * byte [] -> unit
-
-type ObjectNotFoundWaylandProtocol() =
-    interface IWaylandProtocol with
-        member this.Invoke(socket, senderObjectId, opcode, argsBuf) =
-            let senderObjectIdBytes =
-                BitConverter.GetBytes(senderObjectId : uint32)
-            let codeBytes = BitConverter.GetBytes(0u) // invalid object
-            let message = "invalid_object\x00"
-            let messageBytes =
-                Encoding.ASCII.GetBytes
-                    (message.PadRight((message.Length + 3) / 4 * 4, '\x00'))
-            let messageBytesLenBytes =
-                BitConverter.GetBytes(messageBytes.Length : int32)
-            let totalLen =
-                8 + senderObjectIdBytes.Length + codeBytes.Length
-                + messageBytesLenBytes.Length + messageBytes.Length
-            Console.Write("len={0} ", totalLen)
-            if totalLen > 0xffff then
-                Console.Write
-                    ("message len {0} is greater than 0xffff", totalLen)
-            use memoryStream = new MemoryStream()
-            memoryStream.Write(new ReadOnlySpan<byte>(senderObjectIdBytes))
-            memoryStream.Write
-                (new ReadOnlySpan<byte>(BitConverter.GetBytes
-                                            ((uint32 totalLen <<< 16) ||| 0u)))
-            memoryStream.Write(new ReadOnlySpan<byte>(senderObjectIdBytes))
-            memoryStream.Write(new ReadOnlySpan<byte>(codeBytes))
-            memoryStream.Write(new ReadOnlySpan<byte>(messageBytesLenBytes))
-            memoryStream.Write(new ReadOnlySpan<byte>(messageBytes))
-            socket.Send(memoryStream.ToArray()) |> ignore
-            Console.WriteLine("unknown sender object")
-            Console.WriteLine(";")
-
-type WlDisplay() =
-    interface IWaylandProtocol with
-        member this.Invoke(socket, senderObjectId, opcode, argsBuf) =
-            Console.Write("wl_display ")
-            match opcode with
-            | 0us ->
-                Console.Write("sync ")
-                if argsBuf.Length <> 4 then
-                    Console.Write
-                        ("args buffer size is not 4 but {0}", argsBuf.Length)
-                else
-                    let callback = BitConverter.ToUInt32(argsBuf, 0)
-                    Console.Write("callback=0x{0:X4}({0}) ", callback)
-            | 1us ->
-                Console.Write("get_registry ")
-                if argsBuf.Length <> 4 then
-                    Console.Write
-                        ("args buffer size is not 4 but {0}", argsBuf.Length)
-                else
-                    let registry = BitConverter.ToUInt32(argsBuf, 0)
-                    Console.Write("registry=0x{0:X4}({0}) ", registry)
-            | _ -> Console.Write("unknown opcode ")
-
 let handleRequest (socket : Socket,
                    objects : Dictionary<uint32, IWaylandProtocol>,
                    senderObjectId : uint32, opcode : uint16, argsBuf : byte []) : unit =
-    let object =
-        objects.GetValueOrDefault
-            (senderObjectId, ObjectNotFoundWaylandProtocol())
+    let object = objects.GetValueOrDefault(senderObjectId, ObjectNotFound())
     object.Invoke(socket, senderObjectId, opcode, argsBuf)
     ()
 
@@ -149,7 +91,7 @@ let main _argv =
         printfn "Waiting for a connection..."
         let clientSocket = serverSocket.Accept()
         let objects = Dictionary<uint32, IWaylandProtocol>()
-        objects.Add(1u, new WlDisplay())
+        objects.Add(1u, WlDisplay())
         printfn "Accept"
         Thread(new ThreadStart(fun () -> thread (clientSocket, objects)))
             .Start()
