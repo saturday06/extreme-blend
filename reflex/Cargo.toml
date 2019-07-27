@@ -10,6 +10,7 @@ mio = "*"
 tokio = "*"
 tokio-io = "*"
 futures = "*"
+byteorder = "*"
 winapi = { version = "*", features = [
     "impl-default",
     "minwindef",

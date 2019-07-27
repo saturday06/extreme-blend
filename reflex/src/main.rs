@@ -3,8 +3,12 @@ use futures::stream::Stream;
 use std::os::raw::{c_char, c_int};
 use std::os::windows::io::FromRawSocket;
 //use std::os::windows::raw::SOCKET;
-//use tokio::net::{TcpListener, TcpStream};
+use byteorder::{NativeEndian, ReadBytesExt};
+use std::io::Cursor;
 use std::os::windows::io::FromRawHandle;
+use tokio::io::read_exact;
+use tokio::io::ReadExact;
+use tokio::net::TcpStream;
 use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
 use winapi::shared::minwindef::MAKEWORD;
@@ -109,23 +113,37 @@ fn main() {
         };
         let stream0 = tokio::net::TcpStream::from_std(std_stream, &Handle::default()).unwrap();
         let session = loop_fn(stream0, |stream| {
-            let mut header_buf0 = Vec::new();
-            header_buf0.resize(8, 0);
+            // https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format
+            futures::future::ok(())
+                .and_then(|_| {
+                    let mut header_buf = Vec::new();
+                    header_buf.resize(8, 0);
+                    tokio::io::read_exact(stream, header_buf).map_err(|e| eprintln!("Error: {}", e))
+                })
+                .and_then(|(stream, header_buf)| {
+                    let mut cursor = Cursor::new(&header_buf);
+                    let sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
+                    let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
+                    let message_size = (message_size_and_opcode >> 16) as usize;
+                    let opcode = (0x0000ffff & message_size_and_opcode) as u16;
 
-            let mut payload_buf0 = Vec::new();
-            payload_buf0.resize(8, 0);
-
-            tokio::io::read_exact(stream, header_buf0)
-                .map_err(|e| eprintln!("Error: {}", e))
-                .and_then(|(stream, buf)| {
-                    tokio::io::read_exact(stream, payload_buf0)
+                    if message_size < header_buf.len() {
+                        return Err(());
+                    }
+                    let mut payload_buf = Vec::new();
+                    payload_buf.resize(message_size - header_buf.len(), 0);
+                    Ok(tokio::io::read_exact(stream, payload_buf)
                         .map_err(|e| eprintln!("Error: {}", e))
+                        .and_then(move |(stream, payload_buf): (TcpStream, Vec<u8>)| {
+                            println!(
+                                "id={} opcode={} {:?}",
+                                sender_object_id, opcode, payload_buf
+                            );
+                            Ok(stream)
+                        }))
                 })
-                .map(|(stream, buf)| {
-                    println!("{:?}", buf);
-                    stream
-                })
-                .and_then(|stream| Ok(Loop::Continue(stream)))
+                .and_then(|x| x)
+                .and_then(|stream: TcpStream| Ok(Loop::Continue(stream)))
         });
         runtime.spawn(session);
     }
