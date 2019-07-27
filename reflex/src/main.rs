@@ -109,10 +109,18 @@ fn main() {
         };
         let stream0 = tokio::net::TcpStream::from_std(std_stream, &Handle::default()).unwrap();
         let session = loop_fn(stream0, |stream| {
-            let mut buf = Vec::new();
-            buf.resize(5, 0);
-            tokio::io::read_exact(stream, buf)
+            let mut header_buf0 = Vec::new();
+            header_buf0.resize(8, 0);
+
+            let mut payload_buf0 = Vec::new();
+            payload_buf0.resize(8, 0);
+
+            tokio::io::read_exact(stream, header_buf0)
                 .map_err(|e| eprintln!("Error: {}", e))
+                .and_then(|(stream, buf)| {
+                    tokio::io::read_exact(stream, payload_buf0)
+                        .map_err(|e| eprintln!("Error: {}", e))
+                })
                 .map(|(stream, buf)| {
                     println!("{:?}", buf);
                     stream
