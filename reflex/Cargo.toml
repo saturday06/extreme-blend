@@ -6,6 +6,10 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
+mio = "*"
+tokio = "*"
+tokio-io = "*"
+futures = "*"
 winapi = { version = "*", features = [
     "impl-default",
     "minwindef",
