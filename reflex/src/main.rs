@@ -116,7 +116,7 @@ impl WaylandProtocol for ObjectNotFound {
 
 struct SessionState {
     counter: u32,
-    objectMap: HashMap<u32, Arc<Mutex<Box<WaylandProtocol>>>>,
+    object_map: HashMap<u32, Box<WaylandProtocol>>,
 }
 
 fn main() {
@@ -133,60 +133,57 @@ fn main() {
             std::net::TcpStream::from_raw_socket(client_socket as std::os::windows::raw::SOCKET)
         };
         let stream0 = tokio::net::TcpStream::from_std(std_stream, &Handle::default()).unwrap();
-        let session_state0 = Arc::new(Mutex::new(SessionState {
+        let session_state0 = SessionState {
             counter: 0,
-            objectMap: HashMap::new(),
-        }));
-        let session = loop_fn((stream0, session_state0), move |(stream, session_state)| {
-            // https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format
-            let session_state1 = session_state.clone();
-            let process_input = futures::future::ok(())
-                .and_then(|_| {
-                    let mut header_buf = Vec::new();
-                    header_buf.resize(8, 0);
-                    tokio::io::read_exact(stream, header_buf).map_err(|e| eprintln!("Error: {}", e))
-                })
-                .and_then(move |(stream, header_buf)| {
-                    let mut cursor = Cursor::new(&header_buf);
-                    let sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
-                    let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
-                    let message_size = (message_size_and_opcode >> 16) as usize;
-                    let opcode = (0x0000ffff & message_size_and_opcode) as u16;
+            object_map: HashMap::new(),
+        };
+        let session = loop_fn(
+            (stream0, session_state0),
+            move |(stream, mut session_state)| {
+                // https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format
+                //let session_state1 = session_state.clone();
+                let process_input = futures::future::ok(())
+                    .and_then(|_| {
+                        let mut header_buf = Vec::new();
+                        header_buf.resize(8, 0);
+                        tokio::io::read_exact(stream, header_buf)
+                            .map_err(|e| eprintln!("Error: {}", e))
+                    })
+                    .and_then(move |(stream, header_buf)| {
+                        let mut cursor = Cursor::new(&header_buf);
+                        let sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
+                        let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
+                        let message_size = (message_size_and_opcode >> 16) as usize;
+                        let opcode = (0x0000ffff & message_size_and_opcode) as u16;
 
-                    if message_size < header_buf.len() {
-                        return Err(());
-                    }
-                    let mut payload_buf = Vec::new();
-                    payload_buf.resize(message_size - header_buf.len(), 0);
-                    Ok(tokio::io::read_exact(stream, payload_buf)
-                        .map_err(|e| eprintln!("Error: {}", e))
-                        .and_then(move |(stream, payload_buf): (TcpStream, Vec<u8>)| {
-                            println!(
-                                "id={} opcode={} {:?}",
-                                sender_object_id, opcode, payload_buf
-                            );
+                        if message_size < header_buf.len() {
+                            return Err(());
+                        }
+                        let mut payload_buf = Vec::new();
+                        payload_buf.resize(message_size - header_buf.len(), 0);
+                        Ok(tokio::io::read_exact(stream, payload_buf)
+                            .map_err(|e| eprintln!("Error: {}", e))
+                            .and_then(move |(stream, payload_buf): (TcpStream, Vec<u8>)| {
+                                println!(
+                                    "id={} opcode={} {:?}",
+                                    sender_object_id, opcode, payload_buf
+                                );
 
-                            let object = {
-                                let mut lock = session_state1.lock().unwrap();
-                                lock.counter += 1;
-                                lock.objectMap.get(&sender_object_id).map(|x| x.clone())
-                            };
+                                let obj = session_state.object_map.get_mut(&sender_object_id);
+                                if let Some(o) = obj {
+                                    o.handle(opcode, payload_buf);
+                                } else {
+                                    ObjectNotFound {}.handle(opcode, payload_buf);
+                                }
 
-                            if let Some(obj) = object {
-                                let mut o = obj.lock().unwrap();
-                                o.handle(opcode, payload_buf);
-                            } else {
-                                let mut o = ObjectNotFound {};
-                                o.handle(opcode, payload_buf);
-                            };
-
-                            Ok((stream, session_state1))
-                        }))
-                })
-                .and_then(|x| x)
-                .and_then(|(s, ss)| Ok(Loop::Continue((s, ss))));
-            process_input
-        });
+                                Ok((stream, session_state))
+                            }))
+                    })
+                    .and_then(|x| x)
+                    .and_then(|(s, ss)| Ok(Loop::Continue((s, ss))));
+                process_input
+            },
+        );
         runtime.spawn(session);
     }
 
