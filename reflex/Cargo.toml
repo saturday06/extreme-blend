@@ -11,6 +11,7 @@ tokio = "*"
 tokio-io = "*"
 futures = "*"
 byteorder = "*"
+bytes = "*"
 winapi = { version = "*", features = [
     "impl-default",
     "minwindef",
