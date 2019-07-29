@@ -115,7 +115,9 @@ trait WaylandProtocol {
     ) -> Box<Future<Item = (), Error = ()> + Send>;
 }
 
-struct WlCompositor {}
+struct WlCompositor {
+    name: u32,
+}
 
 impl WaylandProtocol for WlCompositor {
     fn handle(
@@ -127,14 +129,53 @@ impl WaylandProtocol for WlCompositor {
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         Box::new(
-            tx.send(Box::new(WlDisplayError { sender_object_id }))
-                .map_err(|_| ())
-                .map(|_tx| ()),
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
         )
     }
 }
 
 struct WlRegistry {}
+
+impl WlRegistry {
+    fn bind(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        name: u32,
+        id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        println!("WlRegistry::bind(name: {}, id: {})", name, id);
+        if name
+            == session_state
+                .read()
+                .unwrap()
+                .wl_compositor
+                .read()
+                .unwrap()
+                .name
+        {
+            let mut lock = session_state.write().unwrap();
+            let registry = lock.wl_registry.clone();
+            lock.object_map.insert(id, registry);
+            return Box::new(futures::future::ok(()));
+        }
+
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
 
 impl WaylandProtocol for WlRegistry {
     fn handle(
@@ -145,17 +186,32 @@ impl WaylandProtocol for WlRegistry {
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
-        Box::new(
-            tx.send(Box::new(WlDisplayError { sender_object_id }))
+        let args_len = args.len();
+        let mut cursor = Cursor::new(args);
+        match opcode {
+            0 if args_len == 8 => {
+                return self.bind(
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            _ => Box::new(
+                tx.send(Box::new(WlDisplayError {
+                    object_id: sender_object_id,
+                    code: WlDisplayErrorInvalidMethod,
+                }))
                 .map_err(|_| ())
                 .map(|_tx| ()),
-        )
+            ),
+        }
     }
 }
 
 struct WlDisplay {
-    wl_registry: Arc<RwLock<WlRegistry>>,
-    wl_compositor: Arc<RwLock<WlCompositor>>,
+    next_callback_data: u32,
 }
 
 impl WlDisplay {
@@ -167,11 +223,14 @@ impl WlDisplay {
         wl_callback_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::sync({})", wl_callback_id);
-
+        self.next_callback_data += 1;
         Box::new(
-            tx.send(Box::new(WlDisplayError { sender_object_id }))
-                .map_err(|_| ())
-                .map(|_tx| ()),
+            tx.send(Box::new(WlCallbackDone {
+                sender_object_id: wl_callback_id,
+                callback_data: self.next_callback_data,
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
         )
     }
 
@@ -183,17 +242,19 @@ impl WlDisplay {
         wl_registry_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", wl_registry_id);
-        {
+        let compositor_name = {
             let mut lock = session_state.write().unwrap();
-            lock.object_map
-                .insert(wl_registry_id, self.wl_registry.clone());
-        }
+            let registry = lock.wl_registry.clone();
+            let compositor_name = lock.wl_compositor.read().unwrap().name.clone();
+            lock.object_map.insert(wl_registry_id, registry);
+            compositor_name
+        };
         Box::new(
             tx.send(Box::new(WlRegistryGlobal {
-                sender_object_id: sender_object_id,
-                name: wl_registry_id,
+                sender_object_id: wl_registry_id,
+                name: compositor_name,
                 interface: "wl_compositor".to_owned(),
-                version: 1,
+                version: 4,
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -232,9 +293,12 @@ impl WaylandProtocol for WlDisplay {
             _ => {}
         }
         Box::new(
-            tx.send(Box::new(WlDisplayError { sender_object_id }))
-                .map_err(|_| ())
-                .map(|_tx| ()),
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
         )
     }
 }
@@ -249,13 +313,18 @@ trait WaylandEvent {
     fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error>;
 }
 
+const WlDisplayErrorInvalidObject: u32 = 0;
+const WlDisplayErrorInvalidMethod: u32 = 1;
+const WlDisplayErrorNoMemory: u32 = 2;
+
 struct WlDisplayError {
-    pub sender_object_id: u32,
+    object_id: u32,
+    code: u32,
 }
 
 impl WaylandEvent for WlDisplayError {
     fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
-        let mut message = "invalid object".to_owned();
+        let mut message = "Oops!".to_owned();
         message.push(0 as char);
         while message.len() % 4 != 0 {
             message.push(0 as char);
@@ -267,10 +336,10 @@ impl WaylandEvent for WlDisplayError {
         }
         let i = dst.len();
         dst.resize(i + total_len, 0);
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+        NativeEndian::write_u32(&mut dst[i..], 1);
         NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-        NativeEndian::write_u32(&mut dst[i + 8..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 12..], 0); // invalid object
+        NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
+        NativeEndian::write_u32(&mut dst[i + 12..], self.code); // invalid object
         NativeEndian::write_u32(&mut dst[i + 16..], message.len() as u32);
         dst[i + 20..].copy_from_slice(message.as_bytes());
 
@@ -307,6 +376,24 @@ impl WaylandEvent for WlRegistryGlobal {
         dst[i + 16..(i + 16 + aligned_interface.len())]
             .copy_from_slice(aligned_interface.as_bytes());
         NativeEndian::write_u32(&mut dst[i + 16 + aligned_interface.len()..], self.version);
+
+        Ok(())
+    }
+}
+
+struct WlCallbackDone {
+    pub sender_object_id: u32,
+    pub callback_data: u32,
+}
+
+impl WaylandEvent for WlCallbackDone {
+    fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
+        let total_len = 8 + 4;
+        let i = dst.len();
+        dst.resize(i + total_len, 0);
+        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+        NativeEndian::write_u32(&mut dst[i + 8..], self.callback_data);
 
         Ok(())
     }
@@ -380,14 +467,15 @@ impl tokio::codec::Decoder for WaylandCodec {
 
 struct SessionState {
     object_map: HashMap<u32, Arc<RwLock<WaylandProtocol + Send + Sync>>>,
+    wl_registry: Arc<RwLock<WlRegistry>>,
+    wl_compositor: Arc<RwLock<WlCompositor>>,
 }
 
 fn main() {
     let mut server_socket = ServerSocket::bind().unwrap();
     let mut runtime = Runtime::new().unwrap();
     let wl_display = Arc::new(RwLock::new(WlDisplay {
-        wl_registry: Arc::new(RwLock::new(WlRegistry {})),
-        wl_compositor: Arc::new(RwLock::new(WlCompositor {})),
+        next_callback_data: 0,
     }));
     loop {
         let client_socket = if let Some(x) = server_socket.accept() {
@@ -401,6 +489,8 @@ fn main() {
         };
         let stream = tokio::net::TcpStream::from_std(std_stream, &Handle::default()).unwrap();
         let session_state0 = Arc::new(RwLock::new(SessionState {
+            wl_registry: Arc::new(RwLock::new(WlRegistry {})),
+            wl_compositor: Arc::new(RwLock::new(WlCompositor { name: 1 })),
             object_map: HashMap::new(),
         }));
         session_state0
@@ -439,12 +529,12 @@ fn main() {
                     )
                 } else {
                     Box::new(
-                        tx.clone()
-                            .send(Box::new(WlDisplayError {
-                                sender_object_id: req.sender_object_id,
-                            }))
-                            .map_err(|_| ())
-                            .map(|_tx| ()),
+                        tx.send(Box::new(WlDisplayError {
+                            object_id: 1,
+                            code: WlDisplayErrorInvalidObject,
+                        }))
+                        .map_err(|_| ())
+                        .map(|_tx| ()),
                     )
                 };
                 h.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
