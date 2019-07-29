@@ -14,7 +14,7 @@
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
 
-TEST(client_test, dev_client01) {
+TEST(client_test, dev03) {
   struct wl_display *display;
 
   display = wl_display_connect(NULL);
