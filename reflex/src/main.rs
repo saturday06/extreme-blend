@@ -10,7 +10,9 @@ use std::io::Cursor;
 use std::io::Read;
 use std::os::raw::{c_char, c_int};
 use std::os::windows::io::FromRawSocket;
+use std::sync::{Arc, RwLock};
 use tokio::codec::BytesCodec;
+use tokio::codec::Decoder;
 use tokio::io::AsyncRead;
 use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
@@ -102,8 +104,38 @@ impl Drop for ServerSocket {
     }
 }
 
-trait WaylandProtocol: Send {
-    fn handle(&mut self, opcode: u16, args: Vec<u8>) -> Box<Future<Item = (), Error = ()> + Send>;
+trait WaylandProtocol {
+    fn handle(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send>;
+}
+
+struct WlDisplay {
+    pub struct Disp {
+
+    }
+}
+
+impl WaylandProtocol for WlDisplay {
+    fn handle(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(
+            tx.send(Box::new(WlDisplayError { sender_object_id }))
+                .map_err(|_| ())
+                .map(|_tx| ()),
+        )
+    }
 }
 
 struct WaylandRequest {
@@ -112,7 +144,7 @@ struct WaylandRequest {
     pub args: Vec<u8>,
 }
 
-trait WaylandEvent: Send {
+trait WaylandEvent {
     fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error>;
 }
 
@@ -149,10 +181,14 @@ impl WaylandCodec {
 }
 
 impl tokio::codec::Encoder for WaylandCodec {
-    type Item = Box<WaylandEvent>;
+    type Item = Box<WaylandEvent + Send>;
     type Error = std::io::Error;
 
-    fn encode(&mut self, res: Box<WaylandEvent>, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(
+        &mut self,
+        res: Box<WaylandEvent + Send>,
+        dst: &mut BytesMut,
+    ) -> Result<(), Self::Error> {
         res.encode(dst)
     }
 }
@@ -167,6 +203,7 @@ impl tokio::codec::Decoder for WaylandCodec {
             return Ok(None);
         }
 
+        // https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format
         let (req, message_size) = {
             let mut cursor = Cursor::new(&src);
             let sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
@@ -202,13 +239,13 @@ impl tokio::codec::Decoder for WaylandCodec {
 }
 
 struct SessionState {
-    counter: u32,
-    object_map: HashMap<u32, Box<WaylandProtocol>>,
+    object_map: HashMap<u32, Arc<RwLock<WaylandProtocol + Send + Sync>>>,
 }
 
 fn main() {
     let mut server_socket = ServerSocket::bind().unwrap();
     let mut runtime = Runtime::new().unwrap();
+    let wl_display = Arc::new(RwLock::new(WlDisplay {}));
     loop {
         let client_socket = if let Some(x) = server_socket.accept() {
             x
@@ -220,13 +257,17 @@ fn main() {
             std::net::TcpStream::from_raw_socket(client_socket as std::os::windows::raw::SOCKET)
         };
         let stream = tokio::net::TcpStream::from_std(std_stream, &Handle::default()).unwrap();
-        let mut session_state = SessionState {
-            counter: 0,
+        let session_state0 = Arc::new(RwLock::new(SessionState {
             object_map: HashMap::new(),
-        };
-        let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<WaylandEvent>>(1000);
+        }));
+        session_state0
+            .write()
+            .unwrap()
+            .object_map
+            .insert(0, wl_display.clone());
+        let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<WaylandEvent + Send>>(1000);
 
-        let (writer0, reader0) = stream.framed(WaylandCodec::new()).split();
+        let (writer0, reader0) = WaylandCodec::new().framed(stream).split();
         let output_session = rx0
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
             .forward(writer0)
@@ -236,112 +277,36 @@ fn main() {
 
         let input_session = reader0
             .for_each(move |req: WaylandRequest| {
-                let payload_buf = Vec::new();
-                let opcode = 1;
-                let obj = session_state.object_map.get_mut(&1);
+                let session_state = session_state0.clone();
+                let obj = session_state
+                    .read()
+                    .unwrap()
+                    .object_map
+                    .get(&req.sender_object_id)
+                    .map(|x| x.clone());
+                let tx = tx0.clone();
                 let h = if let Some(o) = obj {
-                    o.handle(opcode, payload_buf)
+                    let mut l = o.write().unwrap();
+                    l.handle(
+                        session_state,
+                        tx,
+                        req.sender_object_id,
+                        req.opcode,
+                        req.args,
+                    )
                 } else {
-                    tx0.clone()
-                        .send(Box::new(WlDisplayError {
-                            sender_object_id: req.sender_object_id,
-                        }))
-                        .map_err(|_| ())
-                        .map(|tx| ())
-                        .boxed()
+                    Box::new(
+                        tx.clone()
+                            .send(Box::new(WlDisplayError {
+                                sender_object_id: req.sender_object_id,
+                            }))
+                            .map_err(|_| ())
+                            .map(|_tx| ()),
+                    )
                 };
                 h.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
             })
             .map_err(|_| ());
         runtime.spawn(input_session);
-        /*
-        let input_session = loop_fn(
-            (reader0, session_state0, tx0),
-            move |(reader, mut session_state, tx)| {
-                // https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format
-                //let session_state1 = session_state.clone();
-                let process_input = futures::future::ok(())
-                    .and_then(|_| {
-                        let mut header_buf = Vec::new();
-                        header_buf.resize(8, 0);
-                        tokio::io::read_exact(reader, header_buf)
-                            .map_err(|e| eprintln!("Error: {}", e))
-                    })
-                    .and_then(move |(reader, header_buf)| {
-                        let mut cursor = Cursor::new(&header_buf);
-                        let sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
-                        let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
-                        let message_size = (message_size_and_opcode >> 16) as usize;
-                        let opcode = (0x0000ffff & message_size_and_opcode) as u16;
-
-                        if message_size < header_buf.len() {
-                            return Err(());
-                        }
-                        let mut payload_buf = Vec::new();
-                        payload_buf.resize(message_size - header_buf.len(), 0);
-                        Ok(tokio::io::read_exact(reader, payload_buf)
-                            .map_err(|e| eprintln!("Error: {}", e))
-                            .and_then(move |(reader, payload_buf)| {
-                                println!(
-                                    "id={} opcode={} {:?}",
-                                    sender_object_id, opcode, payload_buf
-                                );
-
-                                let obj = session_state.object_map.get_mut(&sender_object_id);
-                                let out = if let Some(o) = obj {
-                                    o.handle(opcode, payload_buf)
-                                } else {
-                                    ObjectNotFound {}.handle(opcode, payload_buf)
-                                };
-
-                                Ok((reader, session_state, out))
-                            }))
-                    })
-                    .and_then(|x| x)
-                    .and_then(|(r, ss, out)| {
-                        if let Some(o) = out {
-                            tx.send(o)
-                                .map_err(|_| ())
-                                .map(|tx| Loop::Continue((r, ss, tx)))
-                                .boxed()
-                        } else {
-                            futures::future::ok(Loop::Continue((r, ss, tx))).boxed()
-                        }
-                    });
-                process_input
-            },
-        );
-        runtime.spawn(input_session);
-        */
     }
-
-    //for stream in std_listener.incoming() {
-    //    stream.unwrap();
-    //}
-    //let listener = mio::net::TcpListener::from_std(std_listener).unwrap();
-    //mio::miow::
-    //let xx = std_listener.local_addr();
-    //println!("{:?}", xx);
-    //let handle = Handle::default();
-    //let listener = TcpListener::from_std(std_listener, &handle).expect("Oops!");
-    /*
-    let server = listener
-        .incoming()
-        .map_err(|e| eprintln!("failed to accept socket; error = {:?}", e))
-        .for_each(|stream0| {
-            let session = loop_fn(stream0, |stream| {
-                let mut buf = Vec::new();
-                buf.resize(5, 0);
-                tokio::io::read_exact(stream, buf)
-                    .map_err(|e| eprintln!("{}", e))
-                    .map(|(stream, buf)| {
-                        println!("{:?}", buf);
-                        stream
-                    })
-                    .and_then(|stream| Ok(Loop::Continue(stream)))
-            });
-            tokio::spawn(session)
-        });
-    tokio::run(server);
-    */
 }
