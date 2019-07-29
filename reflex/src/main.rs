@@ -115,11 +115,7 @@ trait WaylandProtocol {
     ) -> Box<Future<Item = (), Error = ()> + Send>;
 }
 
-struct WlDisplay {
-    pub struct Disp {
-
-    }
-}
+struct WlDisplay {}
 
 impl WaylandProtocol for WlDisplay {
     fn handle(
