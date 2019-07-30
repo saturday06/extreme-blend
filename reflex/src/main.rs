@@ -173,6 +173,19 @@ impl WaylandProtocol for WlShm {
 struct WlRegistry {}
 
 impl WlRegistry {
+    fn bind2(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        name: u32,
+        name_buf: Vec<u8>,
+        version: u32,
+        id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        self.bind(session_state, tx, sender_object_id, name, id)
+    }
+
     fn bind(
         &mut self,
         session_state: Arc<RwLock<SessionState>>,
@@ -242,7 +255,7 @@ impl WaylandProtocol for WlRegistry {
         let args_len = args.len();
         let mut cursor = Cursor::new(args);
         match opcode {
-            0 if args_len >= 8 => {
+            0 if args_len == 8 => {
                 return self.bind(
                     session_state,
                     tx,
@@ -251,19 +264,44 @@ impl WaylandProtocol for WlRegistry {
                     cursor.read_u32::<NativeEndian>().unwrap(),
                 );
             }
-            _ => Box::new(
-                tx.send(Box::new(WlDisplayError {
-                    object_id: sender_object_id,
-                    code: WlDisplayErrorInvalidMethod,
-                    message: format!(
-                        "WlRegistry@{} opcode={} args_len={} not found",
-                        sender_object_id, opcode, args_len
-                    ),
-                }))
-                .map_err(|_| ())
-                .map(|_tx| ()),
-            ),
+            0 if args_len > 8 => {
+                let name = cursor.read_u32::<NativeEndian>().unwrap();
+                let name_buf_len = cursor.read_u32::<NativeEndian>().unwrap() as usize;
+                let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
+                let mut name_buf = Vec::new();
+                name_buf.resize(name_buf_len, 0);
+                cursor.read_exact(&mut name_buf).unwrap();
+                cursor.set_position(
+                    cursor.position() + (name_buf_len_with_pad - name_buf_len) as u64,
+                );
+                let version = cursor.read_u32::<NativeEndian>().unwrap();
+                let id = cursor.read_u32::<NativeEndian>().unwrap();
+                if args_len == 4 + 4 + name_buf_len_with_pad + 4 + 4 {
+                    return self.bind2(
+                        session_state,
+                        tx,
+                        sender_object_id,
+                        name,
+                        name_buf,
+                        version,
+                        id,
+                    );
+                }
+            }
+            _ => (),
         }
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "WlRegistry@{} opcode={} args_len={} not found",
+                    sender_object_id, opcode, args_len
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
     }
 }
 
