@@ -119,6 +119,18 @@ struct WlCompositor {
     name: u32,
 }
 
+impl WlCompositor {
+    fn create_surface(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        wl_surface_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(futures::future::ok(()))
+    }
+}
+
 impl WaylandProtocol for WlCompositor {
     fn handle(
         &mut self,
@@ -173,6 +185,36 @@ impl WaylandProtocol for WlShm {
     }
 }
 
+struct XdgWmBase {
+    name: u32,
+}
+
+impl XdgWmBase {}
+
+impl WaylandProtocol for XdgWmBase {
+    fn handle(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "XdgWmBase@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
 struct WlRegistry {}
 
 impl WlRegistry {
@@ -208,13 +250,13 @@ impl WlRegistry {
                 .name
         {
             let mut lock = session_state.write().unwrap();
-            let registry = lock.wl_registry.clone();
-            lock.object_map.insert(id, registry);
+            let wl_compositor = lock.wl_compositor.clone();
+            lock.object_map.insert(id, wl_compositor);
             return Box::new(futures::future::ok(()));
         } else if name == session_state.read().unwrap().wl_shm.read().unwrap().name {
             let mut lock = session_state.write().unwrap();
-            let shm = lock.wl_shm.clone();
-            lock.object_map.insert(id, shm);
+            let wl_shm = lock.wl_shm.clone();
+            lock.object_map.insert(id, wl_shm);
             return Box::new(
                 tx.send(Box::new(WlShmFormat {
                     sender_object_id: id,
@@ -229,6 +271,19 @@ impl WlRegistry {
                 .map_err(|_| ())
                 .map(|_tx| ()),
             );
+        } else if name
+            == session_state
+                .read()
+                .unwrap()
+                .xdg_wm_base
+                .read()
+                .unwrap()
+                .name
+        {
+            let mut lock = session_state.write().unwrap();
+            let xdg_wm_base = lock.xdg_wm_base.clone();
+            lock.object_map.insert(id, xdg_wm_base);
+            return Box::new(futures::future::ok(()));
         }
 
         Box::new(
@@ -341,11 +396,13 @@ impl WlDisplay {
         println!("WlDisplay::get_registry({})", wl_registry_id);
         let compositor_name: u32;
         let shm_name: u32;
+        let xdg_wm_base_name: u32;
         {
             let mut lock = session_state.write().unwrap();
             let registry = lock.wl_registry.clone();
             compositor_name = lock.wl_compositor.read().unwrap().name.clone();
             shm_name = lock.wl_shm.read().unwrap().name.clone();
+            xdg_wm_base_name = lock.xdg_wm_base.read().unwrap().name.clone();
             lock.object_map.insert(wl_registry_id, registry);
         };
         Box::new(
@@ -364,6 +421,14 @@ impl WlDisplay {
                         name: shm_name,
                         interface: "wl_shm".to_owned(),
                         version: 1,
+                    }))
+                })
+                .and_then(move |tx| {
+                    tx.send(Box::new(WlRegistryGlobal {
+                        sender_object_id: wl_registry_id,
+                        name: xdg_wm_base_name,
+                        interface: "xdg_wm_base".to_owned(),
+                        version: 2,
                     }))
                 })
                 .map_err(|_| ())
@@ -602,6 +667,7 @@ struct SessionState {
     wl_registry: Arc<RwLock<WlRegistry>>,
     wl_compositor: Arc<RwLock<WlCompositor>>,
     wl_shm: Arc<RwLock<WlShm>>,
+    xdg_wm_base: Arc<RwLock<XdgWmBase>>,
 }
 
 fn main() {
@@ -625,6 +691,7 @@ fn main() {
             wl_registry: Arc::new(RwLock::new(WlRegistry {})),
             wl_compositor: Arc::new(RwLock::new(WlCompositor { name: 1 })),
             wl_shm: Arc::new(RwLock::new(WlShm { name: 2 })),
+            xdg_wm_base: Arc::new(RwLock::new(XdgWmBase { name: 3 })),
             object_map: HashMap::new(),
         }));
         session_state0
