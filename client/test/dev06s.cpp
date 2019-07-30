@@ -168,13 +168,21 @@ static const struct wl_registry_listener g_registry_listener = {
 
 void wayland_finish(wayland *p) {
   if (p) {
-    xdg_wm_base_destroy(p->xdg_wm_base);
-    wl_shm_destroy(p->shm);
-    wl_compositor_destroy(p->compositor);
-
-    wl_registry_destroy(p->registry);
-
-    wl_display_disconnect(p->display);
+    if (p->xdg_wm_base) {
+      xdg_wm_base_destroy(p->xdg_wm_base);
+    }
+    if (p->shm) {
+      wl_shm_destroy(p->shm);
+    }
+    if (p->compositor) {
+      wl_compositor_destroy(p->compositor);
+    }
+    if (p->registry) {
+      wl_registry_destroy(p->registry);
+    }
+    if (p->display) {
+      wl_display_disconnect(p->display);
+    }
 
     free(p);
   }
