@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include "test.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
-#include <xdg-shell-unstable-v6-client-header.h>
+#include <xdg-shell-client-header.h>
 
 ////////////////////////////////////////////////////////////// header
 ///////////////////////////////////////////
@@ -26,7 +26,7 @@ typedef struct {
   struct wl_registry *registry;
   struct wl_compositor *compositor;
   struct wl_shm *shm;
-  struct zxdg_shell_v6 *xdg_shell;
+  struct xdg_wm_base *xdg_wm_base;
 
   uint32_t shm_cnt;
 } wayland;
@@ -121,16 +121,16 @@ static struct wl_shm_pool *_create_shm_pool(wayland *p, int size,
 }
 
 //========================
-// xdg_shell
+// xdg_wm_base
 //========================
 
-static void _xdg_shell_ping(void *data, struct zxdg_shell_v6 *xdg_shell,
-                            uint32_t serial) {
-  zxdg_shell_v6_pong(xdg_shell, serial);
+static void _xdg_wm_base_ping(void *data, struct xdg_wm_base *xdg_wm_base,
+                              uint32_t serial) {
+  xdg_wm_base_pong(xdg_wm_base, serial);
 }
 
-static const struct zxdg_shell_v6_listener g_xdg_shell_listener = {
-    _xdg_shell_ping};
+static const struct xdg_wm_base_listener g_xdg_wm_base_listener = {
+    _xdg_wm_base_ping};
 
 //========================
 // wl_registry
@@ -146,11 +146,11 @@ static void _registry_global(void *data, struct wl_registry *reg, uint32_t id,
   else if (strcmp(itf, "wl_shm") == 0)
     p->shm =
         static_cast<wl_shm *>(wl_registry_bind(reg, id, &wl_shm_interface, 1));
-  else if (strcmp(itf, "zxdg_shell_v6") == 0) {
-    p->xdg_shell = static_cast<zxdg_shell_v6 *>(
-        wl_registry_bind(reg, id, &zxdg_shell_v6_interface, 1));
+  else if (strcmp(itf, "xdg_wm_base") == 0) {
+    p->xdg_wm_base = static_cast<xdg_wm_base *>(
+        wl_registry_bind(reg, id, &xdg_wm_base_interface, 1));
 
-    zxdg_shell_v6_add_listener(p->xdg_shell, &g_xdg_shell_listener, NULL);
+    xdg_wm_base_add_listener(p->xdg_wm_base, &g_xdg_wm_base_listener, NULL);
   }
 }
 
@@ -168,7 +168,7 @@ static const struct wl_registry_listener g_registry_listener = {
 
 void wayland_finish(wayland *p) {
   if (p) {
-    zxdg_shell_v6_destroy(p->xdg_shell);
+    xdg_wm_base_destroy(p->xdg_wm_base);
     wl_shm_destroy(p->shm);
     wl_compositor_destroy(p->compositor);
 
@@ -209,10 +209,10 @@ wayland *wayland_init(void) {
 
   wl_display_roundtrip(disp);
 
-  // xdg_shell 縺後↑縺�
+  // xdg_wm_base 縺後↑縺�
 
-  if (!p->xdg_shell) {
-    printf("not find 'zxdg_shell_v6'\n");
+  if (!p->xdg_wm_base) {
+    printf("not find 'xdg_wm_base'\n");
     wayland_finish(p);
     exit(1);
   }
@@ -289,8 +289,8 @@ wayland *g_wl;
 /* ウィンドウ */
 typedef struct {
   struct wl_surface *surface;
-  struct zxdg_surface_v6 *xdg_surface;
-  struct zxdg_toplevel_v6 *xdg_toplevel;
+  struct xdg_surface *xdg_surface;
+  struct xdg_toplevel *xdg_toplevel;
   imagebuf *img;
   int configure_flag, close_flag;
 } window;
@@ -315,13 +315,13 @@ static void _draw_image(imagebuf *p) {
 
 //-------- xdg_surface
 
-static void _xdg_surface_configure(void *data, struct zxdg_surface_v6 *surface,
+static void _xdg_surface_configure(void *data, struct xdg_surface *surface,
                                    uint32_t serial) {
   window *win = (window *)data;
 
   printf("surface-configure: serial %u\n", serial);
 
-  zxdg_surface_v6_ack_configure(surface, serial);
+  xdg_surface_ack_configure(surface, serial);
 
   if (win->configure_flag == 0) {
     win->configure_flag = 1;
@@ -331,13 +331,12 @@ static void _xdg_surface_configure(void *data, struct zxdg_surface_v6 *surface,
   }
 }
 
-static const struct zxdg_surface_v6_listener g_xdg_surface_listener = {
+static const struct xdg_surface_listener g_xdg_surface_listener = {
     _xdg_surface_configure};
 
 //-------- xdg_toplevel
 
-static void _xdg_toplevel_configure(void *data,
-                                    struct zxdg_toplevel_v6 *toplevel,
+static void _xdg_toplevel_configure(void *data, struct xdg_toplevel *toplevel,
                                     int32_t width, int32_t height,
                                     struct wl_array *states) {
   void *vps;
@@ -346,16 +345,16 @@ static void _xdg_toplevel_configure(void *data,
 
   wl_array_for_each(vps, states) {
     switch (*static_cast<uint32_t *>(vps)) {
-    case ZXDG_TOPLEVEL_V6_STATE_MAXIMIZED:
+    case XDG_TOPLEVEL_STATE_MAXIMIZED:
       printf("MAXIMIZED ");
       break;
-    case ZXDG_TOPLEVEL_V6_STATE_FULLSCREEN:
+    case XDG_TOPLEVEL_STATE_FULLSCREEN:
       printf("FULLSCREEN ");
       break;
-    case ZXDG_TOPLEVEL_V6_STATE_RESIZING:
+    case XDG_TOPLEVEL_STATE_RESIZING:
       printf("RESIZING ");
       break;
-    case ZXDG_TOPLEVEL_V6_STATE_ACTIVATED:
+    case XDG_TOPLEVEL_STATE_ACTIVATED:
       printf("ACTIVATED ");
       break;
     }
@@ -364,13 +363,13 @@ static void _xdg_toplevel_configure(void *data,
   printf("\n");
 }
 
-static void _xdg_toplevel_close(void *data, struct zxdg_toplevel_v6 *toplevel) {
+static void _xdg_toplevel_close(void *data, struct xdg_toplevel *toplevel) {
   printf("close\n");
 
   ((window *)data)->close_flag = 1;
 }
 
-const struct zxdg_toplevel_v6_listener g_xdg_toplevel_listener = {
+const struct xdg_toplevel_listener g_xdg_toplevel_listener = {
     _xdg_toplevel_configure, _xdg_toplevel_close};
 
 //--------- window
@@ -390,15 +389,15 @@ window *window_create(wayland *wl, int width, int height) {
 
   // xdg_surface
 
-  p->xdg_surface = zxdg_shell_v6_get_xdg_surface(wl->xdg_shell, p->surface);
+  p->xdg_surface = xdg_wm_base_get_xdg_surface(wl->xdg_wm_base, p->surface);
 
-  zxdg_surface_v6_add_listener(p->xdg_surface, &g_xdg_surface_listener, p);
+  xdg_surface_add_listener(p->xdg_surface, &g_xdg_surface_listener, p);
 
   // xdg_toplevel
 
-  p->xdg_toplevel = zxdg_surface_v6_get_toplevel(p->xdg_surface);
+  p->xdg_toplevel = xdg_surface_get_toplevel(p->xdg_surface);
 
-  zxdg_toplevel_v6_add_listener(p->xdg_toplevel, &g_xdg_toplevel_listener, p);
+  xdg_toplevel_add_listener(p->xdg_toplevel, &g_xdg_toplevel_listener, p);
 
   //適用
 
@@ -417,8 +416,8 @@ void window_destroy(window *p) {
   if (p) {
     imagebuf_destroy(p->img);
 
-    zxdg_toplevel_v6_destroy(p->xdg_toplevel);
-    zxdg_surface_v6_destroy(p->xdg_surface);
+    xdg_toplevel_destroy(p->xdg_toplevel);
+    xdg_surface_destroy(p->xdg_surface);
     wl_surface_destroy(p->surface);
 
     free(p);

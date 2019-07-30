@@ -133,8 +133,8 @@ impl WaylandProtocol for WlCompositor {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
                 message: format!(
-                    "WlCompositor@{} opcode={} not found",
-                    sender_object_id, opcode
+                    "WlCompositor@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args
                 ),
             }))
             .map_err(|_| ())
@@ -162,7 +162,10 @@ impl WaylandProtocol for WlShm {
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
-                message: format!("WlShm@{} opcode={} not found", sender_object_id, opcode),
+                message: format!(
+                    "WlShm@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -252,10 +255,9 @@ impl WaylandProtocol for WlRegistry {
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
-        let args_len = args.len();
-        let mut cursor = Cursor::new(args);
+        let mut cursor = Cursor::new(&args);
         match opcode {
-            0 if args_len == 8 => {
+            0 if args.len() == 8 => {
                 return self.bind(
                     session_state,
                     tx,
@@ -264,7 +266,7 @@ impl WaylandProtocol for WlRegistry {
                     cursor.read_u32::<NativeEndian>().unwrap(),
                 );
             }
-            0 if args_len > 8 => {
+            0 if args.len() > 8 => {
                 let name = cursor.read_u32::<NativeEndian>().unwrap();
                 let name_buf_len = cursor.read_u32::<NativeEndian>().unwrap() as usize;
                 let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
@@ -276,7 +278,7 @@ impl WaylandProtocol for WlRegistry {
                 );
                 let version = cursor.read_u32::<NativeEndian>().unwrap();
                 let id = cursor.read_u32::<NativeEndian>().unwrap();
-                if args_len == 4 + 4 + name_buf_len_with_pad + 4 + 4 {
+                if args.len() == 4 + 4 + name_buf_len_with_pad + 4 + 4 {
                     return self.bind2(
                         session_state,
                         tx,
@@ -295,8 +297,8 @@ impl WaylandProtocol for WlRegistry {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
                 message: format!(
-                    "WlRegistry@{} opcode={} args_len={} not found",
-                    sender_object_id, opcode, args_len
+                    "WlRegistry@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args
                 ),
             }))
             .map_err(|_| ())
@@ -379,10 +381,9 @@ impl WaylandProtocol for WlDisplay {
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
-        let args_len = args.len();
-        let mut cursor = Cursor::new(args);
+        let mut cursor = Cursor::new(&args);
         match opcode {
-            0 if args_len >= 4 => {
+            0 if args.len() >= 4 => {
                 return self.sync(
                     session_state,
                     tx,
@@ -390,7 +391,7 @@ impl WaylandProtocol for WlDisplay {
                     cursor.read_u32::<NativeEndian>().unwrap(),
                 );
             }
-            1 if args_len >= 4 => {
+            1 if args.len() >= 4 => {
                 return self.get_registry(
                     session_state,
                     tx,
@@ -405,8 +406,8 @@ impl WaylandProtocol for WlDisplay {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
                 message: format!(
-                    "WlDisplay@{} opcode={} args_len={} not found",
-                    1, opcode, args_len
+                    "WlDisplay@{} opcode={} args={:?} not found",
+                    1, opcode, args
                 ),
             }))
             .map_err(|_| ())
@@ -664,7 +665,10 @@ fn main() {
                         tx.send(Box::new(WlDisplayError {
                             object_id: 1,
                             code: WlDisplayErrorInvalidObject,
-                            message: format!("reflex: object {} not found", req.sender_object_id),
+                            message: format!(
+                                "object_id={} opcode={} args={:?} not found",
+                                req.sender_object_id, req.opcode, req.args
+                            ),
                         }))
                         .map_err(|_| ())
                         .map(|_tx| ()),

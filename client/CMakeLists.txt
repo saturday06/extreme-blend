@@ -33,14 +33,18 @@ set(
   external/include/wayland-server-header.h
   external/source/wayland-code.c
   external/include/xdg-shell-unstable-v6-server-header.h
+  external/include/xdg-shell-unstable-v6-client-header.h
   external/source/xdg-shell-unstable-v6-code.c
+  external/include/xdg-shell-server-header.h
+  external/include/xdg-shell-client-header.h
+  external/source/xdg-shell-code.c
 )
 
 add_executable(compositor_test ${compositor_sources} ${test_sources})
 add_executable(compositor_benchmark ${compositor_sources} ${benchmark_sources})
 
-target_link_libraries(compositor_test gtest)
-target_link_libraries(compositor_benchmark gtest gtest_main benchmark)
+target_link_libraries(compositor_test gtest rt)
+target_link_libraries(compositor_benchmark gtest gtest_main benchmark rt)
 
 enable_testing()
 add_test(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/compositor_test)
@@ -104,9 +108,33 @@ add_custom_command(
 )
 
 add_custom_command(
+  OUTPUT external/include/xdg-shell-unstable-v6-client-header.h
+  DEPENDS external-directory /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
+  COMMAND ${wayland_scanner_executable} client-header /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml external/include/xdg-shell-unstable-v6-client-header.h
+)
+
+add_custom_command(
   OUTPUT external/source/xdg-shell-unstable-v6-code.c
   DEPENDS external-directory /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml
   COMMAND ${wayland_scanner_executable} code /usr/share/wayland-protocols/unstable/xdg-shell/xdg-shell-unstable-v6.xml external/source/xdg-shell-unstable-v6-code.c
+)
+
+add_custom_command(
+  OUTPUT external/include/xdg-shell-server-header.h
+  DEPENDS external-directory /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
+  COMMAND ${wayland_scanner_executable} server-header /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml external/include/xdg-shell-server-header.h
+)
+
+add_custom_command(
+  OUTPUT external/include/xdg-shell-client-header.h
+  DEPENDS external-directory /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
+  COMMAND ${wayland_scanner_executable} client-header /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml external/include/xdg-shell-client-header.h
+)
+
+add_custom_command(
+  OUTPUT external/source/xdg-shell-code.c
+  DEPENDS external-directory /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
+  COMMAND ${wayland_scanner_executable} code /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml external/source/xdg-shell-code.c
 )
 
 add_custom_target(external-directory ALL COMMAND ${CMAKE_COMMAND} -E make_directory external/include external/source)
