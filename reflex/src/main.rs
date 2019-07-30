@@ -132,6 +132,37 @@ impl WaylandProtocol for WlCompositor {
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "WlCompositor@{} opcode={} not found",
+                    sender_object_id, opcode
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct WlShm {
+    name: u32,
+}
+
+impl WlShm {}
+
+impl WaylandProtocol for WlShm {
+    fn handle(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+                message: format!("WlShm@{} opcode={} not found", sender_object_id, opcode),
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -164,12 +195,34 @@ impl WlRegistry {
             let registry = lock.wl_registry.clone();
             lock.object_map.insert(id, registry);
             return Box::new(futures::future::ok(()));
+        } else if name == session_state.read().unwrap().wl_shm.read().unwrap().name {
+            let mut lock = session_state.write().unwrap();
+            let shm = lock.wl_shm.clone();
+            lock.object_map.insert(id, shm);
+            return Box::new(
+                tx.send(Box::new(WlShmFormat {
+                    sender_object_id: id,
+                    format: 0, // argb8888
+                }))
+                .and_then(move |tx1| {
+                    tx1.send(Box::new(WlShmFormat {
+                        sender_object_id: id,
+                        format: 1, // xrgb8888
+                    }))
+                })
+                .map_err(|_| ())
+                .map(|_tx| ()),
+            );
         }
 
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "WlRegistry@{}.bind(name={}, id={}) not found",
+                    sender_object_id, name, id
+                ),
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -189,7 +242,7 @@ impl WaylandProtocol for WlRegistry {
         let args_len = args.len();
         let mut cursor = Cursor::new(args);
         match opcode {
-            0 if args_len == 8 => {
+            0 if args_len >= 8 => {
                 return self.bind(
                     session_state,
                     tx,
@@ -202,6 +255,10 @@ impl WaylandProtocol for WlRegistry {
                 tx.send(Box::new(WlDisplayError {
                     object_id: sender_object_id,
                     code: WlDisplayErrorInvalidMethod,
+                    message: format!(
+                        "WlRegistry@{} opcode={} args_len={} not found",
+                        sender_object_id, opcode, args_len
+                    ),
                 }))
                 .map_err(|_| ())
                 .map(|_tx| ()),
@@ -237,27 +294,40 @@ impl WlDisplay {
     fn get_registry(
         &mut self,
         session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        tx0: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         wl_registry_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", wl_registry_id);
-        let compositor_name = {
+        let compositor_name: u32;
+        let shm_name: u32;
+        {
             let mut lock = session_state.write().unwrap();
             let registry = lock.wl_registry.clone();
-            let compositor_name = lock.wl_compositor.read().unwrap().name.clone();
+            compositor_name = lock.wl_compositor.read().unwrap().name.clone();
+            shm_name = lock.wl_shm.read().unwrap().name.clone();
             lock.object_map.insert(wl_registry_id, registry);
-            compositor_name
         };
         Box::new(
-            tx.send(Box::new(WlRegistryGlobal {
-                sender_object_id: wl_registry_id,
-                name: compositor_name,
-                interface: "wl_compositor".to_owned(),
-                version: 4,
-            }))
-            .map_err(|_| ())
-            .map(|_tx| ()),
+            futures::future::ok(tx0)
+                .and_then(move |tx| {
+                    tx.send(Box::new(WlRegistryGlobal {
+                        sender_object_id: wl_registry_id,
+                        name: compositor_name,
+                        interface: "wl_compositor".to_owned(),
+                        version: 1,
+                    }))
+                })
+                .and_then(move |tx| {
+                    tx.send(Box::new(WlRegistryGlobal {
+                        sender_object_id: wl_registry_id,
+                        name: shm_name,
+                        interface: "wl_shm".to_owned(),
+                        version: 1,
+                    }))
+                })
+                .map_err(|_| ())
+                .map(|_tx| ()),
         )
     }
 }
@@ -274,7 +344,7 @@ impl WaylandProtocol for WlDisplay {
         let args_len = args.len();
         let mut cursor = Cursor::new(args);
         match opcode {
-            0 if args_len == 4 => {
+            0 if args_len >= 4 => {
                 return self.sync(
                     session_state,
                     tx,
@@ -282,7 +352,7 @@ impl WaylandProtocol for WlDisplay {
                     cursor.read_u32::<NativeEndian>().unwrap(),
                 );
             }
-            1 if args_len == 4 => {
+            1 if args_len >= 4 => {
                 return self.get_registry(
                     session_state,
                     tx,
@@ -296,6 +366,10 @@ impl WaylandProtocol for WlDisplay {
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "WlDisplay@{} opcode={} args_len={} not found",
+                    1, opcode, args_len
+                ),
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -320,11 +394,12 @@ const WlDisplayErrorNoMemory: u32 = 2;
 struct WlDisplayError {
     object_id: u32,
     code: u32,
+    message: String,
 }
 
 impl WaylandEvent for WlDisplayError {
     fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
-        let mut message = "Oops!".to_owned();
+        let mut message = self.message.clone();
         message.push(0 as char);
         while message.len() % 4 != 0 {
             message.push(0 as char);
@@ -342,6 +417,24 @@ impl WaylandEvent for WlDisplayError {
         NativeEndian::write_u32(&mut dst[i + 12..], self.code); // invalid object
         NativeEndian::write_u32(&mut dst[i + 16..], message.len() as u32);
         dst[i + 20..].copy_from_slice(message.as_bytes());
+
+        Ok(())
+    }
+}
+
+struct WlShmFormat {
+    sender_object_id: u32,
+    format: u32,
+}
+
+impl WaylandEvent for WlShmFormat {
+    fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
+        let total_len = 8 + 4;
+        let i = dst.len();
+        dst.resize(i + total_len, 0);
+        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+        NativeEndian::write_u32(&mut dst[i + 8..], self.format);
 
         Ok(())
     }
@@ -469,6 +562,7 @@ struct SessionState {
     object_map: HashMap<u32, Arc<RwLock<WaylandProtocol + Send + Sync>>>,
     wl_registry: Arc<RwLock<WlRegistry>>,
     wl_compositor: Arc<RwLock<WlCompositor>>,
+    wl_shm: Arc<RwLock<WlShm>>,
 }
 
 fn main() {
@@ -491,6 +585,7 @@ fn main() {
         let session_state0 = Arc::new(RwLock::new(SessionState {
             wl_registry: Arc::new(RwLock::new(WlRegistry {})),
             wl_compositor: Arc::new(RwLock::new(WlCompositor { name: 1 })),
+            wl_shm: Arc::new(RwLock::new(WlShm { name: 2 })),
             object_map: HashMap::new(),
         }));
         session_state0
@@ -499,7 +594,6 @@ fn main() {
             .object_map
             .insert(1, wl_display.clone());
         let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<WaylandEvent + Send>>(1000);
-
         let (writer0, reader0) = WaylandCodec::new().framed(stream).split();
         let output_session = rx0
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
@@ -532,6 +626,7 @@ fn main() {
                         tx.send(Box::new(WlDisplayError {
                             object_id: 1,
                             code: WlDisplayErrorInvalidObject,
+                            message: format!("reflex: object {} not found", req.sender_object_id),
                         }))
                         .map_err(|_| ())
                         .map(|_tx| ()),

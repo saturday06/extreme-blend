@@ -41,6 +41,7 @@ TEST(client_test, dev02) {
   ASSERT_TRUE(display != NULL);
 
   reg = wl_display_get_registry(display);
+  ASSERT_TRUE(reg != NULL);
   wl_registry_add_listener(reg, &g_reg_listener, NULL);
 
   wl_display_roundtrip(display);
