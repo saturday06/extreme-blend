@@ -127,6 +127,11 @@ impl WlCompositor {
         sender_object_id: u32,
         wl_surface_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
+        session_state
+            .write()
+            .unwrap()
+            .object_map
+            .insert(wl_surface_id, Arc::new(RwLock::new(WlSurface {})));
         Box::new(futures::future::ok(()))
     }
 }
@@ -140,12 +145,50 @@ impl WaylandProtocol for WlCompositor {
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 4 => {
+                return self.create_surface(
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            _ => {}
+        }
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
                 code: WlDisplayErrorInvalidMethod,
                 message: format!(
                     "WlCompositor@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct WlSurface {}
+
+impl WaylandProtocol for WlSurface {
+    fn handle(
+        &mut self,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WlDisplayErrorInvalidMethod,
+                message: format!(
+                    "WlSurface@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args
                 ),
             }))
