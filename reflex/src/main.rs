@@ -1,25 +1,30 @@
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
-use bytes::buf::BufMut;
 use bytes::BytesMut;
-use futures::future::{loop_fn, Future, Loop};
+use futures::future::Future;
 use futures::sink::Sink;
 use futures::stream::Stream;
 use std::collections::HashMap;
-use std::fmt::Write;
 use std::io::Cursor;
 use std::io::Read;
 use std::os::raw::{c_char, c_int};
 use std::os::windows::io::FromRawSocket;
 use std::sync::{Arc, RwLock};
-use tokio::codec::BytesCodec;
 use tokio::codec::Decoder;
-use tokio::io::AsyncRead;
 use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
-use tokio::sync::mpsc::Receiver;
 use winapi::shared::minwindef::MAKEWORD;
 use winapi::shared::ws2def::{ADDRESS_FAMILY, AF_UNIX, SOCKADDR};
 use winapi::um::winsock2::*;
+
+#[derive(Clone)]
+enum WlResource {
+    WlDisplay(Arc<RwLock<WlDisplay>>),
+    WlRegistry(Arc<RwLock<WlRegistry>>),
+    WlShm(Arc<RwLock<WlShm>>),
+    WlCompositor(Arc<RwLock<WlCompositor>>),
+    XdgWmBase(Arc<RwLock<XdgWmBase>>),
+    WlSurface(Arc<RwLock<WlSurface>>),
+}
 
 #[repr(C)]
 struct SOCKADDR_UN {
@@ -123,15 +128,14 @@ impl WlCompositor {
     fn create_surface(
         &mut self,
         session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        _sender_object_id: u32,
         wl_surface_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
-        session_state
-            .write()
-            .unwrap()
-            .object_map
-            .insert(wl_surface_id, Arc::new(RwLock::new(WlSurface {})));
+        session_state.write().unwrap().object_map.insert(
+            wl_surface_id,
+            WlResource::WlSurface(Arc::new(RwLock::new(WlSurface {}))),
+        );
         Box::new(futures::future::ok(()))
     }
 }
@@ -160,7 +164,7 @@ impl WaylandProtocol for WlCompositor {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlCompositor@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args
@@ -177,7 +181,7 @@ struct WlSurface {}
 impl WaylandProtocol for WlSurface {
     fn handle(
         &mut self,
-        session_state: Arc<RwLock<SessionState>>,
+        _session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
@@ -186,7 +190,7 @@ impl WaylandProtocol for WlSurface {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlSurface@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args
@@ -207,7 +211,7 @@ impl WlShm {}
 impl WaylandProtocol for WlShm {
     fn handle(
         &mut self,
-        session_state: Arc<RwLock<SessionState>>,
+        _session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
@@ -216,7 +220,7 @@ impl WaylandProtocol for WlShm {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlShm@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args,
@@ -237,7 +241,7 @@ impl XdgWmBase {}
 impl WaylandProtocol for XdgWmBase {
     fn handle(
         &mut self,
-        session_state: Arc<RwLock<SessionState>>,
+        _session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
@@ -246,7 +250,7 @@ impl WaylandProtocol for XdgWmBase {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "XdgWmBase@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args,
@@ -267,8 +271,8 @@ impl WlRegistry {
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         name: u32,
-        name_buf: Vec<u8>,
-        version: u32,
+        _name_buf: Vec<u8>,
+        _version: u32,
         id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         self.bind(session_state, tx, sender_object_id, name, id)
@@ -294,12 +298,13 @@ impl WlRegistry {
         {
             let mut lock = session_state.write().unwrap();
             let wl_compositor = lock.wl_compositor.clone();
-            lock.object_map.insert(id, wl_compositor);
+            lock.object_map
+                .insert(id, WlResource::WlCompositor(wl_compositor));
             return Box::new(futures::future::ok(()));
         } else if name == session_state.read().unwrap().wl_shm.read().unwrap().name {
             let mut lock = session_state.write().unwrap();
             let wl_shm = lock.wl_shm.clone();
-            lock.object_map.insert(id, wl_shm);
+            lock.object_map.insert(id, WlResource::WlShm(wl_shm));
             return Box::new(
                 tx.send(Box::new(WlShmFormat {
                     sender_object_id: id,
@@ -325,14 +330,15 @@ impl WlRegistry {
         {
             let mut lock = session_state.write().unwrap();
             let xdg_wm_base = lock.xdg_wm_base.clone();
-            lock.object_map.insert(id, xdg_wm_base);
+            lock.object_map
+                .insert(id, WlResource::XdgWmBase(xdg_wm_base));
             return Box::new(futures::future::ok(()));
         }
 
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlRegistry@{}.bind(name={}, id={}) not found",
                     sender_object_id, name, id
@@ -393,7 +399,7 @@ impl WaylandProtocol for WlRegistry {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlRegistry@{} opcode={} args={:?} not found",
                     sender_object_id, opcode, args
@@ -412,9 +418,9 @@ struct WlDisplay {
 impl WlDisplay {
     fn sync(
         &mut self,
-        session_state: Arc<RwLock<SessionState>>,
+        _session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
+        _sender_object_id: u32,
         wl_callback_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::sync({})", wl_callback_id);
@@ -433,7 +439,7 @@ impl WlDisplay {
         &mut self,
         session_state: Arc<RwLock<SessionState>>,
         tx0: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
+        _sender_object_id: u32,
         wl_registry_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", wl_registry_id);
@@ -446,7 +452,8 @@ impl WlDisplay {
             compositor_name = lock.wl_compositor.read().unwrap().name.clone();
             shm_name = lock.wl_shm.read().unwrap().name.clone();
             xdg_wm_base_name = lock.xdg_wm_base.read().unwrap().name.clone();
-            lock.object_map.insert(wl_registry_id, registry);
+            lock.object_map
+                .insert(wl_registry_id, WlResource::WlRegistry(registry));
         };
         Box::new(
             futures::future::ok(tx0)
@@ -512,7 +519,7 @@ impl WaylandProtocol for WlDisplay {
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
-                code: WlDisplayErrorInvalidMethod,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
                 message: format!(
                     "WlDisplay@{} opcode={} args={:?} not found",
                     1, opcode, args
@@ -534,9 +541,9 @@ trait WaylandEvent {
     fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error>;
 }
 
-const WlDisplayErrorInvalidObject: u32 = 0;
-const WlDisplayErrorInvalidMethod: u32 = 1;
-const WlDisplayErrorNoMemory: u32 = 2;
+const WL_DISPLAY_ERROR_INVALID_OBJECT: u32 = 0;
+const WL_DISPLAY_ERROR_INVALID_METHOD: u32 = 1;
+const _WL_DISPLAY_ERROR_NO_MEMORY: u32 = 2;
 
 struct WlDisplayError {
     object_id: u32,
@@ -706,11 +713,53 @@ impl tokio::codec::Decoder for WaylandCodec {
 }
 
 struct SessionState {
-    object_map: HashMap<u32, Arc<RwLock<WaylandProtocol + Send + Sync>>>,
+    object_map: HashMap<u32, WlResource>,
     wl_registry: Arc<RwLock<WlRegistry>>,
     wl_compositor: Arc<RwLock<WlCompositor>>,
     wl_shm: Arc<RwLock<WlShm>>,
     xdg_wm_base: Arc<RwLock<XdgWmBase>>,
+}
+
+fn handle(
+    o: WlResource,
+    session_state: Arc<RwLock<SessionState>>,
+    tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+    sender_object_id: u32,
+    opcode: u16,
+    args: Vec<u8>,
+) -> Box<Future<Item = (), Error = ()> + Send> {
+    match o {
+        WlResource::WlCompositor(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlShm(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlRegistry(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlSurface(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlDisplay(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::XdgWmBase(obj) => {
+            obj.write()
+                .unwrap()
+                .handle(session_state, tx, sender_object_id, opcode, args)
+        }
+    }
 }
 
 fn main() {
@@ -741,7 +790,7 @@ fn main() {
             .write()
             .unwrap()
             .object_map
-            .insert(1, wl_display.clone());
+            .insert(1, WlResource::WlDisplay(wl_display.clone()));
         let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<WaylandEvent + Send>>(1000);
         let (writer0, reader0) = WaylandCodec::new().framed(stream).split();
         let output_session = rx0
@@ -759,11 +808,11 @@ fn main() {
                     .unwrap()
                     .object_map
                     .get(&req.sender_object_id)
-                    .map(|x| x.clone());
+                    .map(|r| r.clone());
                 let tx = tx0.clone();
                 let h = if let Some(o) = obj {
-                    let mut l = o.write().unwrap();
-                    l.handle(
+                    handle(
+                        o,
                         session_state,
                         tx,
                         req.sender_object_id,
@@ -774,7 +823,7 @@ fn main() {
                     Box::new(
                         tx.send(Box::new(WlDisplayError {
                             object_id: 1,
-                            code: WlDisplayErrorInvalidObject,
+                            code: WL_DISPLAY_ERROR_INVALID_OBJECT,
                             message: format!(
                                 "object_id={} opcode={} args={:?} not found",
                                 req.sender_object_id, req.opcode, req.args
