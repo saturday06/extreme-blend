@@ -22,8 +22,12 @@ enum WlResource {
     WlRegistry(Arc<RwLock<WlRegistry>>),
     WlShm(Arc<RwLock<WlShm>>),
     WlCompositor(Arc<RwLock<WlCompositor>>),
-    XdgWmBase(Arc<RwLock<XdgWmBase>>),
     WlSurface(Arc<RwLock<WlSurface>>),
+    XdgWmBase(Arc<RwLock<XdgWmBase>>),
+    XdgSurface(Arc<RwLock<XdgSurface>>),
+    XdgToplevel(Arc<RwLock<XdgToplevel>>),
+    WlBuffer(Arc<RwLock<WlBuffer>>),
+    WlShmPool(Arc<RwLock<WlShmPool>>),
 }
 
 #[repr(C)]
@@ -109,24 +113,13 @@ impl Drop for ServerSocket {
     }
 }
 
-trait WaylandProtocol {
-    fn handle(
-        &mut self,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        opcode: u16,
-        args: Vec<u8>,
-    ) -> Box<Future<Item = (), Error = ()> + Send>;
-}
-
 struct WlCompositor {
     name: u32,
 }
 
 impl WlCompositor {
     fn create_surface(
-        &mut self,
+        _sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         _sender_object_id: u32,
@@ -138,11 +131,9 @@ impl WlCompositor {
         );
         Box::new(futures::future::ok(()))
     }
-}
 
-impl WaylandProtocol for WlCompositor {
     fn handle(
-        &mut self,
+        sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
@@ -152,7 +143,8 @@ impl WaylandProtocol for WlCompositor {
         let mut cursor = Cursor::new(&args);
         match opcode {
             0 if args.len() == 4 => {
-                return self.create_surface(
+                return Self::create_surface(
+                    sender_object,
                     session_state,
                     tx,
                     sender_object_id,
@@ -178,15 +170,56 @@ impl WaylandProtocol for WlCompositor {
 
 struct WlSurface {}
 
-impl WaylandProtocol for WlSurface {
-    fn handle(
-        &mut self,
+impl WlSurface {
+    fn commit(
+        _sender_object: Arc<RwLock<Self>>,
         _session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        Box::new(futures::future::ok(()))
+    }
+
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::WlSurface(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            1 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            6 if args.len() == 0 => {
+                return Self::commit(sender_object, session_state, tx, sender_object_id);
+            }
+            _ => {}
+        }
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
@@ -208,15 +241,72 @@ struct WlShm {
 
 impl WlShm {}
 
-impl WaylandProtocol for WlShm {
+impl WlShm {
+    fn create_pool(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        wl_shm_pool_id: u32,
+        fd: u32,
+        size: i32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        session_state.write().unwrap().object_map.insert(
+            wl_shm_pool_id,
+            WlResource::WlShmPool(Arc::new(RwLock::new(WlShmPool { fd, size }))),
+        );
+        Box::new(futures::future::ok(()))
+    }
+
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::WlShmPool(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
     fn handle(
-        &mut self,
-        _session_state: Arc<RwLock<SessionState>>,
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 12 => {
+                return Self::create_pool(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                    cursor.read_i32::<NativeEndian>().unwrap(),
+                );
+            }
+            1 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            _ => {}
+        };
+
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
@@ -232,21 +322,419 @@ impl WaylandProtocol for WlShm {
     }
 }
 
-struct XdgWmBase {
-    name: u32,
+struct XdgSurface {
+    wl_surface: Arc<RwLock<WlSurface>>,
 }
 
-impl XdgWmBase {}
+impl XdgSurface {
+    fn get_toplevel(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        xdg_toplevel_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        session_state.write().unwrap().object_map.insert(
+            xdg_toplevel_id,
+            WlResource::XdgToplevel(Arc::new(RwLock::new(XdgToplevel {}))),
+        );
+        Box::new(futures::future::ok(()))
+    }
 
-impl WaylandProtocol for XdgWmBase {
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::XdgSurface(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
     fn handle(
-        &mut self,
-        _session_state: Arc<RwLock<SessionState>>,
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
         opcode: u16,
         args: Vec<u8>,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            1 if args.len() == 4 => {
+                return Self::get_toplevel(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            _ => {}
+        };
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "XdgSurface@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct XdgToplevel {}
+
+impl XdgToplevel {
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::XdgToplevel(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            _ => {}
+        };
+
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "XdgToplevel@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct WlBuffer {
+    offset: i32,
+    width: i32,
+    height: i32,
+    stride: i32,
+    format: u32,
+}
+
+impl WlBuffer {
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::WlBuffer(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            _ => {}
+        };
+
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "WlBuffer@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct WlShmPool {
+    fd: u32,
+    size: i32,
+}
+
+impl WlShmPool {
+    fn create_buffer(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        wl_buffer_id: u32,
+        offset: i32,
+        width: i32,
+        height: i32,
+        stride: i32,
+        format: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        session_state.write().unwrap().object_map.insert(
+            wl_buffer_id,
+            WlResource::WlBuffer(Arc::new(RwLock::new(WlBuffer {
+                offset,
+                width,
+                height,
+                stride,
+                format,
+            }))),
+        );
+        Box::new(futures::future::ok(()))
+    }
+
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::WlShmPool(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 24 => {
+                return Self::create_buffer(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                    cursor.read_i32::<NativeEndian>().unwrap(),
+                    cursor.read_i32::<NativeEndian>().unwrap(),
+                    cursor.read_i32::<NativeEndian>().unwrap(),
+                    cursor.read_i32::<NativeEndian>().unwrap(),
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            1 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            _ => {}
+        };
+
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "WlShmPool@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args,
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
+
+struct XdgWmBase {
+    name: u32,
+}
+
+impl XdgWmBase {
+    fn destroy(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let removed = {
+            let object_map = &mut session_state.write().unwrap().object_map;
+            if let Some(WlResource::XdgWmBase(_)) = object_map.get(&sender_object_id) {
+                object_map.remove(&sender_object_id);
+                true
+            } else {
+                false
+            }
+        };
+        if removed {
+            Box::new(futures::future::ok(()))
+        } else {
+            Box::new(futures::future::err(()))
+        }
+    }
+
+    fn create_positioner(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        xdg_positioner_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        return Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "XdgWmBase@{}::create_positioner(xdg_positioner_id={}): wl_surface not found",
+                    sender_object_id, xdg_positioner_id
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        );
+    }
+
+    fn get_xdg_surface(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        xdg_surface_id: u32,
+        wl_surface_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let wl_surface = if let Some(WlResource::WlSurface(x)) =
+            session_state.read().unwrap().object_map.get(&wl_surface_id)
+        {
+            x.clone()
+        } else {
+            return Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "XdgWmBase@{}::get_xdg_surface(xdg_surface_id={} wl_surface_id={}): wl_surface not found",
+                    sender_object_id, xdg_surface_id, wl_surface_id
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()));
+        };
+
+        session_state.write().unwrap().object_map.insert(
+            xdg_surface_id,
+            WlResource::XdgSurface(Arc::new(RwLock::new(XdgSurface {
+                wl_surface: wl_surface,
+            }))),
+        );
+        Box::new(futures::future::ok(()))
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 0 => {
+                return Self::destroy(sender_object, session_state, tx, sender_object_id);
+            }
+            1 if args.len() == 4 => {
+                return Self::create_positioner(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            2 if args.len() == 8 => {
+                return Self::get_xdg_surface(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            _ => {}
+        }
         Box::new(
             tx.send(Box::new(WlDisplayError {
                 object_id: sender_object_id,
@@ -266,7 +754,7 @@ struct WlRegistry {}
 
 impl WlRegistry {
     fn bind2(
-        &mut self,
+        sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
@@ -275,11 +763,11 @@ impl WlRegistry {
         _version: u32,
         id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
-        self.bind(session_state, tx, sender_object_id, name, id)
+        Self::bind(sender_object, session_state, tx, sender_object_id, name, id)
     }
 
     fn bind(
-        &mut self,
+        _sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
@@ -350,9 +838,9 @@ impl WlRegistry {
     }
 }
 
-impl WaylandProtocol for WlRegistry {
+impl WlRegistry {
     fn handle(
-        &mut self,
+        sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
@@ -362,7 +850,8 @@ impl WaylandProtocol for WlRegistry {
         let mut cursor = Cursor::new(&args);
         match opcode {
             0 if args.len() == 8 => {
-                return self.bind(
+                return Self::bind(
+                    sender_object,
                     session_state,
                     tx,
                     sender_object_id,
@@ -383,7 +872,8 @@ impl WaylandProtocol for WlRegistry {
                 let version = cursor.read_u32::<NativeEndian>().unwrap();
                 let id = cursor.read_u32::<NativeEndian>().unwrap();
                 if args.len() == 4 + 4 + name_buf_len_with_pad + 4 + 4 {
-                    return self.bind2(
+                    return Self::bind2(
+                        sender_object,
                         session_state,
                         tx,
                         sender_object_id,
@@ -417,18 +907,22 @@ struct WlDisplay {
 
 impl WlDisplay {
     fn sync(
-        &mut self,
+        sender_object: Arc<RwLock<Self>>,
         _session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         _sender_object_id: u32,
         wl_callback_id: u32,
     ) -> Box<Future<Item = (), Error = ()> + Send> {
         println!("WlDisplay::sync({})", wl_callback_id);
-        self.next_callback_data += 1;
+        let callback_data = {
+            let mut obj = sender_object.write().unwrap();
+            obj.next_callback_data += 1;
+            obj.next_callback_data
+        };
         Box::new(
             tx.send(Box::new(WlCallbackDone {
                 sender_object_id: wl_callback_id,
-                callback_data: self.next_callback_data,
+                callback_data,
             }))
             .map_err(|_| ())
             .map(|_tx| ()),
@@ -436,7 +930,7 @@ impl WlDisplay {
     }
 
     fn get_registry(
-        &mut self,
+        _sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx0: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         _sender_object_id: u32,
@@ -485,11 +979,9 @@ impl WlDisplay {
                 .map(|_tx| ()),
         )
     }
-}
 
-impl WaylandProtocol for WlDisplay {
     fn handle(
-        &mut self,
+        sender_object: Arc<RwLock<Self>>,
         session_state: Arc<RwLock<SessionState>>,
         tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
         sender_object_id: u32,
@@ -499,7 +991,8 @@ impl WaylandProtocol for WlDisplay {
         let mut cursor = Cursor::new(&args);
         match opcode {
             0 if args.len() >= 4 => {
-                return self.sync(
+                return Self::sync(
+                    sender_object,
                     session_state,
                     tx,
                     sender_object_id,
@@ -507,7 +1000,8 @@ impl WaylandProtocol for WlDisplay {
                 );
             }
             1 if args.len() >= 4 => {
-                return self.get_registry(
+                return Self::get_registry(
+                    sender_object,
                     session_state,
                     tx,
                     sender_object_id,
@@ -730,34 +1224,34 @@ fn handle(
 ) -> Box<Future<Item = (), Error = ()> + Send> {
     match o {
         WlResource::WlCompositor(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            WlCompositor::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
         WlResource::WlShm(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            WlShm::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
         WlResource::WlRegistry(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            WlRegistry::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
         WlResource::WlSurface(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            WlSurface::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
         WlResource::WlDisplay(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            WlDisplay::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
         WlResource::XdgWmBase(obj) => {
-            obj.write()
-                .unwrap()
-                .handle(session_state, tx, sender_object_id, opcode, args)
+            XdgWmBase::handle(obj, session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::XdgSurface(obj) => {
+            XdgSurface::handle(obj, session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::XdgToplevel(obj) => {
+            XdgToplevel::handle(obj, session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlBuffer(obj) => {
+            WlBuffer::handle(obj, session_state, tx, sender_object_id, opcode, args)
+        }
+        WlResource::WlShmPool(obj) => {
+            WlShmPool::handle(obj, session_state, tx, sender_object_id, opcode, args)
         }
     }
 }
