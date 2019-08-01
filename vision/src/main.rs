@@ -12,8 +12,161 @@ use std::sync::{Arc, RwLock};
 use tokio::codec::Decoder;
 use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
+use winapi::shared::minwindef::MAKEWORD;
+use winapi::shared::ws2def::{ADDRESS_FAMILY, AF_UNIX, SOCKADDR};
+use winapi::um::winsock2::*;
 
+#[derive(Clone)]
+enum WlResource {
+    WlDisplay(Arc<RwLock<WlDisplay>>),
+    WlRegistry(Arc<RwLock<WlRegistry>>),
+    WlShm(Arc<RwLock<WlShm>>),
+    WlCompositor(Arc<RwLock<WlCompositor>>),
+    WlSurface(Arc<RwLock<WlSurface>>),
+    XdgWmBase(Arc<RwLock<XdgWmBase>>),
+    XdgSurface(Arc<RwLock<XdgSurface>>),
+    XdgToplevel(Arc<RwLock<XdgToplevel>>),
+    WlBuffer(Arc<RwLock<WlBuffer>>),
+    WlShmPool(Arc<RwLock<WlShmPool>>),
+}
 
+#[repr(C)]
+struct SOCKADDR_UN {
+    sun_family: ADDRESS_FAMILY,
+    sun_path: [c_char; 108],
+}
+
+struct ServerSocket {
+    native_socket: SOCKET,
+}
+
+impl ServerSocket {
+    pub fn bind() -> Option<ServerSocket> {
+        let mut sockaddr = SOCKADDR_UN {
+            sun_family: AF_UNIX as ADDRESS_FAMILY,
+            sun_path: [0; 108],
+        };
+
+        let socket_path = "c:\\Temp\\temp.unix";
+        let mut sun_path = format!("{}\0", socket_path)
+            .as_bytes()
+            .iter()
+            .map(|c| *c as i8)
+            .collect::<Vec<_>>();
+        sun_path.resize(sockaddr.sun_path.len(), 0);
+        sockaddr.sun_path.copy_from_slice(&sun_path);
+
+        unsafe {
+            let mut wsa_data = WSADATA::default();
+            let x = WSAStartup(MAKEWORD(2, 2), &mut wsa_data);
+            if x != 0 {
+                return None;
+            };
+
+            let server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+            if server_socket == INVALID_SOCKET {
+                return None;
+            }
+
+            let _ = std::fs::remove_file(socket_path);
+            let b = bind(
+                server_socket,
+                &sockaddr as *const SOCKADDR_UN as *const SOCKADDR,
+                std::mem::size_of::<SOCKADDR_UN>() as c_int,
+            );
+            if b == SOCKET_ERROR {
+                return None;
+            }
+
+            let l = listen(server_socket, SOMAXCONN);
+            if l == SOCKET_ERROR {
+                panic!("listen");
+            }
+
+            Some(ServerSocket {
+                native_socket: server_socket,
+            })
+        }
+    }
+
+    pub fn accept(&mut self) -> Option<SOCKET> {
+        let client_socket = unsafe {
+            accept(
+                self.native_socket,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        if client_socket == INVALID_SOCKET {
+            None
+        } else {
+            Some(client_socket)
+        }
+    }
+}
+
+impl Drop for ServerSocket {
+    fn drop(&mut self) {
+        unsafe {
+            closesocket(self.native_socket);
+        }
+    }
+}
+
+struct WlCompositor {
+    name: u32,
+}
+
+impl WlCompositor {
+    fn create_surface(
+        _sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        _sender_object_id: u32,
+        wl_surface_id: u32,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        session_state.write().unwrap().object_map.insert(
+            wl_surface_id,
+            WlResource::WlSurface(Arc::new(RwLock::new(WlSurface {}))),
+        );
+        Box::new(futures::future::ok(()))
+    }
+
+    fn handle(
+        sender_object: Arc<RwLock<Self>>,
+        session_state: Arc<RwLock<SessionState>>,
+        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
+        sender_object_id: u32,
+        opcode: u16,
+        args: Vec<u8>,
+    ) -> Box<Future<Item = (), Error = ()> + Send> {
+        let mut cursor = Cursor::new(&args);
+        match opcode {
+            0 if args.len() == 4 => {
+                return Self::create_surface(
+                    sender_object,
+                    session_state,
+                    tx,
+                    sender_object_id,
+                    cursor.read_u32::<NativeEndian>().unwrap(),
+                );
+            }
+            _ => {}
+        }
+        Box::new(
+            tx.send(Box::new(WlDisplayError {
+                object_id: sender_object_id,
+                code: WL_DISPLAY_ERROR_INVALID_METHOD,
+                message: format!(
+                    "WlCompositor@{} opcode={} args={:?} not found",
+                    sender_object_id, opcode, args
+                ),
+            }))
+            .map_err(|_| ())
+            .map(|_tx| ()),
+        )
+    }
+}
 
 struct WlSurface {}
 
@@ -1104,7 +1257,6 @@ fn handle(
 }
 
 fn main() {
-/*
     let mut server_socket = ServerSocket::bind().unwrap();
     let mut runtime = Runtime::new().unwrap();
     let wl_display = Arc::new(RwLock::new(WlDisplay {
@@ -1179,5 +1331,5 @@ fn main() {
             })
             .map_err(|_| ());
         runtime.spawn(input_session);
-    }*/
+    }
 }

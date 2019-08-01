@@ -1,4 +1,4 @@
-/.vs/
+/target/
+/.idea/
+/.ionide/
 /.vscode/
-/*/bin/
-/*/obj/

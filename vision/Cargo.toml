@@ -1,5 +1,5 @@
 [package]
-name = "ultimate-desktop-reflex"
+name = "ultimate-desktop-vision"
 version = "0.1.0"
 authors = ["Isamu Mogi <isamu@leafytree.jp>"]
 edition = "2018"
@@ -12,3 +12,9 @@ tokio-io = "*"
 futures = "*"
 byteorder = "*"
 bytes = "*"
+winapi = { version = "*", features = [
+    "impl-default",
+    "minwindef",
+    "winsock2",
+    "ws2def",
+] }
