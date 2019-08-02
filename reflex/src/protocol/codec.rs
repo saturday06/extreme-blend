@@ -1,8 +1,8 @@
-use std::io::{Cursor, Read};
 use super::event::Event;
 use super::request::Request;
-use bytes::BytesMut;
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
+use bytes::BytesMut;
+use std::io::{Cursor, Read};
 
 pub struct Codec;
 
@@ -16,11 +16,7 @@ impl tokio::codec::Encoder for Codec {
     type Item = Box<Event + Send>;
     type Error = std::io::Error;
 
-    fn encode(
-        &mut self,
-        res: Box<Event + Send>,
-        dst: &mut BytesMut,
-    ) -> Result<(), Self::Error> {
+    fn encode(&mut self, res: Box<Event + Send>, dst: &mut BytesMut) -> Result<(), Self::Error> {
         res.encode(dst)
     }
 }

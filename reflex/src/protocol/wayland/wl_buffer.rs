@@ -22,23 +22,87 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-use std::rc::Rc;
+
+use byteorder::{NativeEndian, ReadBytesExt};
+use futures::future::Future;
+use futures::sink::Sink;
+use std::io::{Cursor, Read};
+use std::sync::Arc;
 use std::cell::RefCell;
 
 pub mod events {
+    use byteorder::{ByteOrder, NativeEndian};
+
+    // compositor releases buffer
+    //
+    // Sent when this wl_buffer is no longer used by the compositor.
+    // The client is now free to reuse or destroy this buffer and its
+    // backing storage.
+    // 
+    // If a client receives a release event before the frame callback
+    // requested in the same wl_surface.commit that attaches this
+    // wl_buffer to a surface, then the client is immediately free to
+    // reuse the buffer and its backing storage, and does not need a
+    // second buffer for the next surface content update. Typically
+    // this is possible, when the compositor maintains a copy of the
+    // wl_surface contents, e.g. as a GL texture. This is an important
+    // optimization for GL(ES) compositors with wl_shm clients.
     pub struct Release {
+        pub sender_object_id: u32,
     }
 
     impl super::super::super::event::Event for Release {
         fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            let total_len = 8;
+            if total_len > 0xffff {
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
+            }
+
+            let i = dst.len();
+            dst.resize(i + total_len, 0);
+
+            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+
             Ok(())
         }
     }
 }
 
-pub fn dispatch_request(request: Rc<RefCell<WlBuffer>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RefCell<WlBuffer>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    let mut cursor = Cursor::new(&args);
+    match opcode {
+        0 => {
+            return WlBuffer::destroy(request, session, tx, sender_object_id, )
+        },
+        _ => {},
+    };
     Box::new(futures::future::ok(()))
 }
 
+// content for a wl_surface
+//
+// A buffer provides the content for a wl_surface. Buffers are
+// created through factory interfaces such as wl_drm, wl_shm or
+// similar. It has a width and a height and can be attached to a
+// wl_surface, but the mechanism by which a client provides and
+// updates the contents is defined by the buffer factory interface.
 pub struct WlBuffer {
+}
+
+impl WlBuffer {
+    // destroy a buffer
+    //
+    // Destroy a buffer. If and how you need to release the backing
+    // storage is defined by the buffer factory interface.
+    // 
+    // For possible side-effects to a surface, see wl_surface.attach.
+    pub fn destroy(
+        request: Arc<RefCell<WlBuffer>>,
+        session: &mut super::super::session::Session,
+        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
+        sender_object_id: u32,
+    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+        Box::new(futures::future::ok(()))
+    }
 }

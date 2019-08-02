@@ -13,7 +13,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  if (setenv("WAYLAND_DISPLAY", "/mnt/c/Temp/temp.unix", 1)) {
+  //  if (setenv("WAYLAND_DISPLAY", "/mnt/c/Temp/temp.unix", 1)) {
+  if (setenv("WAYLAND_DISPLAY", "/tmp/temp.unix", 1)) {
     perror(argv[0]);
     return 1;
   }

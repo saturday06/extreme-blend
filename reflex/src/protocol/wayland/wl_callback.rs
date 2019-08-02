@@ -22,23 +22,52 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-use std::rc::Rc;
+
+use byteorder::{NativeEndian, ReadBytesExt};
+use futures::future::Future;
+use futures::sink::Sink;
+use std::io::{Cursor, Read};
+use std::sync::Arc;
 use std::cell::RefCell;
 
 pub mod events {
+    use byteorder::{ByteOrder, NativeEndian};
+
+    // done event
+    //
+    // Notify the client when the related request is done.
     pub struct Done {
+        pub sender_object_id: u32,
+        pub callback_data: u32, // uint: request-specific data for the callback
     }
 
     impl super::super::super::event::Event for Done {
         fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            let total_len = 8 + 4;
+            if total_len > 0xffff {
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
+            }
+
+            let i = dst.len();
+            dst.resize(i + total_len, 0);
+
+            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+
+            NativeEndian::write_u32(&mut dst[i + 8..], self.callback_data);
             Ok(())
         }
     }
 }
 
-pub fn dispatch_request(request: Rc<RefCell<WlCallback>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RefCell<WlCallback>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     Box::new(futures::future::ok(()))
 }
 
+// callback object
+//
+// Clients can handle the 'done' event to get notified when
+// the related request is done.
 pub struct WlCallback {
 }
+

@@ -1,6 +1,6 @@
 use super::resource::Resource;
-use super::wayland::wl_registry::WlRegistry;
 use super::wayland::wl_compositor::WlCompositor;
+use super::wayland::wl_registry::WlRegistry;
 use super::wayland::wl_shm::WlShm;
 use super::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
