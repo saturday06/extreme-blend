@@ -50,14 +50,14 @@ fn handle_client(mut runtime: Arc<RwLock<Runtime>>, stream: UnixStream) -> Box<F
 
     let input_session = reader0
         .for_each(move |req: Request| {
-            let obj = session0
+            let opt_res = session0
                 .resources
                 .get(&req.sender_object_id)
                 .map(|r| r.clone());
             let tx = tx0.clone();
-            let h = if let Some(o) = obj {
+            let h = if let Some(res) = opt_res {
                 protocol::resource::dispatch_request(
-                    o.clone(),
+                    res,
                     &mut session0,
                     tx,
                     req.sender_object_id,
