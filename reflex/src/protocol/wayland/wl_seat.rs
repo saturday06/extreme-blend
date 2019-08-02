@@ -23,5 +23,18 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum Capability {
+    }
+}
+
+pub mod events {
+    pub struct Capabilities {
+    }
+
+    pub struct Name {
+    }
+}
+
+pub struct WlSeat {
 }

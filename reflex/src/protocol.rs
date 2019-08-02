@@ -1,0 +1,32 @@
+pub mod wayland;
+pub mod xdg_shell;
+
+pub enum Resource {
+    WlBuffer(super::wl_buffer::WlBuffer),
+    WlCallback(super::wl_callback::WlCallback),
+    WlCompositor(super::wl_compositor::WlCompositor),
+    WlDataDevice(super::wl_data_device::WlDataDevice),
+    WlDataDeviceManager(super::wl_data_device_manager::WlDataDeviceManager),
+    WlDataOffer(super::wl_data_offer::WlDataOffer),
+    WlDataSource(super::wl_data_source::WlDataSource),
+    WlDisplay(super::wl_display::WlDisplay),
+    WlKeyboard(super::wl_keyboard::WlKeyboard),
+    WlOutput(super::wl_output::WlOutput),
+    WlPointer(super::wl_pointer::WlPointer),
+    WlRegion(super::wl_region::WlRegion),
+    WlRegistry(super::wl_registry::WlRegistry),
+    WlSeat(super::wl_seat::WlSeat),
+    WlShell(super::wl_shell::WlShell),
+    WlShellSurface(super::wl_shell_surface::WlShellSurface),
+    WlShm(super::wl_shm::WlShm),
+    WlShmPool(super::wl_shm_pool::WlShmPool),
+    WlSubcompositor(super::wl_subcompositor::WlSubcompositor),
+    WlSubsurface(super::wl_subsurface::WlSubsurface),
+    WlSurface(super::wl_surface::WlSurface),
+    WlTouch(super::wl_touch::WlTouch),
+    XdgPopup(super::xdg_popup::XdgPopup),
+    XdgPositioner(super::xdg_positioner::XdgPositioner),
+    XdgSurface(super::xdg_surface::XdgSurface),
+    XdgToplevel(super::xdg_toplevel::XdgToplevel),
+    XdgWmBase(super::xdg_wm_base::XdgWmBase),
+}

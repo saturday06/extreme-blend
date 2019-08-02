@@ -23,5 +23,30 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum Error {
+    }
+}
+
+pub mod events {
+    pub struct DataOffer {
+    }
+
+    pub struct Drop {
+    }
+
+    pub struct Enter {
+    }
+
+    pub struct Leave {
+    }
+
+    pub struct Motion {
+    }
+
+    pub struct Selection {
+    }
+}
+
+pub struct WlDataDevice {
 }

@@ -23,5 +23,21 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum Error {
+    }
+}
+
+pub mod events {
+    pub struct Action {
+    }
+
+    pub struct Offer {
+    }
+
+    pub struct SourceActions {
+    }
+}
+
+pub struct WlDataOffer {
 }

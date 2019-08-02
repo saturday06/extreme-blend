@@ -23,5 +23,27 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum FullscreenMethod {
+    }
+
+    pub enum Resize {
+    }
+
+    pub enum Transient {
+    }
+}
+
+pub mod events {
+    pub struct Configure {
+    }
+
+    pub struct Ping {
+    }
+
+    pub struct PopupDone {
+    }
+}
+
+pub struct WlShellSurface {
 }

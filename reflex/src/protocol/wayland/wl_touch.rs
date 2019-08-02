@@ -23,5 +23,28 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod events {
+    pub struct Cancel {
+    }
+
+    pub struct Down {
+    }
+
+    pub struct Frame {
+    }
+
+    pub struct Motion {
+    }
+
+    pub struct Orientation {
+    }
+
+    pub struct Shape {
+    }
+
+    pub struct Up {
+    }
+}
+
+pub struct WlTouch {
 }

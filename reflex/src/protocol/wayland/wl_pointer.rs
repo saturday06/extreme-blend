@@ -23,5 +23,48 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum Axis {
+    }
+
+    pub enum AxisSource {
+    }
+
+    pub enum ButtonState {
+    }
+
+    pub enum Error {
+    }
+}
+
+pub mod events {
+    pub struct Axis {
+    }
+
+    pub struct AxisDiscrete {
+    }
+
+    pub struct AxisSource {
+    }
+
+    pub struct AxisStop {
+    }
+
+    pub struct Button {
+    }
+
+    pub struct Enter {
+    }
+
+    pub struct Frame {
+    }
+
+    pub struct Leave {
+    }
+
+    pub struct Motion {
+    }
+}
+
+pub struct WlPointer {
 }

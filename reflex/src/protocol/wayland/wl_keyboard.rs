@@ -23,5 +23,33 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum KeyState {
+    }
+
+    pub enum KeymapFormat {
+    }
+}
+
+pub mod events {
+    pub struct Enter {
+    }
+
+    pub struct Key {
+    }
+
+    pub struct Keymap {
+    }
+
+    pub struct Leave {
+    }
+
+    pub struct Modifiers {
+    }
+
+    pub struct RepeatInfo {
+    }
+}
+
+pub struct WlKeyboard {
 }

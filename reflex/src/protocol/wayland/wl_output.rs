@@ -23,5 +23,30 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub struct WlCompositor {
+pub mod enums {
+    pub enum Mode {
+    }
+
+    pub enum Subpixel {
+    }
+
+    pub enum Transform {
+    }
+}
+
+pub mod events {
+    pub struct Done {
+    }
+
+    pub struct Geometry {
+    }
+
+    pub struct Mode {
+    }
+
+    pub struct Scale {
+    }
+}
+
+pub struct WlOutput {
 }
