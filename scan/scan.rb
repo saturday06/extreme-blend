@@ -134,13 +134,43 @@ open("../reflex/src/protocol.rs", "wb") do |f|
     f.puts("pub mod #{protocol.name};")
   end
   f.puts("")
-  f.puts("pub enum Resource {")
+  f.puts("pub mod codec;")
+  f.puts("pub mod event;")
+  f.puts("pub mod request;")
+  f.puts("pub mod resource;")
+  f.puts("pub mod session;")
+end
+
+open("../reflex/src/protocol/resource.rs", "wb") do |f|
+  f.puts(<<EOF)
+use std::rc::Rc;
+use std::cell::RefCell;
+
+#[derive(Clone)]
+pub enum Resource {
+EOF
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
-      f.puts("    #{camel_case(interface.name)}(super::#{interface.name}::#{camel_case(interface.name)}),")
+      f.puts("    #{camel_case(interface.name)}(Rc<RefCell<super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}>>),")
     end
   end
   f.puts("}")
+  f.puts("")
+  f.puts(<<DISPATCH_REQUEST)
+pub fn dispatch_request(resource: Resource, session: &mut super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    match resource {
+DISPATCH_REQUEST
+  protocols.each do |protocol|
+    protocol.interfaces.each do |interface|
+      f.puts("        Resource::#{camel_case(interface.name)}(object) => {")
+      f.puts("            super::#{protocol.name}::#{interface.name}::dispatch_request(object)")
+      f.puts("        }")
+    end
+  end
+  f.puts(<<DISPATCH_REQUEST)
+    }
+}
+DISPATCH_REQUEST
 end
 
 protocols.each do |protocol|
@@ -156,6 +186,10 @@ protocols.each do |protocol|
   protocol.interfaces.each do |interface|
     open("../reflex/src/protocol/#{protocol.name}/#{interface.name}.rs", "wb") do |f|
       f.puts(render_comment(protocol.copyright.text))
+      f.puts(<<EOF)
+use std::rc::Rc;
+use std::cell::RefCell;
+EOF
       if interface.enums
         f.puts("")
         f.print("pub mod enums {")
@@ -173,9 +207,21 @@ protocols.each do |protocol|
           f.puts("")
           f.puts("    pub struct #{camel_case(event.name)} {")
           f.puts("    }")
+          f.puts("")
+          f.puts("    impl super::super::super::event::Event for #{camel_case(event.name)} {")
+          f.puts(<<ENCODE)
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+ENCODE
+          f.puts("    }")
         end
         f.puts("}")
       end
+      f.puts("")
+      f.puts("pub fn dispatch_request(request: Rc<RefCell<#{camel_case(interface.name)}>>) -> Box<futures::future::Future<Item = (), Error = ()>> {")
+      f.puts("    Box::new(futures::future::ok(()))")
+      f.puts("}")
       f.puts("")
       f.puts("pub struct #{camel_case(interface.name)} {")
       f.puts("}")

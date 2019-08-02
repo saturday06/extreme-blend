@@ -22,6 +22,8 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod enums {
     pub enum Mode {
@@ -38,14 +40,42 @@ pub mod events {
     pub struct Done {
     }
 
+    impl super::super::super::event::Event for Done {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Geometry {
+    }
+
+    impl super::super::super::event::Event for Geometry {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Mode {
     }
 
+    impl super::super::super::event::Event for Mode {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Scale {
     }
+
+    impl super::super::super::event::Event for Scale {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<WlOutput>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct WlOutput {

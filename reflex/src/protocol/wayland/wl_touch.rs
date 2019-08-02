@@ -22,28 +22,76 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod events {
     pub struct Cancel {
     }
 
+    impl super::super::super::event::Event for Cancel {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Down {
+    }
+
+    impl super::super::super::event::Event for Down {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Frame {
     }
 
+    impl super::super::super::event::Event for Frame {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Motion {
+    }
+
+    impl super::super::super::event::Event for Motion {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Orientation {
     }
 
+    impl super::super::super::event::Event for Orientation {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Shape {
+    }
+
+    impl super::super::super::event::Event for Shape {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Up {
     }
+
+    impl super::super::super::event::Event for Up {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<WlTouch>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct WlTouch {

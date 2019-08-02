@@ -22,6 +22,8 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod enums {
     pub enum KeyState {
@@ -35,20 +37,60 @@ pub mod events {
     pub struct Enter {
     }
 
+    impl super::super::super::event::Event for Enter {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Key {
+    }
+
+    impl super::super::super::event::Event for Key {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Keymap {
     }
 
+    impl super::super::super::event::Event for Keymap {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Leave {
+    }
+
+    impl super::super::super::event::Event for Leave {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Modifiers {
     }
 
+    impl super::super::super::event::Event for Modifiers {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct RepeatInfo {
     }
+
+    impl super::super::super::event::Event for RepeatInfo {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<WlKeyboard>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct WlKeyboard {

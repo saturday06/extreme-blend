@@ -22,6 +22,8 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod enums {
     pub enum Capability {
@@ -32,8 +34,24 @@ pub mod events {
     pub struct Capabilities {
     }
 
+    impl super::super::super::event::Event for Capabilities {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Name {
     }
+
+    impl super::super::super::event::Event for Name {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<WlSeat>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct WlSeat {

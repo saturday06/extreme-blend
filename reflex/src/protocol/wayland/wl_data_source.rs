@@ -22,6 +22,8 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod enums {
     pub enum Error {
@@ -32,20 +34,60 @@ pub mod events {
     pub struct Action {
     }
 
+    impl super::super::super::event::Event for Action {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Cancelled {
+    }
+
+    impl super::super::super::event::Event for Cancelled {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct DndDropPerformed {
     }
 
+    impl super::super::super::event::Event for DndDropPerformed {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct DndFinished {
+    }
+
+    impl super::super::super::event::Event for DndFinished {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
     }
 
     pub struct Send {
     }
 
+    impl super::super::super::event::Event for Send {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+
     pub struct Target {
     }
+
+    impl super::super::super::event::Event for Target {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<WlDataSource>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct WlDataSource {

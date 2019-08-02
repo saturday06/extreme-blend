@@ -23,6 +23,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub mod enums {
     pub enum Error {
@@ -32,6 +34,16 @@ pub mod enums {
 pub mod events {
     pub struct Ping {
     }
+
+    impl super::super::super::event::Event for Ping {
+        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+            Ok(())
+        }
+    }
+}
+
+pub fn dispatch_request(request: Rc<RefCell<XdgWmBase>>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    Box::new(futures::future::ok(()))
 }
 
 pub struct XdgWmBase {
