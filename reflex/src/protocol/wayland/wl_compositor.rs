@@ -30,8 +30,6 @@ use std::sync::{Arc, RwLock};
 mod lib;
 pub use lib::*;
 
-pub const GLOBAL_SINGLETON_NAME: u32 = 2;
-
 // the compositor singleton
 //
 // A compositor.  This object is a singleton global.  The

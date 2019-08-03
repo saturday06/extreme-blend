@@ -33,8 +33,6 @@ pub mod events;
 mod lib;
 pub use lib::*;
 
-pub const GLOBAL_SINGLETON_NAME: u32 = 3;
-
 // create desktop-style surfaces
 //
 // The xdg_wm_base interface is exposed as a global object enabling clients

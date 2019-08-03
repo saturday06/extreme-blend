@@ -55,7 +55,7 @@ impl WlShm {
     // objects.  The server will mmap size bytes of the passed file
     // descriptor, to use as backing memory for the pool.
     pub fn create_pool(
-        context: Context<WlShm>,
+        context: Context<Arc<RwLock<WlShm>>>,
         id: u32, // new_id: pool to create
         fd: i32, // fd: file descriptor for the pool
         size: i32, // int: pool size, in bytes
