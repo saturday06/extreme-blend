@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,11 +23,16 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+#[allow(unused_imports)]
+use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)]
+use futures::future::Future;
+#[allow(unused_imports)]
+use futures::sink::Sink;
+#[allow(unused_imports)]
+use std::io::{Cursor, Read};
+#[allow(unused_imports)]
+use std::sync::{Arc, RwLock};
 
 pub mod events {
     use byteorder::{ByteOrder, NativeEndian};
@@ -59,7 +64,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlCallback>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
+pub fn dispatch_request(
+    request: Arc<RwLock<WlCallback>>,
+    session: RwLock<super::super::session::Session>,
+    tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
+    sender_object_id: u32,
+    opcode: u16,
+    args: Vec<u8>,
+) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     Box::new(futures::future::ok(()))
 }
 
@@ -67,6 +79,4 @@ pub fn dispatch_request(request: Arc<RwLock<WlCallback>>, session: RwLock<super:
 //
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
-pub struct WlCallback {
-}
-
+pub struct WlCallback {}

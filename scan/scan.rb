@@ -566,6 +566,8 @@ open("../reflex/src/protocol/resource.rs", "wb") do |f|
   f.puts(<<EOF)
 
 use std::sync::{Arc, RwLock};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Clone)]
 pub enum Resource {

@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,11 +23,16 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+#[allow(unused_imports)]
+use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)]
+use futures::future::Future;
+#[allow(unused_imports)]
+use futures::sink::Sink;
+#[allow(unused_imports)]
+use std::io::{Cursor, Read};
+#[allow(unused_imports)]
+use std::sync::{Arc, RwLock};
 
 pub mod enums {
     // global error values
@@ -37,7 +42,7 @@ pub mod enums {
     pub enum Error {
         InvalidObject = 0, // server couldn't find object
         InvalidMethod = 1, // method doesn't exist on the specified interface
-        NoMemory = 2, // server is out of memory
+        NoMemory = 2,      // server is out of memory
     }
 }
 
@@ -85,8 +90,8 @@ pub mod events {
     // of the error, for (debugging) convenience.
     pub struct Error {
         pub sender_object_id: u32,
-        pub object_id: u32, // object: object where the error occurred
-        pub code: u32, // uint: error code
+        pub object_id: u32,  // object: object where the error occurred
+        pub code: u32,       // uint: error code
         pub message: String, // string: error description
     }
 
@@ -105,58 +110,72 @@ pub mod events {
 
             NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
             NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.code);
-            
+
             NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.message.len() as u32);
             let mut aligned_message = self.message.clone();
             aligned_message.push(0u8.into());
             while aligned_message.len() % 4 != 0 {
                 aligned_message.push(0u8.into());
             }
-            dst[(i + 8 + 4 + 4 + 4)..(i + 8 + 4 + 4 + 4 + aligned_message.len())].copy_from_slice(aligned_message.as_bytes());
+            dst[(i + 8 + 4 + 4 + 4)..(i + 8 + 4 + 4 + 4 + aligned_message.len())]
+                .copy_from_slice(aligned_message.as_bytes());
 
             Ok(())
         }
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
+pub fn dispatch_request(
+    request: Arc<RwLock<WlDisplay>>,
+    session: RwLock<super::super::session::Session>,
+    tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
+    sender_object_id: u32,
+    opcode: u16,
+    args: Vec<u8>,
+) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
+                x
             } else {
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| ()));
-
+                return Box::new(
+                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                        sender_object_id: 1,
+                        object_id: sender_object_id,
+                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                        message: format!(
+                            "@{} opcode={} args={:?} not found",
+                            sender_object_id, opcode, args
+                        ),
+                    }))
+                    .map_err(|_| ())
+                    .map(|_tx| ()),
+                );
             };
-            return WlDisplay::sync(request, session, tx, sender_object_id, callback)
-        },
+            return WlDisplay::sync(request, session, tx, sender_object_id, callback);
+        }
         1 => {
             let registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
+                x
             } else {
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| ()));
-
+                return Box::new(
+                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                        sender_object_id: 1,
+                        object_id: sender_object_id,
+                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                        message: format!(
+                            "@{} opcode={} args={:?} not found",
+                            sender_object_id, opcode, args
+                        ),
+                    }))
+                    .map_err(|_| ())
+                    .map(|_tx| ()),
+                );
             };
-            return WlDisplay::get_registry(request, session, tx, sender_object_id, registry)
-        },
-        _ => {},
+            return WlDisplay::get_registry(request, session, tx, sender_object_id, registry);
+        }
+        _ => {}
     };
     Box::new(futures::future::ok(()))
 }
@@ -165,8 +184,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: RwLock<super::
 //
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
-pub struct WlDisplay {
-}
+pub struct WlDisplay {}
 
 impl WlDisplay {
     // get global registry object
@@ -174,7 +192,7 @@ impl WlDisplay {
     // This request creates a registry object that allows the client
     // to list and bind the global objects available from the
     // compositor.
-    // 
+    //
     // It should be noted that the server side resources consumed in
     // response to a get_registry request can only be released when the
     // client disconnects, not when the client side proxy is destroyed.
@@ -197,11 +215,11 @@ impl WlDisplay {
     // handled in-order and events are delivered in-order, this can
     // be used as a barrier to ensure all previous requests and the
     // resulting events have been handled.
-    // 
+    //
     // The object returned by this request will be destroyed by the
     // compositor after the callback is fired and as such the client must not
     // attempt to use it after that point.
-    // 
+    //
     // The callback_data passed in the callback is the event serial.
     pub fn sync(
         request: Arc<RwLock<WlDisplay>>,

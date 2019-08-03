@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,11 +23,16 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+#[allow(unused_imports)]
+use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)]
+use futures::future::Future;
+#[allow(unused_imports)]
+use futures::sink::Sink;
+#[allow(unused_imports)]
+use std::io::{Cursor, Read};
+#[allow(unused_imports)]
+use std::sync::{Arc, RwLock};
 
 pub mod events {
     use byteorder::{ByteOrder, NativeEndian};
@@ -69,12 +74,12 @@ pub mod events {
     // reused in the future.
     pub struct Down {
         pub sender_object_id: u32,
-        pub serial: u32, // uint: serial number of the touch down event
-        pub time: u32, // uint: timestamp with millisecond granularity
+        pub serial: u32,  // uint: serial number of the touch down event
+        pub time: u32,    // uint: timestamp with millisecond granularity
         pub surface: u32, // object: surface touched
-        pub id: i32, // int: the unique ID of this touch point
-        pub x: u32, // fixed: surface-local x coordinate
-        pub y: u32, // fixed: surface-local y coordinate
+        pub id: i32,      // int: the unique ID of this touch point
+        pub x: u32,       // fixed: surface-local x coordinate
+        pub y: u32,       // fixed: surface-local y coordinate
     }
 
     impl super::super::super::event::Event for Down {
@@ -105,7 +110,7 @@ pub mod events {
     // Indicates the end of a set of events that logically belong together.
     // A client is expected to accumulate the data in all events within the
     // frame before proceeding.
-    // 
+    //
     // A wl_touch.frame terminates at least one event but otherwise no
     // guarantee is provided about the set of events within a frame. A client
     // must assume that any state not updated in a frame is unchanged from the
@@ -137,9 +142,9 @@ pub mod events {
     pub struct Motion {
         pub sender_object_id: u32,
         pub time: u32, // uint: timestamp with millisecond granularity
-        pub id: i32, // int: the unique ID of this touch point
-        pub x: u32, // fixed: surface-local x coordinate
-        pub y: u32, // fixed: surface-local y coordinate
+        pub id: i32,   // int: the unique ID of this touch point
+        pub x: u32,    // fixed: surface-local x coordinate
+        pub y: u32,    // fixed: surface-local y coordinate
     }
 
     impl super::super::super::event::Event for Motion {
@@ -166,11 +171,11 @@ pub mod events {
     // update orientation of touch point
     //
     // Sent when a touchpoint has changed its orientation.
-    // 
+    //
     // This event does not occur on its own. It is sent before a
     // wl_touch.frame event and carries the new shape information for
     // any previously reported, or new touch points of that frame.
-    // 
+    //
     // Other events describing the touch point such as wl_touch.down,
     // wl_touch.motion or wl_touch.shape may be sent within the
     // same wl_touch.frame. A client should treat these events as a single
@@ -179,18 +184,18 @@ pub mod events {
     // A wl_touch.down event is guaranteed to occur before the first
     // wl_touch.orientation event for this touch ID but both events may occur
     // within the same wl_touch.frame.
-    // 
+    //
     // The orientation describes the clockwise angle of a touchpoint's major
     // axis to the positive surface y-axis and is normalized to the -180 to
     // +180 degree range. The granularity of orientation depends on the touch
     // device, some devices only support binary rotation values between 0 and
     // 90 degrees.
-    // 
+    //
     // This event is only sent by the compositor if the touch device supports
     // orientation reports.
     pub struct Orientation {
         pub sender_object_id: u32,
-        pub id: i32, // int: the unique ID of this touch point
+        pub id: i32,          // int: the unique ID of this touch point
         pub orientation: u32, // fixed: angle between major axis and positive surface y-axis in degrees
     }
 
@@ -216,11 +221,11 @@ pub mod events {
     // update shape of touch point
     //
     // Sent when a touchpoint has changed its shape.
-    // 
+    //
     // This event does not occur on its own. It is sent before a
     // wl_touch.frame event and carries the new shape information for
     // any previously reported, or new touch points of that frame.
-    // 
+    //
     // Other events describing the touch point such as wl_touch.down,
     // wl_touch.motion or wl_touch.orientation may be sent within the
     // same wl_touch.frame. A client should treat these events as a single
@@ -229,20 +234,20 @@ pub mod events {
     // A wl_touch.down event is guaranteed to occur before the first
     // wl_touch.shape event for this touch ID but both events may occur within
     // the same wl_touch.frame.
-    // 
+    //
     // A touchpoint shape is approximated by an ellipse through the major and
     // minor axis length. The major axis length describes the longer diameter
     // of the ellipse, while the minor axis length describes the shorter
     // diameter. Major and minor are orthogonal and both are specified in
     // surface-local coordinates. The center of the ellipse is always at the
     // touchpoint location as reported by wl_touch.down or wl_touch.move.
-    // 
+    //
     // This event is only sent by the compositor if the touch device supports
     // shape reports. The client has to make reasonable assumptions about the
     // shape if it did not receive this event.
     pub struct Shape {
         pub sender_object_id: u32,
-        pub id: i32, // int: the unique ID of this touch point
+        pub id: i32,    // int: the unique ID of this touch point
         pub major: u32, // fixed: length of the major axis in surface-local coordinates
         pub minor: u32, // fixed: length of the minor axis in surface-local coordinates
     }
@@ -275,8 +280,8 @@ pub mod events {
     pub struct Up {
         pub sender_object_id: u32,
         pub serial: u32, // uint: serial number of the touch up event
-        pub time: u32, // uint: timestamp with millisecond granularity
-        pub id: i32, // int: the unique ID of this touch point
+        pub time: u32,   // uint: timestamp with millisecond granularity
+        pub id: i32,     // int: the unique ID of this touch point
     }
 
     impl super::super::super::event::Event for Up {
@@ -300,13 +305,18 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlTouch>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
+pub fn dispatch_request(
+    request: Arc<RwLock<WlTouch>>,
+    session: RwLock<super::super::session::Session>,
+    tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
+    sender_object_id: u32,
+    opcode: u16,
+    args: Vec<u8>,
+) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
-        0 => {
-            return WlTouch::release(request, session, tx, sender_object_id, )
-        },
-        _ => {},
+        0 => return WlTouch::release(request, session, tx, sender_object_id),
+        _ => {}
     };
     Box::new(futures::future::ok(()))
 }
@@ -315,14 +325,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlTouch>>, session: RwLock<super::su
 //
 // The wl_touch interface represents a touchscreen
 // associated with a seat.
-// 
+//
 // Touch interactions can consist of one or more contacts.
 // For each contact, a series of events is generated, starting
 // with a down event, followed by zero or more motion events,
 // and ending with an up event. Events relating to the same
 // contact point can be identified by the ID of the sequence.
-pub struct WlTouch {
-}
+pub struct WlTouch {}
 
 impl WlTouch {
     // release the touch object
