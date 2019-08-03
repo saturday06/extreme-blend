@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-//
+// 
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-//
+// 
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-//
+// 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,7 +24,8 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{err, ok, Future};
+use futures::future::{Future, ok, err};
+use std::sync::{Arc, RwLock};
 
 pub mod enums;
 mod lib;
@@ -37,12 +38,13 @@ pub use lib::*;
 // copy-and-paste and drag-and-drop.  These mechanisms are tied to
 // a wl_seat and this interface lets a client get a wl_data_device
 // corresponding to a wl_seat.
-//
+// 
 // Depending on the version bound, the objects created from the bound
 // wl_data_device_manager object will have different requirements for
 // functioning properly. See wl_data_source.set_actions,
 // wl_data_offer.accept and wl_data_offer.finish for details.
-pub struct WlDataDeviceManager {}
+pub struct WlDataDeviceManager {
+}
 
 impl WlDataDeviceManager {
     // create a new data source
@@ -60,7 +62,7 @@ impl WlDataDeviceManager {
     // Create a new data device for a given seat.
     pub fn get_data_device(
         context: Context<WlDataDeviceManager>,
-        id: u32,   // new_id: data device to create
+        id: u32, // new_id: data device to create
         seat: u32, // object: seat associated with the data device
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         Box::new(err(()))

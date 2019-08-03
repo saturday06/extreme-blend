@@ -22,6 +22,7 @@
 // ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
 #[allow(unused_imports)] use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)] use futures::future::Future;
 #[allow(unused_imports)] use futures::sink::Sink;
@@ -29,10 +30,11 @@
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
+pub const GLOBAL_SINGLETON_NAME: u32 = 3;
 pub const VERSION: u32 = 1;
 
 #[allow(unused_variables)]
-pub fn dispatch_request(request: crate::protocol::session::Context<crate::protocol::wayland::wl_shm::WlShm>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: crate::protocol::session::Context<Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>>>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -98,7 +100,7 @@ pub fn dispatch_request(request: crate::protocol::session::Context<crate::protoc
     Box::new(futures::future::ok(request.into()))
 }
 
-impl Into<crate::protocol::resource::Resource> for crate::protocol::wayland::wl_shm::WlShm {
+impl Into<crate::protocol::resource::Resource> for Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>> {
     fn into(self) -> crate::protocol::resource::Resource {
         crate::protocol::resource::Resource::WlShm(self)
     }

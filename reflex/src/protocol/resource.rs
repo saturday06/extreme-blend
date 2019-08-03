@@ -17,7 +17,7 @@ pub enum Resource {
     WlSeat(crate::protocol::wayland::wl_seat::WlSeat),
     WlShell(crate::protocol::wayland::wl_shell::WlShell),
     WlShellSurface(crate::protocol::wayland::wl_shell_surface::WlShellSurface),
-    WlShm(crate::protocol::wayland::wl_shm::WlShm),
+    WlShm(Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>>),
     WlShmPool(crate::protocol::wayland::wl_shm_pool::WlShmPool),
     WlSubcompositor(crate::protocol::wayland::wl_subcompositor::WlSubcompositor),
     WlSubsurface(crate::protocol::wayland::wl_subsurface::WlSubsurface),

@@ -13,6 +13,7 @@ use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 use tokio::codec::Decoder;
 use tokio::runtime::Runtime;
 use tokio_uds::UnixListener;
@@ -24,6 +25,7 @@ fn main() {
 
     let socket_path = "/tmp/temp.unix";
     let _ = std::fs::remove_file(socket_path);
+    let wl_display = Arc::new(RwLock::new(WlDisplay{}));
     let listener = UnixListener::bind(socket_path)
         .unwrap()
         .incoming()
@@ -51,7 +53,7 @@ fn main() {
             };
             session0
                 .resources
-                .insert(1, Resource::WlDisplay(WlDisplay {}));
+                .insert(1, Resource::WlDisplay(wl_display.clone()));
 
             let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(reader0
                 .fold(session0, |mut session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {

@@ -53,17 +53,25 @@ class Copyright
 end
 
 class Interface
-  attr_reader :name, :description, :requests, :events, :enums, :version, :receiver_type, :protocol_name, :global_singleton, :short_receiver_type
+  attr_reader :name, :description, :requests, :events, :enums, :version, :receiver_type, :protocol_name, :global_singleton, :short_receiver_type, :global_singleton_name_int
 
   def initialize(elem, protocol_name)
     @name = elem.attributes["name"].strip
     @protocol_name = protocol_name
     @version = elem.attributes["version"].strip
-    @global_singleton = [
-      "wl_display",
-      "wl_compositor",
-      "xdg_wm_base",
-    ].include?(@name)
+    @global_singleton = false
+    [
+      ["wayland", "wl_display", 1],
+      ["wayland", "wl_compositor", 2],
+      ["wayland", "wl_shm", 3],
+      ["xdg_shell", "xdg_wm_base", 4],
+    ].each do |protocol_name, name, name_int|
+      if protocol_name == @protocol_name && name == @name
+        @global_singleton = true
+        @global_singleton_name_int = name_int
+      end
+    end
+
     if @global_singleton
       @short_receiver_type = "Arc<RwLock<#{camel_case(@name)}>>"
       @receiver_type = "Arc<RwLock<crate::protocol::#{@protocol_name}::#{@name}::#{camel_case(@name)}>>"
@@ -691,6 +699,7 @@ protocols.each do |protocol|
     open("../reflex/src/protocol/#{protocol.name}/#{interface.name}/lib.rs", "wb") do |f|
       f.puts(render_comment(protocol.copyright.text))
       f.puts(<<USE)
+
 #[allow(unused_imports)] use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)] use futures::future::Future;
 #[allow(unused_imports)] use futures::sink::Sink;
@@ -698,10 +707,16 @@ protocols.each do |protocol|
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
+USE
+
+      if interface.global_singleton
+        f.puts("pub const GLOBAL_SINGLETON_NAME: u32 = #{interface.global_singleton_name_int};")
+      end
+      f.puts(<<CODE)
 pub const VERSION: u32 = #{interface.version};
 
 #[allow(unused_variables)]
-USE
+CODE
       f.puts("pub fn dispatch_request(request: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
@@ -725,6 +740,7 @@ INTO
       f.puts(<<USE)
 use crate::protocol::session::{Context, Session};
 use futures::future::{Future, ok, err};
+use std::sync::{Arc, RwLock};
 
 USE
       if interface.enums

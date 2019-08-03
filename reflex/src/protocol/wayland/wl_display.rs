@@ -26,6 +26,7 @@
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
 use futures::sink::Sink;
+use std::sync::{Arc, RwLock};
 
 pub mod enums;
 pub mod events;
@@ -51,7 +52,7 @@ impl WlDisplay {
     // Therefore, clients should invoke get_registry as infrequently as
     // possible to avoid wasting memory.
     pub fn get_registry(
-        mut context: Context<WlDisplay>,
+        mut context: Context<Arc<RwLock<WlDisplay>>>,
         registry: u32, // new_id: global registry object
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", registry);
@@ -62,7 +63,7 @@ impl WlDisplay {
                 .and_then(move |tx| {
                     tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
                         sender_object_id: registry,
-                        name: crate::protocol::wayland::wl_compositor::GLOBAL_NAME,
+                        name: crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME,
                         interface: "wl_compositor".to_owned(),
                         version: crate::protocol::wayland::wl_compositor::VERSION,
                     }))
@@ -70,7 +71,7 @@ impl WlDisplay {
                 .and_then(move |tx| {
                     tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
                         sender_object_id: registry,
-                        name: crate::protocol::wayland::wl_shm::GLOBAL_NAME,
+                        name: crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME,
                         interface: "wl_shm".to_owned(),
                         version: crate::protocol::wayland::wl_shm::VERSION,
                     }))
@@ -78,7 +79,7 @@ impl WlDisplay {
                 .and_then(move |tx| {
                     tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
                         sender_object_id: registry,
-                        name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_NAME,
+                        name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME,
                         interface: "xdg_wm_base".to_owned(),
                         version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
                     }))
@@ -102,7 +103,7 @@ impl WlDisplay {
     //
     // The callback_data passed in the callback is the event serial.
     pub fn sync(
-        mut context: Context<WlDisplay>,
+        mut context: Context<Arc<RwLock<WlDisplay>>>,
         callback: u32, // new_id: callback object for the sync request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("WlDisplay::sync({})", callback);
