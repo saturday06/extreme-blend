@@ -257,7 +257,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlOutput>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlOutput>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -289,7 +289,7 @@ impl WlOutput {
         session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 }

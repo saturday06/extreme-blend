@@ -165,7 +165,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -373,7 +373,7 @@ impl WlDataOffer {
         sender_object_id: u32,
         serial: u32, // uint: serial number of the accept request
         mime_type: String, // string: mime type accepted by the client
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -385,7 +385,7 @@ impl WlDataOffer {
         session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -407,7 +407,7 @@ impl WlDataOffer {
         session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -435,7 +435,7 @@ impl WlDataOffer {
         sender_object_id: u32,
         mime_type: String, // string: mime type desired by receiver
         fd: i32, // fd: file descriptor for data transfer
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -479,7 +479,7 @@ impl WlDataOffer {
         sender_object_id: u32,
         dnd_actions: u32, // uint: actions supported by the destination client
         preferred_action: u32, // uint: action preferred by the destination client
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 }

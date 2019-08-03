@@ -63,7 +63,7 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -144,7 +144,7 @@ impl WlDataDeviceManager {
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: data source to create
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -158,7 +158,7 @@ impl WlDataDeviceManager {
         sender_object_id: u32,
         id: u32, // new_id: data device to create
         seat: u32, // object: seat associated with the data device
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 }

@@ -35,7 +35,7 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlShell>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlShell>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -102,7 +102,7 @@ impl WlShell {
         sender_object_id: u32,
         id: u32, // new_id: shell surface to create
         surface: u32, // object: surface to be given the shell surface role
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 }

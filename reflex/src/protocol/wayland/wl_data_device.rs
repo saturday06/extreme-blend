@@ -239,7 +239,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -359,7 +359,7 @@ impl WlDataDevice {
         session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -376,7 +376,7 @@ impl WlDataDevice {
         sender_object_id: u32,
         source: u32, // object: data source for the selection
         serial: u32, // uint: serial number of the event that triggered this request
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 
@@ -418,7 +418,7 @@ impl WlDataDevice {
         origin: u32, // object: surface where the drag originates
         icon: u32, // object: drag-and-drop icon surface
         serial: u32, // uint: serial number of the implicit grab on the origin
-    ) -> Box<futures::future::Future<Item = (), Error = ()>> {
+    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
         Box::new(futures::future::ok(()))
     }
 }

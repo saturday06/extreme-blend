@@ -21,15 +21,17 @@ use tokio_uds::{UnixListener, UnixStream};
 mod protocol;
 
 fn handle_stream(stream: UnixStream, runtime: Arc<RwLock<Runtime>>) -> Box<Future<Item = (), Error = std::io::Error> + Send> {
-    /*
-    let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(1000);
-    let (writer0, reader0) = Codec::new().framed(stream).split();
-    let output_session = rx0
-        .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
-        .forward(writer0)
-        .map_err(|_| ())
-        .and_then(|_| Ok(()));
-    runtime.write().unwrap().spawn(output_session);
+    let (reader0, tx0) = {
+        let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(1000);
+        let (writer0, reader0) = Codec::new().framed(stream).split();
+        let output_session = rx0
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
+            .forward(writer0)
+            .map_err(|_| ())
+            .and_then(|_| Ok(()));
+        runtime.write().unwrap().spawn(output_session);
+        (reader0, tx0)
+    };
 
     let mut session0 = RwLock::new(Session {
         wl_registry: WlRegistry {},
@@ -50,6 +52,7 @@ fn handle_stream(stream: UnixStream, runtime: Arc<RwLock<Runtime>>) -> Box<Futur
             .map(|r| r.clone());
         let tx = tx0.clone();
         if let Some(res) = opt_res {
+            /*
             protocol::resource::dispatch_request(
                 res,
                 session0,
@@ -58,8 +61,13 @@ fn handle_stream(stream: UnixStream, runtime: Arc<RwLock<Runtime>>) -> Box<Futur
                 req.opcode,
                 req.args,
             )
+            */
+            let f: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
+                futures::future::ok(())
+            );
+            f
         } else {
-            Box::new(
+            let f: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
                 tx.send(Box::new(wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: 1,
@@ -68,13 +76,13 @@ fn handle_stream(stream: UnixStream, runtime: Arc<RwLock<Runtime>>) -> Box<Futur
                         "object_id={} opcode={} args={:?} not found",
                         req.sender_object_id, req.opcode, req.args
                     ),
-                }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-            )
+                })).map(|_tx| ()).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
+            );
+            f
         }
-    });*/
-    Box::new(futures::future::ok(()))
+    });
+
+    Box::new(input_session)
 }
 
 fn main() {
@@ -82,14 +90,13 @@ fn main() {
 
     let socket_path = "/tmp/temp.unix";
     let _ = std::fs::remove_file(socket_path);
-    let f: Box<futures::future::Future<Item = (), Error = ()> + Send> = Box::new(UnixListener::bind(socket_path)
+    let listener = UnixListener::bind(socket_path)
         .unwrap()
         .incoming()
         .for_each(move |stream| {
-            let f: Box<Future<Item = (), Error = std::io::Error> + Send> = handle_stream(stream, runtime.clone());
-            f
+            handle_stream(stream, runtime.clone())
         })
-        .map_err(|_| ()));
-    tokio::run(f);
+        .map_err(|_| ());
+    tokio::run(listener);
     println!("ok");
 }

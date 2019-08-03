@@ -32,7 +32,7 @@ pub enum Resource {
     XdgWmBase(Arc<RwLock<super::xdg_shell::xdg_wm_base::XdgWmBase>>),
 }
 
-pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     match resource {
         Resource::WlBuffer(object) => {
             super::wayland::wl_buffer::dispatch_request(object, session, tx, sender_object_id, opcode, args)

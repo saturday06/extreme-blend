@@ -578,7 +578,7 @@ EOF
   f.puts("}")
   f.puts("")
   f.puts(<<DISPATCH_REQUEST)
-pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
     match resource {
 DISPATCH_REQUEST
   protocols.each do |protocol|
@@ -650,7 +650,7 @@ EOF
         f.puts("}")
       end
       f.puts("")
-      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {")
+      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
       f.puts("")
@@ -671,7 +671,7 @@ EOF
           request.args.each do |arg|
             f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end
-          f.puts("    ) -> Box<futures::future::Future<Item = (), Error = ()>> {")
+          f.puts("    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {")
           f.puts("        Box::new(futures::future::ok(()))")
           f.puts("    }")
         end
