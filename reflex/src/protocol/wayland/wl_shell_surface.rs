@@ -23,592 +23,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // different method to set the surface fullscreen
-    //
-    // Hints to indicate to the compositor how to deal with a conflict
-    // between the dimensions of the surface and the dimensions of the
-    // output. The compositor is free to ignore this parameter.
-    pub enum FullscreenMethod {
-        Default = 0, // no preference, apply default policy
-        Scale = 1, // scale, preserve the surface's aspect ratio and center on output
-        Driver = 2, // switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
-        Fill = 3, // no upscaling, center on output and add black borders to compensate size mismatch
-    }
-
-    // edge values for resizing
-    //
-    // These values are used to indicate which edge of a surface
-    // is being dragged in a resize operation. The server may
-    // use this information to adapt its behavior, e.g. choose
-    // an appropriate cursor image.
-    pub enum Resize {
-        None = 0, // no edge
-        Top = 1, // top edge
-        Bottom = 2, // bottom edge
-        Left = 4, // left edge
-        TopLeft = 5, // top and left edges
-        BottomLeft = 6, // bottom and left edges
-        Right = 8, // right edge
-        TopRight = 9, // top and right edges
-        BottomRight = 10, // bottom and right edges
-    }
-
-    // details of transient behaviour
-    //
-    // These flags specify details of the expected behaviour
-    // of transient surfaces. Used in the set_transient request.
-    pub enum Transient {
-        Inactive = 0x1, // do not set keyboard focus
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // suggest resize
-    //
-    // The configure event asks the client to resize its surface.
-    // 
-    // The size is a hint, in the sense that the client is free to
-    // ignore it if it doesn't resize, pick a smaller size (to
-    // satisfy aspect ratio or resize in steps of NxM pixels).
-    // 
-    // The edges parameter provides a hint about how the surface
-    // was resized. The client may use this information to decide
-    // how to adjust its content to the new size (e.g. a scrolling
-    // area might adjust its content position to leave the viewable
-    // content unmoved).
-    // 
-    // The client is free to dismiss all but the last configure
-    // event it received.
-    // 
-    // The width and height arguments specify the size of the window
-    // in surface-local coordinates.
-    pub struct Configure {
-        pub sender_object_id: u32,
-        pub edges: u32, // uint: how the surface was resized
-        pub width: i32, // int: new width of the surface
-        pub height: i32, // int: new height of the surface
-    }
-
-    impl super::super::super::event::Event for Configure {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4 + 4 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.edges);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4..], self.width);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4..], self.height);
-            Ok(())
-        }
-    }
-
-    // ping client
-    //
-    // Ping a client to check if it is receiving events and sending
-    // requests. A client is expected to reply with a pong request.
-    pub struct Ping {
-        pub sender_object_id: u32,
-        pub serial: u32, // uint: serial number of the ping
-    }
-
-    impl super::super::super::event::Event for Ping {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.serial);
-            Ok(())
-        }
-    }
-
-    // popup interaction is done
-    //
-    // The popup_done event is sent out when a popup grab is broken,
-    // that is, when the user clicks a surface that doesn't belong
-    // to the client owning the popup surface.
-    pub struct PopupDone {
-        pub sender_object_id: u32,
-    }
-
-    impl super::super::super::event::Event for PopupDone {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 2) as u32);
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::pong(request, session, sender_object_id, serial)
-        },
-        1 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::move_fn(request, session, sender_object_id, seat, serial)
-        },
-        2 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::resize(request, session, sender_object_id, seat, serial, edges)
-        },
-        3 => {
-            return WlShellSurface::set_toplevel(request, session, sender_object_id, )
-        },
-        4 => {
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let flags = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::set_transient(request, session, sender_object_id, parent, x, y, flags)
-        },
-        5 => {
-            let method = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let framerate = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::set_fullscreen(request, session, sender_object_id, method, framerate, output)
-        },
-        6 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let flags = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::set_popup(request, session, sender_object_id, seat, serial, parent, x, y, flags)
-        },
-        7 => {
-            let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlShellSurface::set_maximized(request, session, sender_object_id, output)
-        },
-        8 => {
-            let title = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-            return WlShellSurface::set_title(request, session, sender_object_id, title)
-        },
-        9 => {
-            let class_ = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-            return WlShellSurface::set_class(request, session, sender_object_id, class_)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // desktop-style metadata interface
 //
@@ -635,13 +56,11 @@ impl WlShellSurface {
     // The server may ignore move requests depending on the state of
     // the surface (e.g. fullscreen or maximized).
     pub fn move_fn(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // respond to a ping event
@@ -649,12 +68,10 @@ impl WlShellSurface {
     // A client must respond to a ping event with a pong request or
     // the client may be deemed unresponsive.
     pub fn pong(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         serial: u32, // uint: serial number of the ping event
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // start an interactive resize
@@ -665,14 +82,12 @@ impl WlShellSurface {
     // The server may ignore resize requests depending on the state of
     // the surface (e.g. fullscreen or maximized).
     pub fn resize(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
         edges: u32, // uint: which edge or corner is being dragged
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set surface class
@@ -684,12 +99,10 @@ impl WlShellSurface {
     // file name (or the full path if it is a non-standard location) of
     // the application's .desktop file as the class.
     pub fn set_class(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         class_: String, // string: surface class
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the surface a fullscreen surface
@@ -728,14 +141,12 @@ impl WlShellSurface {
     // with the dimensions for the output on which the surface will
     // be made fullscreen.
     pub fn set_fullscreen(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         method: u32, // uint: method for resolving size conflict
         framerate: u32, // uint: framerate in mHz
         output: u32, // object: output on which the surface is to be fullscreen
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the surface a maximized surface
@@ -759,12 +170,10 @@ impl WlShellSurface {
     // 
     // The details depend on the compositor implementation.
     pub fn set_maximized(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         output: u32, // object: output on which the surface is to be maximized
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the surface a popup surface
@@ -789,17 +198,15 @@ impl WlShellSurface {
     // corner of the surface relative to the upper left corner of the
     // parent surface, in surface-local coordinates.
     pub fn set_popup(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
         parent: u32, // object: parent surface
         x: i32, // int: surface-local x coordinate
         y: i32, // int: surface-local y coordinate
         flags: u32, // uint: transient surface behavior
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set surface title
@@ -812,12 +219,10 @@ impl WlShellSurface {
     // 
     // The string must be encoded in UTF-8.
     pub fn set_title(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         title: String, // string: surface title
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the surface a toplevel surface
@@ -826,11 +231,9 @@ impl WlShellSurface {
     // 
     // A toplevel surface is not fullscreen, maximized or transient.
     pub fn set_toplevel(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<WlShellSurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the surface a transient surface
@@ -843,20 +246,12 @@ impl WlShellSurface {
     // 
     // The flags argument controls details of the transient behaviour.
     pub fn set_transient(
-        request: Arc<RwLock<WlShellSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlShellSurface>,
         parent: u32, // object: parent surface
         x: i32, // int: surface-local x coordinate
         y: i32, // int: surface-local y coordinate
         flags: u32, // uint: transient surface behavior
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlShellSurface {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlShellSurface(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

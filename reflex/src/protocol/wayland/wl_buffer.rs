@@ -23,61 +23,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // compositor releases buffer
-    //
-    // Sent when this wl_buffer is no longer used by the compositor.
-    // The client is now free to reuse or destroy this buffer and its
-    // backing storage.
-    // 
-    // If a client receives a release event before the frame callback
-    // requested in the same wl_surface.commit that attaches this
-    // wl_buffer to a surface, then the client is immediately free to
-    // reuse the buffer and its backing storage, and does not need a
-    // second buffer for the next surface content update. Typically
-    // this is possible, when the compositor maintains a copy of the
-    // wl_surface contents, e.g. as a GL texture. This is an important
-    // optimization for GL(ES) compositors with wl_shm clients.
-    pub struct Release {
-        pub sender_object_id: u32,
-    }
-
-    impl super::super::super::event::Event for Release {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlBuffer>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return WlBuffer::destroy(request, session, sender_object_id, )
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // content for a wl_surface
 //
@@ -97,16 +48,8 @@ impl WlBuffer {
     // 
     // For possible side-effects to a surface, see wl_surface.attach.
     pub fn destroy(
-        request: Arc<RwLock<WlBuffer>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlBuffer {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlBuffer(Arc::new(RwLock::new(self)))
+        context: Context<WlBuffer>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

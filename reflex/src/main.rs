@@ -13,12 +13,9 @@ use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-use std::rc::Rc;
-use std::cell::RefCell;
 use tokio::codec::Decoder;
 use tokio::runtime::Runtime;
-use tokio_uds::{UnixListener, UnixStream};
+use tokio_uds::UnixListener;
 
 mod protocol;
 
@@ -53,7 +50,7 @@ fn main() {
             };
             session0
                 .resources
-                .insert(1, Resource::WlDisplay(Arc::new(RwLock::new(WlDisplay {}))));
+                .insert(1, Resource::WlDisplay(WlDisplay {}));
 
             let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(reader0
                 .fold(session0, |mut session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {

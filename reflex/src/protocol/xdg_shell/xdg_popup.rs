@@ -24,129 +24,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    pub enum Error {
-        InvalidGrab = 0, // tried to grab after being mapped
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // configure the popup surface
-    //
-    // This event asks the popup surface to configure itself given the
-    // configuration. The configured state should not be applied immediately.
-    // See xdg_surface.configure for details.
-    // 
-    // The x and y arguments represent the position the popup was placed at
-    // given the xdg_positioner rule, relative to the upper left corner of the
-    // window geometry of the parent surface.
-    pub struct Configure {
-        pub sender_object_id: u32,
-        pub x: i32, // int: x position relative to parent surface window geometry
-        pub y: i32, // int: y position relative to parent surface window geometry
-        pub width: i32, // int: window geometry width
-        pub height: i32, // int: window geometry height
-    }
-
-    impl super::super::super::event::Event for Configure {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4 + 4 + 4 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_i32(&mut dst[i + 8..], self.x);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4..], self.y);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4..], self.width);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4 + 4..], self.height);
-            Ok(())
-        }
-    }
-
-    // popup interaction is done
-    //
-    // The popup_done event is sent out when a popup is dismissed by the
-    // compositor. The client should destroy the xdg_popup object at this
-    // point.
-    pub struct PopupDone {
-        pub sender_object_id: u32,
-    }
-
-    impl super::super::super::event::Event for PopupDone {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<XdgPopup>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return XdgPopup::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPopup::grab(request, session, sender_object_id, seat, serial)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // short-lived, popup surfaces for menus
 //
@@ -192,11 +76,9 @@ impl XdgPopup {
     // If this xdg_popup is not the "topmost" popup, a protocol error
     // will be sent.
     pub fn destroy(
-        request: Arc<RwLock<XdgPopup>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgPopup>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // make the popup take an explicit grab
@@ -243,18 +125,10 @@ impl XdgPopup {
     // "owner-events" grab in X11 parlance), while the top most grabbing popup
     // will always have keyboard focus.
     pub fn grab(
-        request: Arc<RwLock<XdgPopup>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPopup>,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for XdgPopup {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::XdgPopup(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

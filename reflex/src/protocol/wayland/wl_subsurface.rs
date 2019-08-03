@@ -23,103 +23,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    pub enum Error {
-        BadSurface = 0, // wl_surface is not a sibling or the parent
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return WlSubsurface::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSubsurface::set_position(request, session, sender_object_id, x, y)
-        },
-        2 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSubsurface::place_above(request, session, sender_object_id, sibling)
-        },
-        3 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSubsurface::place_below(request, session, sender_object_id, sibling)
-        },
-        4 => {
-            return WlSubsurface::set_sync(request, session, sender_object_id, )
-        },
-        5 => {
-            return WlSubsurface::set_desync(request, session, sender_object_id, )
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+mod lib;
+pub use lib::*;
 
 // sub-surface interface to a wl_surface
 //
@@ -184,11 +93,9 @@ impl WlSubsurface {
     // to the parent is deleted, and the wl_surface loses its role as
     // a sub-surface. The wl_surface is unmapped immediately.
     pub fn destroy(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<WlSubsurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // restack the sub-surface
@@ -209,12 +116,10 @@ impl WlSubsurface {
     // A new sub-surface is initially added as the top-most in the stack
     // of its siblings and parent.
     pub fn place_above(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSubsurface>,
         sibling: u32, // object: the reference surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // restack the sub-surface
@@ -222,12 +127,10 @@ impl WlSubsurface {
     // The sub-surface is placed just below the reference surface.
     // See wl_subsurface.place_above.
     pub fn place_below(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSubsurface>,
         sibling: u32, // object: the reference surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set sub-surface to desynchronized mode
@@ -252,11 +155,9 @@ impl WlSubsurface {
     // If a surface's parent surface behaves as desynchronized, then
     // the cached state is applied on set_desync.
     pub fn set_desync(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<WlSubsurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // reposition the sub-surface
@@ -278,13 +179,11 @@ impl WlSubsurface {
     // 
     // The initial position is 0, 0.
     pub fn set_position(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSubsurface>,
         x: i32, // int: x coordinate in the parent surface
         y: i32, // int: y coordinate in the parent surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set sub-surface to synchronized mode
@@ -303,16 +202,8 @@ impl WlSubsurface {
     // 
     // See wl_subsurface for the recursive effect of this mode.
     pub fn set_sync(
-        request: Arc<RwLock<WlSubsurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlSubsurface {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlSubsurface(Arc::new(RwLock::new(self)))
+        context: Context<WlSubsurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

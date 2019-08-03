@@ -23,55 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub fn dispatch_request(request: Arc<RwLock<WlCompositor>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlCompositor::create_surface(request, session, sender_object_id, id)
-        },
-        1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlCompositor::create_region(request, session, sender_object_id, id)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+mod lib;
+pub use lib::*;
 
 // the compositor singleton
 //
@@ -86,29 +42,19 @@ impl WlCompositor {
     //
     // Ask the compositor to create a new region.
     pub fn create_region(
-        request: Arc<RwLock<WlCompositor>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlCompositor>,
         id: u32, // new_id: the new region
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // create new surface
     //
     // Ask the compositor to create a new surface.
     pub fn create_surface(
-        request: Arc<RwLock<WlCompositor>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlCompositor>,
         id: u32, // new_id: the new surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlCompositor {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlCompositor(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

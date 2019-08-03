@@ -23,104 +23,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // drag and drop actions
-    //
-    // This is a bitmask of the available/preferred actions in a
-    // drag-and-drop operation.
-    // 
-    // In the compositor, the selected action is a result of matching the
-    // actions offered by the source and destination sides.  "action" events
-    // with a "none" action will be sent to both source and destination if
-    // there is no match. All further checks will effectively happen on
-    // (source actions ∩ destination actions).
-    // 
-    // In addition, compositors may also pick different actions in
-    // reaction to key modifiers being pressed. One common design that
-    // is used in major toolkits (and the behavior recommended for
-    // compositors) is:
-    // 
-    // - If no modifiers are pressed, the first match (in bit order)
-    //   will be used.
-    // - Pressing Shift selects "move", if enabled in the mask.
-    // - Pressing Control selects "copy", if enabled in the mask.
-    // 
-    // Behavior beyond that is considered implementation-dependent.
-    // Compositors may for example bind other modifiers (like Alt/Meta)
-    // or drags initiated with other buttons than BTN_LEFT to specific
-    // actions (e.g. "ask").
-    pub enum DndAction {
-        None = 0, // no action
-        Copy = 1, // copy action
-        Move = 2, // move action
-        Ask = 4, // ask action
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlDataDeviceManager::create_data_source(request, session, sender_object_id, id)
-        },
-        1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlDataDeviceManager::get_data_device(request, session, sender_object_id, id, seat)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+mod lib;
+pub use lib::*;
 
 // data transfer interface
 //
@@ -142,30 +50,20 @@ impl WlDataDeviceManager {
     //
     // Create a new data source.
     pub fn create_data_source(
-        request: Arc<RwLock<WlDataDeviceManager>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlDataDeviceManager>,
         id: u32, // new_id: data source to create
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // create a new data device
     //
     // Create a new data device for a given seat.
     pub fn get_data_device(
-        request: Arc<RwLock<WlDataDeviceManager>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlDataDeviceManager>,
         id: u32, // new_id: data device to create
         seat: u32, // object: seat associated with the data device
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlDataDeviceManager {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlDataDeviceManager(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

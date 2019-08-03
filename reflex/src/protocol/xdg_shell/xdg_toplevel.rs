@@ -24,514 +24,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // edge values for resizing
-    //
-    // These values are used to indicate which edge of a surface
-    // is being dragged in a resize operation.
-    pub enum ResizeEdge {
-        None = 0, // 
-        Top = 1, // 
-        Bottom = 2, // 
-        Left = 4, // 
-        TopLeft = 5, // 
-        BottomLeft = 6, // 
-        Right = 8, // 
-        TopRight = 9, // 
-        BottomRight = 10, // 
-    }
-
-    // types of state on the surface
-    //
-    // The different state values used on the surface. This is designed for
-    // state values like maximized, fullscreen. It is paired with the
-    // configure event to ensure that both the client and the compositor
-    // setting the state can be synchronized.
-    // 
-    // States set in this way are double-buffered. They will get applied on
-    // the next commit.
-    pub enum State {
-        Maximized = 1, // the surface is maximized
-        Fullscreen = 2, // the surface is fullscreen
-        Resizing = 3, // the surface is being resized
-        Activated = 4, // the surface is now activated
-        TiledLeft = 5, // 
-        TiledRight = 6, // 
-        TiledTop = 7, // 
-        TiledBottom = 8, // 
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // surface wants to be closed
-    //
-    // The close event is sent by the compositor when the user
-    // wants the surface to be closed. This should be equivalent to
-    // the user clicking the close button in client-side decorations,
-    // if your application has any.
-    // 
-    // This is only a request that the user intends to close the
-    // window. The client may choose to ignore this request, or show
-    // a dialog to ask the user to save their data, etc.
-    pub struct Close {
-        pub sender_object_id: u32,
-    }
-
-    impl super::super::super::event::Event for Close {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            Ok(())
-        }
-    }
-
-    // suggest a surface change
-    //
-    // This configure event asks the client to resize its toplevel surface or
-    // to change its state. The configured state should not be applied
-    // immediately. See xdg_surface.configure for details.
-    // 
-    // The width and height arguments specify a hint to the window
-    // about how its surface should be resized in window geometry
-    // coordinates. See set_window_geometry.
-    // 
-    // If the width or height arguments are zero, it means the client
-    // should decide its own window dimension. This may happen when the
-    // compositor needs to configure the state of the surface but doesn't
-    // have any information about any previous or expected dimension.
-    // 
-    // The states listed in the event specify how the width/height
-    // arguments should be interpreted, and possibly how it should be
-    // drawn.
-    // 
-    // Clients must send an ack_configure in response to this event. See
-    // xdg_surface.configure and xdg_surface.ack_configure for details.
-    pub struct Configure {
-        pub sender_object_id: u32,
-        pub width: i32, // int: 
-        pub height: i32, // int: 
-        pub states: Vec<u8>, // array: 
-    }
-
-    impl super::super::super::event::Event for Configure {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4 + 4 + (4 + (self.states.len() + 1 + 3) / 4 * 4);
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_i32(&mut dst[i + 8..], self.width);
-            NativeEndian::write_i32(&mut dst[i + 8 + 4..], self.height);
-            
-            NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.states.len() as u32);
-            let mut aligned_states = self.states.clone();
-            while aligned_states.len() % 4 != 0 {
-                aligned_states.push(0u8);
-            }
-            dst[(i + 8 + 4 + 4 + 4)..(i + 8 + 4 + 4 + 4 + aligned_states.len())].copy_from_slice(&aligned_states[..]);
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return XdgToplevel::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::set_parent(request, session, sender_object_id, parent)
-        },
-        2 => {
-            let title = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-            return XdgToplevel::set_title(request, session, sender_object_id, title)
-        },
-        3 => {
-            let app_id = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-            return XdgToplevel::set_app_id(request, session, sender_object_id, app_id)
-        },
-        4 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::show_window_menu(request, session, sender_object_id, seat, serial, x, y)
-        },
-        5 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::move_fn(request, session, sender_object_id, seat, serial)
-        },
-        6 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::resize(request, session, sender_object_id, seat, serial, edges)
-        },
-        7 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::set_max_size(request, session, sender_object_id, width, height)
-        },
-        8 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::set_min_size(request, session, sender_object_id, width, height)
-        },
-        9 => {
-            return XdgToplevel::set_maximized(request, session, sender_object_id, )
-        },
-        10 => {
-            return XdgToplevel::unset_maximized(request, session, sender_object_id, )
-        },
-        11 => {
-            let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgToplevel::set_fullscreen(request, session, sender_object_id, output)
-        },
-        12 => {
-            return XdgToplevel::unset_fullscreen(request, session, sender_object_id, )
-        },
-        13 => {
-            return XdgToplevel::set_minimized(request, session, sender_object_id, )
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // toplevel surface
 //
@@ -557,11 +56,9 @@ impl XdgToplevel {
     // This request destroys the role surface and unmaps the surface;
     // see "Unmapping" behavior in interface section for details.
     pub fn destroy(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgToplevel>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // start an interactive move
@@ -583,13 +80,11 @@ impl XdgToplevel {
     // updating a pointer cursor, during the move. There is no guarantee
     // that the device focus will return when the move is completed.
     pub fn move_fn(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // start an interactive resize
@@ -625,14 +120,12 @@ impl XdgToplevel {
     // use this information to adapt its behavior, e.g. choose an
     // appropriate cursor image.
     pub fn resize(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
         edges: u32, // uint: which edge or corner is being dragged
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set application ID
@@ -658,12 +151,10 @@ impl XdgToplevel {
     // 
     // [0] http://standards.freedesktop.org/desktop-entry-spec/
     pub fn set_app_id(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         app_id: String, // string: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the window as fullscreen on an output
@@ -692,12 +183,10 @@ impl XdgToplevel {
     // up of subsurfaces, popups or similarly coupled surfaces) are not
     // visible below the fullscreened surface.
     pub fn set_fullscreen(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         output: u32, // object: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the maximum size
@@ -737,13 +226,11 @@ impl XdgToplevel {
     // strictly negative values for width and height will result in a
     // protocol error.
     pub fn set_max_size(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         width: i32, // int: 
         height: i32, // int: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // maximize the window
@@ -768,11 +255,9 @@ impl XdgToplevel {
     // effect. It may alter the state the surface is returned to when
     // unmaximized unless overridden by the compositor.
     pub fn set_maximized(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgToplevel>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the minimum size
@@ -812,13 +297,11 @@ impl XdgToplevel {
     // strictly negative values for width and height will result in a
     // protocol error.
     pub fn set_min_size(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         width: i32, // int: 
         height: i32, // int: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the window as minimized
@@ -832,11 +315,9 @@ impl XdgToplevel {
     // also work with live previews on windows in Alt-Tab, Expose or
     // similar compositor features.
     pub fn set_minimized(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgToplevel>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the parent of this surface
@@ -858,12 +339,10 @@ impl XdgToplevel {
     // parent then the children are managed as though they have no
     // parent surface.
     pub fn set_parent(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         parent: u32, // object: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set surface title
@@ -876,12 +355,10 @@ impl XdgToplevel {
     // 
     // The string must be encoded in UTF-8.
     pub fn set_title(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         title: String, // string: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // show the window menu
@@ -898,15 +375,13 @@ impl XdgToplevel {
     // This request must be used in response to some sort of user action
     // like a button press, key press, or touch down event.
     pub fn show_window_menu(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgToplevel>,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
         x: i32, // int: the x position to pop up the window menu at
         y: i32, // int: the y position to pop up the window menu at
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // unset the window as fullscreen
@@ -929,11 +404,9 @@ impl XdgToplevel {
     // The client must also acknowledge the configure when committing the new
     // content (see ack_configure).
     pub fn unset_fullscreen(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgToplevel>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // unmaximize the window
@@ -960,16 +433,8 @@ impl XdgToplevel {
     // effect. It may alter the state the surface is returned to when
     // unmaximized unless overridden by the compositor.
     pub fn unset_maximized(
-        request: Arc<RwLock<XdgToplevel>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for XdgToplevel {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::XdgToplevel(Arc::new(RwLock::new(self)))
+        context: Context<XdgToplevel>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

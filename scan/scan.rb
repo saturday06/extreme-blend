@@ -91,8 +91,8 @@ EOF
       @requests.sort_by(&:index).each do |request|
         result += "        #{request.index} => {\n"
         result += request.args.map(&:deserialize).join("")
-        result += "            return #{camel_case(@name)}::#{request.rust_name}(request, session, sender_object_id, "
-        result += request.args.map(&:name).join(", ")
+        result += "            return super::#{camel_case(@name)}::#{request.rust_name}(request"
+        result += request.args.map { |arg| ", " + arg.name }.join
         result += ")\n"
         result += "        },\n"
       end
@@ -101,7 +101,7 @@ EOF
     };
 EOF
     end
-    result += "    Box::new(futures::future::ok(session))"
+    result += "    Box::new(futures::future::ok(request.into()))"
     result
   end
 end
@@ -207,16 +207,16 @@ class Arg
 
   def deserialize_return_error
     <<EOF
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                let tx = request.tx.clone();
+                return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
                     sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    object_id: request.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
                     message: format!(
                         "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
+                        request.sender_object_id, opcode, args
                     ),
-                })).map_err(|_| ()).map(|_tx| session));
+                })).map_err(|_| ()).map(|_tx| request.into()));
 EOF
   end
 end
@@ -495,29 +495,29 @@ class Event
   end
 
   def encode
-    result = "        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {\n"    
-    result += "            let total_len = 8"
+    result = "    fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {\n"    
+    result += "        let total_len = 8"
     @args.each do |arg|
       result += " + #{arg.encode_len}"
     end
     result += ";\n"
     result += <<HEADER
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
+        if total_len > 0xffff {
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
+        }
 
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
+        let i = dst.len();
+        dst.resize(i + total_len, 0);
 
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | #{@index}) as u32);
+        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
+        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | #{@index}) as u32);
 
 HEADER
     @args.each do |arg|
-      result += "            #{arg.serialize}\n"
+      result += "        #{arg.serialize}\n"
     end
-    result += "            Ok(())\n"
-    result += "        }\n"
+    result += "        Ok(())\n"
+    result += "    }\n"
   end
 end
 
@@ -566,14 +566,11 @@ end
 open("../reflex/src/protocol/resource.rs", "wb") do |f|
   f.puts(<<EOF)
 
-use std::sync::{Arc, RwLock};
-
-#[derive(Clone)]
 pub enum Resource {
 EOF
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
-      f.puts("    #{camel_case(interface.name)}(Arc<RwLock<super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}>>),")
+      f.puts("    #{camel_case(interface.name)}(super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}),")
     end
   end
   f.puts("}")
@@ -585,7 +582,7 @@ DISPATCH_REQUEST
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
       f.puts("        Resource::#{camel_case(interface.name)}(object) => {")
-      f.puts("            super::#{protocol.name}::#{interface.name}::dispatch_request(object, session, sender_object_id, opcode, args)")
+      f.puts("            super::#{protocol.name}::#{interface.name}::dispatch_request(crate::protocol::session::Context::new(session, object, sender_object_id), opcode, args)")
       f.puts("        }")
     end
   end
@@ -606,54 +603,93 @@ protocols.each do |protocol|
   end
 
   protocol.interfaces.each do |interface|
-    open("../reflex/src/protocol/#{protocol.name}/#{interface.name}.rs", "wb") do |f|
+    next unless interface.enums
+    FileUtils.mkdir_p("../reflex/src/protocol/#{protocol.name}/#{interface.name}")
+    open("../reflex/src/protocol/#{protocol.name}/#{interface.name}/enums.rs", "wb") do |f|
       f.puts(render_comment(protocol.copyright.text))
-      f.puts(<<EOF)
+      f.puts("")
+      interface.enums.each do |enum|
+        f.puts("")
+        f.puts(enum.description.comment()) if enum.description
+        f.puts("pub enum #{camel_case(enum.name)} {")
+        enum.entries.each do |entry|
+          f.puts("    #{camel_case(entry.name)} = #{entry.value}, // #{entry.summary}")
+        end
+        f.puts("}")
+      end
+    end
+  end
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+  protocol.interfaces.each do |interface|
+    next unless interface.events
+    FileUtils.mkdir_p("../reflex/src/protocol/#{protocol.name}/#{interface.name}")
+    open("../reflex/src/protocol/#{protocol.name}/#{interface.name}/events.rs", "wb") do |f|
+      f.puts(render_comment(protocol.copyright.text))
+      f.puts("")
+      f.puts("use byteorder::{ByteOrder, NativeEndian};")
+
+      interface.events.each do |event|
+        f.puts("")
+        f.puts(event.description.comment())
+        f.puts("pub struct #{camel_case(event.name)} {")
+        f.puts("    pub sender_object_id: u32,")
+        event.args.each do |arg|
+          f.puts("    pub #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}")
+        end
+        f.puts("}")
+        f.puts("")
+        f.puts("impl super::super::super::event::Event for #{camel_case(event.name)} {")
+        f.puts(event.encode)
+        f.puts("}")
+      end
+    end
+  end
+
+  protocol.interfaces.each do |interface|
+    FileUtils.mkdir_p("../reflex/src/protocol/#{protocol.name}/#{interface.name}")
+    open("../reflex/src/protocol/#{protocol.name}/#{interface.name}/lib.rs", "wb") do |f|
+      f.puts(render_comment(protocol.copyright.text))
+      f.puts(<<USE)
+#[allow(unused_imports)] use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)] use futures::future::Future;
 #[allow(unused_imports)] use futures::sink::Sink;
 #[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
-EOF
-      if interface.enums
-        f.puts("")
-        f.print("pub mod enums {")
-        interface.enums.each do |enum|
-          f.puts("")
-          f.puts(enum.description.comment(1)) if enum.description
-          f.puts("    pub enum #{camel_case(enum.name)} {")
-          enum.entries.each do |entry|
-            f.puts("        #{camel_case(entry.name)} = #{entry.value}, // #{entry.summary}")
-          end
-          f.puts("    }")
-        end
-        f.puts("}")
-      end
-      if interface.events
-        f.puts("")
-        f.puts("pub mod events {")
-        f.puts("    use byteorder::{ByteOrder, NativeEndian};")
-        interface.events.each do |event|
-          f.puts("")
-          f.puts(event.description.comment(1))
-          f.puts("    pub struct #{camel_case(event.name)} {")
-          f.puts("        pub sender_object_id: u32,")
-          event.args.each do |arg|
-            f.puts("        pub #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}")
-          end
-          f.puts("    }")
-          f.puts("")
-          f.puts("    impl super::super::super::event::Event for #{camel_case(event.name)} {")
-          f.puts(event.encode)
-          f.puts("    }")
-        end
-        f.puts("}")
-      end
-      f.puts("")
-      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+
+#[allow(unused_variables)]
+USE
+      f.puts("pub fn dispatch_request(request: crate::protocol::session::Context<super::#{camel_case(interface.name)}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
+      f.puts(<<INTO)
+
+impl Into<crate::protocol::resource::Resource> for super::#{camel_case(interface.name)} {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::#{camel_case(interface.name)}(self)
+    }
+}
+INTO
+    end
+  end
+
+  next if ARGV[0] != "--overwrite-protocols"
+  
+  protocol.interfaces.each do |interface|
+    open("../reflex/src/protocol/#{protocol.name}/#{interface.name}.rs", "wb") do |f|
+      f.puts(render_comment(protocol.copyright.text))
+      f.puts("")
+      f.puts(<<USE)
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
+
+USE
+      if interface.enums
+        f.puts("pub mod enums;")
+      end
+      if interface.events
+        f.puts("pub mod events;")
+      end
+      f.puts("mod lib;")
+      f.puts("pub use lib::*;")
       f.puts("")
       f.puts(interface.description.comment())
       f.puts("pub struct #{camel_case(interface.name)} {")
@@ -665,26 +701,16 @@ EOF
           f.puts("") if index > 0
           f.puts(request.description.comment(1))
           f.puts("    pub fn #{request.rust_name}(")
-          f.puts("        request: Arc<RwLock<#{camel_case(interface.name)}>>,")
-          f.puts("        session: crate::protocol::session::Session,")
-          f.puts("        sender_object_id: u32,")
+          f.puts("        context: Context<#{camel_case(interface.name)}>,")
           request.args.each do |arg|
             f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end
-          f.puts("    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
-          f.puts("        Box::new(futures::future::ok(session))")
+          f.puts("    ) -> Box<Future<Item = Session, Error = ()> + Send> {")
+          f.puts("        Box::new(ok(context.into()))")
           f.puts("    }")
         end
         f.puts("}")
       end
-      f.puts(<<INTO)
-
-impl Into<crate::protocol::resource::Resource> for #{camel_case(interface.name)} {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::#{camel_case(interface.name)}(Arc::new(RwLock::new(self)))
-    }
-}
-INTO
     end
   end
 end

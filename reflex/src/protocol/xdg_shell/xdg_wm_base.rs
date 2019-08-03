@@ -24,142 +24,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    pub enum Error {
-        Role = 0, // given wl_surface has another role
-        DefunctSurfaces = 1, // xdg_wm_base was destroyed before children
-        NotTheTopmostPopup = 2, // the client tried to map or destroy a non-topmost popup
-        InvalidPopupParent = 3, // the client specified an invalid popup parent surface
-        InvalidSurfaceState = 4, // the client provided an invalid surface state
-        InvalidPositioner = 5, // the client provided an invalid positioner
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // check if the client is alive
-    //
-    // The ping event asks the client if it's still alive. Pass the
-    // serial specified in the event back to the compositor by sending
-    // a "pong" request back with the specified serial. See xdg_wm_base.ping.
-    // 
-    // Compositors can use this to determine if the client is still
-    // alive. It's unspecified what will happen if the client doesn't
-    // respond to the ping request, or in what timeframe. Clients should
-    // try to respond in a reasonable amount of time.
-    // 
-    // A compositor is free to ping in any way it wants, but a client must
-    // always respond to any xdg_wm_base object it created.
-    pub struct Ping {
-        pub sender_object_id: u32,
-        pub serial: u32, // uint: pass this to the pong request
-    }
-
-    impl super::super::super::event::Event for Ping {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.serial);
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return XdgWmBase::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgWmBase::create_positioner(request, session, sender_object_id, id)
-        },
-        2 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgWmBase::get_xdg_surface(request, session, sender_object_id, id, surface)
-        },
-        3 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgWmBase::pong(request, session, sender_object_id, serial)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // create desktop-style surfaces
 //
@@ -178,12 +49,10 @@ impl XdgWmBase {
     // surfaces relative to some parent surface. See the interface description
     // and xdg_surface.get_popup for details.
     pub fn create_positioner(
-        request: Arc<RwLock<XdgWmBase>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgWmBase>,
         id: u32, // new_id: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // destroy xdg_wm_base
@@ -194,11 +63,9 @@ impl XdgWmBase {
     // still alive created by this xdg_wm_base object instance is illegal
     // and will result in a protocol error.
     pub fn destroy(
-        request: Arc<RwLock<XdgWmBase>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgWmBase>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // create a shell surface from a surface
@@ -215,13 +82,11 @@ impl XdgWmBase {
     // See the documentation of xdg_surface for more details about what an
     // xdg_surface is and how it is used.
     pub fn get_xdg_surface(
-        request: Arc<RwLock<XdgWmBase>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgWmBase>,
         id: u32, // new_id: 
         surface: u32, // object: 
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // respond to a ping event
@@ -229,17 +94,9 @@ impl XdgWmBase {
     // A client must respond to a ping event with a pong request or
     // the client may be deemed unresponsive. See xdg_wm_base.ping.
     pub fn pong(
-        request: Arc<RwLock<XdgWmBase>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgWmBase>,
         serial: u32, // uint: serial of the ping event
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for XdgWmBase {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::XdgWmBase(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

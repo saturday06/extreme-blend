@@ -23,177 +23,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // seat capability bitmask
-    //
-    // This is a bitmask of capabilities this seat has; if a member is
-    // set, then it is present on the seat.
-    pub enum Capability {
-        Pointer = 1, // the seat has pointer devices
-        Keyboard = 2, // the seat has one or more keyboards
-        Touch = 4, // the seat has touch devices
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // seat capabilities changed
-    //
-    // This is emitted whenever a seat gains or loses the pointer,
-    // keyboard or touch capabilities.  The argument is a capability
-    // enum containing the complete set of capabilities this seat has.
-    // 
-    // When the pointer capability is added, a client may create a
-    // wl_pointer object using the wl_seat.get_pointer request. This object
-    // will receive pointer events until the capability is removed in the
-    // future.
-    // 
-    // When the pointer capability is removed, a client should destroy the
-    // wl_pointer objects associated with the seat where the capability was
-    // removed, using the wl_pointer.release request. No further pointer
-    // events will be received on these objects.
-    // 
-    // In some compositors, if a seat regains the pointer capability and a
-    // client has a previously obtained wl_pointer object of version 4 or
-    // less, that object may start sending pointer events again. This
-    // behavior is considered a misinterpretation of the intended behavior
-    // and must not be relied upon by the client. wl_pointer objects of
-    // version 5 or later must not send events if created before the most
-    // recent event notifying the client of an added pointer capability.
-    // 
-    // The above behavior also applies to wl_keyboard and wl_touch with the
-    // keyboard and touch capabilities, respectively.
-    pub struct Capabilities {
-        pub sender_object_id: u32,
-        pub capabilities: u32, // uint: capabilities of the seat
-    }
-
-    impl super::super::super::event::Event for Capabilities {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.capabilities);
-            Ok(())
-        }
-    }
-
-    // unique identifier for this seat
-    //
-    // In a multiseat configuration this can be used by the client to help
-    // identify which physical devices the seat represents. Based on
-    // the seat configuration used by the compositor.
-    pub struct Name {
-        pub sender_object_id: u32,
-        pub name: String, // string: seat identifier
-    }
-
-    impl super::super::super::event::Event for Name {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + (4 + (self.name.len() + 1 + 3) / 4 * 4);
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            
-            NativeEndian::write_u32(&mut dst[i + 8..], self.name.len() as u32);
-            let mut aligned_name = self.name.clone();
-            aligned_name.push(0u8.into());
-            while aligned_name.len() % 4 != 0 {
-                aligned_name.push(0u8.into());
-            }
-            dst[(i + 8 + 4)..(i + 8 + 4 + aligned_name.len())].copy_from_slice(aligned_name.as_bytes());
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSeat::get_pointer(request, session, sender_object_id, id)
-        },
-        1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSeat::get_keyboard(request, session, sender_object_id, id)
-        },
-        2 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSeat::get_touch(request, session, sender_object_id, id)
-        },
-        3 => {
-            return WlSeat::release(request, session, sender_object_id, )
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // group of input devices
 //
@@ -215,12 +51,10 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the keyboard capability.
     pub fn get_keyboard(
-        request: Arc<RwLock<WlSeat>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSeat>,
         id: u32, // new_id: seat keyboard
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // return pointer object
@@ -233,12 +67,10 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the pointer capability.
     pub fn get_pointer(
-        request: Arc<RwLock<WlSeat>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSeat>,
         id: u32, // new_id: seat pointer
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // return touch object
@@ -251,12 +83,10 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the touch capability.
     pub fn get_touch(
-        request: Arc<RwLock<WlSeat>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSeat>,
         id: u32, // new_id: seat touch interface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // release the seat object
@@ -264,16 +94,8 @@ impl WlSeat {
     // Using this request a client can tell the server that it is not going to
     // use the seat object anymore.
     pub fn release(
-        request: Arc<RwLock<WlSeat>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlSeat {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlSeat(Arc::new(RwLock::new(self)))
+        context: Context<WlSeat>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

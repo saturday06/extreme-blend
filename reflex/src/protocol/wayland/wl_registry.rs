@@ -23,133 +23,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // announce global object
-    //
-    // Notify the client of global objects.
-    // 
-    // The event notifies the client that a global object with
-    // the given name is now available, and it implements the
-    // given version of the given interface.
-    pub struct Global {
-        pub sender_object_id: u32,
-        pub name: u32, // uint: numeric name of the global object
-        pub interface: String, // string: interface implemented by the object
-        pub version: u32, // uint: interface version
-    }
-
-    impl super::super::super::event::Event for Global {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4 + (4 + (self.interface.len() + 1 + 3) / 4 * 4) + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.name);
-            
-            NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.interface.len() as u32);
-            let mut aligned_interface = self.interface.clone();
-            aligned_interface.push(0u8.into());
-            while aligned_interface.len() % 4 != 0 {
-                aligned_interface.push(0u8.into());
-            }
-            dst[(i + 8 + 4 + 4)..(i + 8 + 4 + 4 + aligned_interface.len())].copy_from_slice(aligned_interface.as_bytes());
-
-            NativeEndian::write_u32(&mut dst[i + 8 + 4 + (4 + (self.interface.len() + 1 + 3) / 4 * 4)..], self.version);
-            Ok(())
-        }
-    }
-
-    // announce removal of global object
-    //
-    // Notify the client of removed global objects.
-    // 
-    // This event notifies the client that the global identified
-    // by name is no longer available.  If the client bound to
-    // the global using the bind request, the client should now
-    // destroy that object.
-    // 
-    // The object remains valid and requests to the object will be
-    // ignored until the client destroys it, to avoid races between
-    // the global going away and a client sending a request to it.
-    pub struct GlobalRemove {
-        pub sender_object_id: u32,
-        pub name: u32, // uint: numeric name of the global object
-    }
-
-    impl super::super::super::event::Event for GlobalRemove {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.name);
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlRegistry>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlRegistry::bind(request, session, sender_object_id, name, id)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // global registry object
 //
@@ -182,18 +61,10 @@ impl WlRegistry {
     // Binds a new, client-created object to the server using the
     // specified name as the identifier.
     pub fn bind(
-        request: Arc<RwLock<WlRegistry>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlRegistry>,
         name: u32, // uint: unique numeric name of the object
         id: u32, // new_id: bounded object
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlRegistry {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlRegistry(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

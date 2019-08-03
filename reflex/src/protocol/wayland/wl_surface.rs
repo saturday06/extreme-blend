@@ -23,361 +23,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // wl_surface error values
-    //
-    // These errors can be emitted in response to wl_surface requests.
-    pub enum Error {
-        InvalidScale = 0, // buffer scale value is invalid
-        InvalidTransform = 1, // buffer transform value is invalid
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // surface enters an output
-    //
-    // This is emitted whenever a surface's creation, movement, or resizing
-    // results in some part of it being within the scanout region of an
-    // output.
-    // 
-    // Note that a surface may be overlapping with zero or more outputs.
-    pub struct Enter {
-        pub sender_object_id: u32,
-        pub output: u32, // object: output entered by the surface
-    }
-
-    impl super::super::super::event::Event for Enter {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.output);
-            Ok(())
-        }
-    }
-
-    // surface leaves an output
-    //
-    // This is emitted whenever a surface's creation, movement, or resizing
-    // results in it no longer having any part of it within the scanout region
-    // of an output.
-    pub struct Leave {
-        pub sender_object_id: u32,
-        pub output: u32, // object: output left by the surface
-    }
-
-    impl super::super::super::event::Event for Leave {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.output);
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return WlSurface::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let buffer = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::attach(request, session, sender_object_id, buffer, x, y)
-        },
-        2 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::damage(request, session, sender_object_id, x, y, width, height)
-        },
-        3 => {
-            let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::frame(request, session, sender_object_id, callback)
-        },
-        4 => {
-            let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::set_opaque_region(request, session, sender_object_id, region)
-        },
-        5 => {
-            let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::set_input_region(request, session, sender_object_id, region)
-        },
-        6 => {
-            return WlSurface::commit(request, session, sender_object_id, )
-        },
-        7 => {
-            let transform = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::set_buffer_transform(request, session, sender_object_id, transform)
-        },
-        8 => {
-            let scale = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::set_buffer_scale(request, session, sender_object_id, scale)
-        },
-        9 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlSurface::damage_buffer(request, session, sender_object_id, x, y, width, height)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // an onscreen surface
 //
@@ -466,14 +118,12 @@ impl WlSurface {
     // If wl_surface.attach is sent with a NULL wl_buffer, the
     // following wl_surface.commit will remove the surface content.
     pub fn attach(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         buffer: u32, // object: buffer of surface contents
         x: i32, // int: surface-local x coordinate
         y: i32, // int: surface-local y coordinate
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // commit pending surface state
@@ -496,11 +146,9 @@ impl WlSurface {
     // 
     // Other interfaces may add further double-buffered surface state.
     pub fn commit(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<WlSurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // mark part of the surface damaged
@@ -527,15 +175,13 @@ impl WlSurface {
     // which uses buffer coordinates instead of surface coordinates,
     // and is probably the preferred and intuitive way of doing this.
     pub fn damage(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         x: i32, // int: surface-local x coordinate
         y: i32, // int: surface-local y coordinate
         width: i32, // int: width of damage rectangle
         height: i32, // int: height of damage rectangle
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // mark part of the surface damaged using buffer coordinates
@@ -573,26 +219,22 @@ impl WlSurface {
     // two requests separately and only transform from one to the other
     // after receiving the wl_surface.commit.
     pub fn damage_buffer(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         x: i32, // int: buffer-local x coordinate
         y: i32, // int: buffer-local y coordinate
         width: i32, // int: width of damage rectangle
         height: i32, // int: height of damage rectangle
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // delete surface
     //
     // Deletes the surface and invalidates its object ID.
     pub fn destroy(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<WlSurface>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // request a frame throttling hint
@@ -630,12 +272,10 @@ impl WlSurface {
     // The callback_data passed in the callback is the current time, in
     // milliseconds, with an undefined base.
     pub fn frame(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         callback: u32, // new_id: callback object for the frame request
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // sets the buffer scaling factor
@@ -664,12 +304,10 @@ impl WlSurface {
     // If scale is not positive the invalid_scale protocol error is
     // raised.
     pub fn set_buffer_scale(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         scale: i32, // int: positive scale for interpreting buffer contents
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // sets the buffer transformation
@@ -704,12 +342,10 @@ impl WlSurface {
     // wl_output.transform enum the invalid_transform protocol error
     // is raised.
     pub fn set_buffer_transform(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         transform: i32, // int: transform for interpreting buffer contents
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set input region
@@ -737,12 +373,10 @@ impl WlSurface {
     // immediately. A NULL wl_region causes the input region to be set
     // to infinite.
     pub fn set_input_region(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         region: u32, // object: input region of the surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set opaque region
@@ -772,17 +406,9 @@ impl WlSurface {
     // destroyed immediately. A NULL wl_region causes the pending opaque
     // region to be set to empty.
     pub fn set_opaque_region(
-        request: Arc<RwLock<WlSurface>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlSurface>,
         region: u32, // object: opaque region of the surface
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlSurface {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlSurface(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

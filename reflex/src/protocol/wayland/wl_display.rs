@@ -23,145 +23,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    // global error values
-    //
-    // These errors are global and can be emitted in response to any
-    // server request.
-    pub enum Error {
-        InvalidObject = 0, // server couldn't find object
-        InvalidMethod = 1, // method doesn't exist on the specified interface
-        NoMemory = 2, // server is out of memory
-    }
-}
-
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // acknowledge object ID deletion
-    //
-    // This event is used internally by the object ID management
-    // logic.  When a client deletes an object, the server will send
-    // this event to acknowledge that it has seen the delete request.
-    // When the client receives this event, it will know that it can
-    // safely reuse the object ID.
-    pub struct DeleteId {
-        pub sender_object_id: u32,
-        pub id: u32, // uint: deleted object ID
-    }
-
-    impl super::super::super::event::Event for DeleteId {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.id);
-            Ok(())
-        }
-    }
-
-    // fatal error event
-    //
-    // The error event is sent out when a fatal (non-recoverable)
-    // error has occurred.  The object_id argument is the object
-    // where the error occurred, most often in response to a request
-    // to that object.  The code identifies the error and is defined
-    // by the object interface.  As such, each interface defines its
-    // own set of error codes.  The message is a brief description
-    // of the error, for (debugging) convenience.
-    pub struct Error {
-        pub sender_object_id: u32,
-        pub object_id: u32, // object: object where the error occurred
-        pub code: u32, // uint: error code
-        pub message: String, // string: error description
-    }
-
-    impl super::super::super::event::Event for Error {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4 + 4 + (4 + (self.message.len() + 1 + 3) / 4 * 4);
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
-            NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.code);
-            
-            NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.message.len() as u32);
-            let mut aligned_message = self.message.clone();
-            aligned_message.push(0u8.into());
-            while aligned_message.len() % 4 != 0 {
-                aligned_message.push(0u8.into());
-            }
-            dst[(i + 8 + 4 + 4 + 4)..(i + 8 + 4 + 4 + 4 + aligned_message.len())].copy_from_slice(aligned_message.as_bytes());
-
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlDisplay::sync(request, session, sender_object_id, callback)
-        },
-        1 => {
-            let registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return WlDisplay::get_registry(request, session, sender_object_id, registry)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // core global object
 //
@@ -183,12 +51,10 @@ impl WlDisplay {
     // Therefore, clients should invoke get_registry as infrequently as
     // possible to avoid wasting memory.
     pub fn get_registry(
-        request: Arc<RwLock<WlDisplay>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlDisplay>,
         registry: u32, // new_id: global registry object
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // asynchronous roundtrip
@@ -205,17 +71,9 @@ impl WlDisplay {
     // 
     // The callback_data passed in the callback is the event serial.
     pub fn sync(
-        request: Arc<RwLock<WlDisplay>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<WlDisplay>,
         callback: u32, // new_id: callback object for the sync request
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for WlDisplay {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlDisplay(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }

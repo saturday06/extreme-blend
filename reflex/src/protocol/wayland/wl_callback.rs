@@ -23,45 +23,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod events {
-    use byteorder::{ByteOrder, NativeEndian};
-
-    // done event
-    //
-    // Notify the client when the related request is done.
-    pub struct Done {
-        pub sender_object_id: u32,
-        pub callback_data: u32, // uint: request-specific data for the callback
-    }
-
-    impl super::super::super::event::Event for Done {
-        fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-            let total_len = 8 + 4;
-            if total_len > 0xffff {
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-            }
-
-            let i = dst.len();
-            dst.resize(i + total_len, 0);
-
-            NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-            NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-
-            NativeEndian::write_u32(&mut dst[i + 8..], self.callback_data);
-            Ok(())
-        }
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<WlCallback>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    Box::new(futures::future::ok(session))
-}
+pub mod events;
+mod lib;
+pub use lib::*;
 
 // callback object
 //
@@ -70,9 +37,3 @@ pub fn dispatch_request(request: Arc<RwLock<WlCallback>>, session: crate::protoc
 pub struct WlCallback {
 }
 
-
-impl Into<crate::protocol::resource::Resource> for WlCallback {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::WlCallback(Arc::new(RwLock::new(self)))
-    }
-}

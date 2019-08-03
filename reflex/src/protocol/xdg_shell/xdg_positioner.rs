@@ -24,258 +24,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)] use futures::future::Future;
-#[allow(unused_imports)] use futures::sink::Sink;
-#[allow(unused_imports)] use std::io::{Cursor, Read};
-#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+use crate::protocol::session::{Context, Session};
+use futures::future::{Future, ok};
 
-pub mod enums {
-    pub enum Anchor {
-        None = 0, // 
-        Top = 1, // 
-        Bottom = 2, // 
-        Left = 3, // 
-        Right = 4, // 
-        TopLeft = 5, // 
-        BottomLeft = 6, // 
-        TopRight = 7, // 
-        BottomRight = 8, // 
-    }
-
-    // constraint adjustments
-    //
-    // The constraint adjustment value define ways the compositor will adjust
-    // the position of the surface, if the unadjusted position would result
-    // in the surface being partly constrained.
-    // 
-    // Whether a surface is considered 'constrained' is left to the compositor
-    // to determine. For example, the surface may be partly outside the
-    // compositor's defined 'work area', thus necessitating the child surface's
-    // position be adjusted until it is entirely inside the work area.
-    // 
-    // The adjustments can be combined, according to a defined precedence: 1)
-    // Flip, 2) Slide, 3) Resize.
-    pub enum ConstraintAdjustment {
-        None = 0, // 
-        SlideX = 1, // 
-        SlideY = 2, // 
-        FlipX = 4, // 
-        FlipY = 8, // 
-        ResizeX = 16, // 
-        ResizeY = 32, // 
-    }
-
-    pub enum Error {
-        InvalidInput = 0, // invalid input provided
-    }
-
-    pub enum Gravity {
-        None = 0, // 
-        Top = 1, // 
-        Bottom = 2, // 
-        Left = 3, // 
-        Right = 4, // 
-        TopLeft = 5, // 
-        BottomLeft = 6, // 
-        TopRight = 7, // 
-        BottomRight = 8, // 
-    }
-}
-
-pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let mut cursor = Cursor::new(&args);
-    match opcode {
-        0 => {
-            return XdgPositioner::destroy(request, session, sender_object_id, )
-        },
-        1 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_size(request, session, sender_object_id, width, height)
-        },
-        2 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_anchor_rect(request, session, sender_object_id, x, y, width, height)
-        },
-        3 => {
-            let anchor = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_anchor(request, session, sender_object_id, anchor)
-        },
-        4 => {
-            let gravity = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_gravity(request, session, sender_object_id, gravity)
-        },
-        5 => {
-            let constraint_adjustment = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_constraint_adjustment(request, session, sender_object_id, constraint_adjustment)
-        },
-        6 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                let tx = session.tx.clone();
-                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "@{} opcode={} args={:?} not found",
-                        sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| session));
-
-            };
-            return XdgPositioner::set_offset(request, session, sender_object_id, x, y)
-        },
-        _ => {},
-    };
-    Box::new(futures::future::ok(session))
-}
+pub mod enums;
+mod lib;
+pub use lib::*;
 
 // child surface positioner
 //
@@ -306,11 +60,9 @@ impl XdgPositioner {
     //
     // Notify the compositor that the xdg_positioner will no longer be used.
     pub fn destroy(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+        context: Context<XdgPositioner>,
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set anchor rectangle anchor
@@ -322,12 +74,10 @@ impl XdgPositioner {
     // otherwise, the derived anchor point will be centered on the specified
     // edge, or in the center of the anchor rectangle if no edge is specified.
     pub fn set_anchor(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         anchor: u32, // uint: anchor
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the anchor rectangle within the parent surface
@@ -343,15 +93,13 @@ impl XdgPositioner {
     // 
     // If a negative size is set the invalid_input error is raised.
     pub fn set_anchor_rect(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         x: i32, // int: x position of anchor rectangle
         y: i32, // int: y position of anchor rectangle
         width: i32, // int: width of anchor rectangle
         height: i32, // int: height of anchor rectangle
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the adjustment to be done when constrained
@@ -370,12 +118,10 @@ impl XdgPositioner {
     // 
     // The default adjustment is none.
     pub fn set_constraint_adjustment(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         constraint_adjustment: u32, // uint: bit mask of constraint adjustments
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set child surface gravity
@@ -387,12 +133,10 @@ impl XdgPositioner {
     // surface will be centered over the anchor point on any axis that had no
     // gravity specified.
     pub fn set_gravity(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         gravity: u32, // uint: gravity direction
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set surface position offset
@@ -409,13 +153,11 @@ impl XdgPositioner {
     // element, while aligning the user interface element of the parent surface
     // with some user interface element placed somewhere in the popup surface.
     pub fn set_offset(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         x: i32, // int: surface position x offset
         y: i32, // int: surface position y offset
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 
     // set the size of the to-be positioned rectangle
@@ -426,18 +168,10 @@ impl XdgPositioner {
     // 
     // If a zero or negative size is set the invalid_input error is raised.
     pub fn set_size(
-        request: Arc<RwLock<XdgPositioner>>,
-        session: crate::protocol::session::Session,
-        sender_object_id: u32,
+        context: Context<XdgPositioner>,
         width: i32, // int: width of positioned rectangle
         height: i32, // int: height of positioned rectangle
-    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(session))
-    }
-}
-
-impl Into<crate::protocol::resource::Resource> for XdgPositioner {
-    fn into(self) -> crate::protocol::resource::Resource {
-        crate::protocol::resource::Resource::XdgPositioner(Arc::new(RwLock::new(self)))
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(ok(context.into()))
     }
 }
