@@ -4,18 +4,18 @@
 // Copyright © 2010-2013 Intel Corporation
 // Copyright © 2015-2017 Samsung Electronics Co., Ltd
 // Copyright © 2015-2017 Red Hat Inc.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
 // to deal in the Software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the next
 // paragraph) shall be included in all copies or substantial portions of the
 // Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -25,7 +25,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok};
+use futures::future::{err, ok, Future};
 
 pub mod enums;
 mod lib;
@@ -40,20 +40,19 @@ pub use lib::*;
 // an axis, or flipping around a rectangle. These positioner-created rules are
 // constrained by the requirement that a child surface must intersect with or
 // be at least partially adjacent to its parent surface.
-// 
+//
 // See the various requests for details about possible rules.
-// 
+//
 // At the time of the request, the compositor makes a copy of the rules
 // specified by the xdg_positioner. Thus, after the request is complete the
 // xdg_positioner object can be destroyed or reused; further changes to the
 // object will have no effect on previous usages.
-// 
+//
 // For an xdg_positioner object to be considered complete, it must have a
 // non-zero size set by set_size, and a non-zero anchor rectangle set by
 // set_anchor_rect. Passing an incomplete xdg_positioner object when
 // positioning a surface raises an error.
-pub struct XdgPositioner {
-}
+pub struct XdgPositioner {}
 
 impl XdgPositioner {
     // destroy the xdg_positioner object
@@ -62,7 +61,7 @@ impl XdgPositioner {
     pub fn destroy(
         context: Context<XdgPositioner>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set anchor rectangle anchor
@@ -77,7 +76,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         anchor: u32, // uint: anchor
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set the anchor rectangle within the parent surface
@@ -86,20 +85,20 @@ impl XdgPositioner {
     // surface will be placed relative to. The rectangle is relative to the
     // window geometry as defined by xdg_surface.set_window_geometry of the
     // parent surface.
-    // 
+    //
     // When the xdg_positioner object is used to position a child surface, the
     // anchor rectangle may not extend outside the window geometry of the
     // positioned child's parent surface.
-    // 
+    //
     // If a negative size is set the invalid_input error is raised.
     pub fn set_anchor_rect(
         context: Context<XdgPositioner>,
-        x: i32, // int: x position of anchor rectangle
-        y: i32, // int: y position of anchor rectangle
-        width: i32, // int: width of anchor rectangle
+        x: i32,      // int: x position of anchor rectangle
+        y: i32,      // int: y position of anchor rectangle
+        width: i32,  // int: width of anchor rectangle
         height: i32, // int: height of anchor rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set the adjustment to be done when constrained
@@ -109,19 +108,19 @@ impl XdgPositioner {
     // partially outside positioning boundaries set by the compositor. The
     // adjustment is set by constructing a bitmask describing the adjustment to
     // be made when the surface is constrained on that axis.
-    // 
+    //
     // If no bit for one axis is set, the compositor will assume that the child
     // surface should not change its position on that axis when constrained.
-    // 
+    //
     // If more than one bit for one axis is set, the order of how adjustments
     // are applied is specified in the corresponding adjustment descriptions.
-    // 
+    //
     // The default adjustment is none.
     pub fn set_constraint_adjustment(
         context: Context<XdgPositioner>,
         constraint_adjustment: u32, // uint: bit mask of constraint adjustments
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set child surface gravity
@@ -136,7 +135,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         gravity: u32, // uint: gravity direction
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set surface position offset
@@ -148,7 +147,7 @@ impl XdgPositioner {
     // surface position will be (x + ox, y + oy). The offset position of the
     // surface is the one used for constraint testing. See
     // set_constraint_adjustment.
-    // 
+    //
     // An example use case is placing a popup menu on top of a user interface
     // element, while aligning the user interface element of the parent surface
     // with some user interface element placed somewhere in the popup surface.
@@ -157,7 +156,7 @@ impl XdgPositioner {
         x: i32, // int: surface position x offset
         y: i32, // int: surface position y offset
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // set the size of the to-be positioned rectangle
@@ -165,13 +164,13 @@ impl XdgPositioner {
     // Set the size of the surface that is to be positioned with the positioner
     // object. The size is in surface-local coordinates and corresponds to the
     // window geometry. See xdg_surface.set_window_geometry.
-    // 
+    //
     // If a zero or negative size is set the invalid_input error is raised.
     pub fn set_size(
         context: Context<XdgPositioner>,
-        width: i32, // int: width of positioned rectangle
+        width: i32,  // int: width of positioned rectangle
         height: i32, // int: height of positioned rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 }

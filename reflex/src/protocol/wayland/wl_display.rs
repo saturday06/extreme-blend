@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok};
+use futures::future::{err, ok, Future};
 
 pub mod enums;
 pub mod events;
@@ -35,8 +35,7 @@ pub use lib::*;
 //
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
-pub struct WlDisplay {
-}
+pub struct WlDisplay {}
 
 impl WlDisplay {
     // get global registry object
@@ -44,7 +43,7 @@ impl WlDisplay {
     // This request creates a registry object that allows the client
     // to list and bind the global objects available from the
     // compositor.
-    // 
+    //
     // It should be noted that the server side resources consumed in
     // response to a get_registry request can only be released when the
     // client disconnects, not when the client side proxy is destroyed.
@@ -54,7 +53,7 @@ impl WlDisplay {
         context: Context<WlDisplay>,
         registry: u32, // new_id: global registry object
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 
     // asynchronous roundtrip
@@ -64,16 +63,16 @@ impl WlDisplay {
     // handled in-order and events are delivered in-order, this can
     // be used as a barrier to ensure all previous requests and the
     // resulting events have been handled.
-    // 
+    //
     // The object returned by this request will be destroyed by the
     // compositor after the callback is fired and as such the client must not
     // attempt to use it after that point.
-    // 
+    //
     // The callback_data passed in the callback is the event serial.
     pub fn sync(
         context: Context<WlDisplay>,
         callback: u32, // new_id: callback object for the sync request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+        Box::new(err(()))
     }
 }

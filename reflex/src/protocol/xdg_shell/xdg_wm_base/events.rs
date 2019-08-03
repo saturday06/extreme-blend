@@ -4,18 +4,18 @@
 // Copyright © 2010-2013 Intel Corporation
 // Copyright © 2015-2017 Samsung Electronics Co., Ltd
 // Copyright © 2015-2017 Red Hat Inc.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
 // to deal in the Software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the next
 // paragraph) shall be included in all copies or substantial portions of the
 // Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -31,12 +31,12 @@ use byteorder::{ByteOrder, NativeEndian};
 // The ping event asks the client if it's still alive. Pass the
 // serial specified in the event back to the compositor by sending
 // a "pong" request back with the specified serial. See xdg_wm_base.ping.
-// 
+//
 // Compositors can use this to determine if the client is still
 // alive. It's unspecified what will happen if the client doesn't
 // respond to the ping request, or in what timeframe. Clients should
 // try to respond in a reasonable amount of time.
-// 
+//
 // A compositor is free to ping in any way it wants, but a client must
 // always respond to any xdg_wm_base object it created.
 pub struct Ping {

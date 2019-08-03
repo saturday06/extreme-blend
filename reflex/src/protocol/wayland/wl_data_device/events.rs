@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -61,13 +61,13 @@ impl super::super::super::event::Event for DataOffer {
 //
 // The event is sent when a drag-and-drop operation is ended
 // because the implicit grab is removed.
-// 
+//
 // The drag-and-drop destination is expected to honor the last action
 // received through wl_data_offer.action, if the resulting action is
 // "copy" or "move", the destination can still perform
 // wl_data_offer.receive requests, and is expected to end all
 // transfers with a wl_data_offer.finish request.
-// 
+//
 // If the resulting action is "ask", the action will not be considered
 // final. The drag-and-drop destination is expected to perform one last
 // wl_data_offer.set_actions request, or wl_data_offer.destroy in order
@@ -101,11 +101,11 @@ impl super::super::super::event::Event for Drop {
 // coordinates.
 pub struct Enter {
     pub sender_object_id: u32,
-    pub serial: u32, // uint: serial number of the enter event
+    pub serial: u32,  // uint: serial number of the enter event
     pub surface: u32, // object: client surface entered
-    pub x: u32, // fixed: surface-local x coordinate
-    pub y: u32, // fixed: surface-local y coordinate
-    pub id: u32, // object: source data_offer object
+    pub x: u32,       // fixed: surface-local x coordinate
+    pub y: u32,       // fixed: surface-local y coordinate
+    pub id: u32,      // object: source data_offer object
 }
 
 impl super::super::super::event::Event for Enter {
@@ -165,8 +165,8 @@ impl super::super::super::event::Event for Leave {
 pub struct Motion {
     pub sender_object_id: u32,
     pub time: u32, // uint: timestamp with millisecond granularity
-    pub x: u32, // fixed: surface-local x coordinate
-    pub y: u32, // fixed: surface-local y coordinate
+    pub x: u32,    // fixed: surface-local x coordinate
+    pub y: u32,    // fixed: surface-local y coordinate
 }
 
 impl super::super::super::event::Event for Motion {

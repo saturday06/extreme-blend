@@ -64,7 +64,7 @@ class Interface
         @description = Description.new(child)
       when "request"
         @requests ||= []
-        @requests << Request.new(child, @requests.size)
+        @requests << Request.new(child, @requests.size, @name)
         @requests.sort_by!(&:name)
       when "event"
         @events ||= []
@@ -89,12 +89,24 @@ class Interface
     match opcode {
 EOF
       @requests.sort_by(&:index).each do |request|
-        result += "        #{request.index} => {\n"
-        result += request.args.map(&:deserialize).join("")
-        result += "            return super::#{camel_case(@name)}::#{request.rust_name}(request"
-        result += request.args.map { |arg| ", " + arg.name }.join
-        result += ")\n"
-        result += "        },\n"
+        result +=<<DESERIALIZE
+        #{request.index} => {
+#{request.args.map(&:deserialize).join("")}
+            if Ok(cursor.position()) != args.len().try_into() {
+                let tx = request.tx.clone();
+                return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: request.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "#{@name}@{} opcode={} args={:?} not found",
+                        request.sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| request.into()));
+            }
+            return super::#{camel_case(@name)}::#{request.rust_name}(request#{request.args.map { |arg| ", " + arg.name }.join});
+        },
+DESERIALIZE
       end
       result +=<<EOF
         _ => {},
@@ -109,7 +121,7 @@ end
 class Request
   attr_reader :name, :description, :args, :rust_name, :index
 
-  def initialize(elem, index)
+  def initialize(elem, index, interface_name)
     @name = elem.attributes["name"].strip
     @index = index
     @rust_name = @name
@@ -122,7 +134,7 @@ class Request
         raise "Oops! multiple description" if @description
         @description = Description.new(child)
       when "arg"
-        arg = Arg.create(child, encode_offset)
+        arg = Arg.create(child, encode_offset, interface_name)
         @args << arg
         encode_offset += " + " + arg.encode_len
       else
@@ -177,52 +189,53 @@ class Enum
 end
 
 class Arg
-  attr_reader :name, :summary, :encode_len, :type, :rust_type, :dynamic_len, :encode_offset
+  attr_reader :name, :summary, :encode_len, :type, :rust_type, :dynamic_len, :encode_offset, :interface_name
 
-  def self.create(elem, encode_offset)
+  def self.create(elem, encode_offset, interface_name)
     name = elem.attributes["name"]
     summary = elem.attributes["summary"]
     type = elem.attributes["type"]
     case type
     when "uint"
-      UintArg.new(name, summary, type, encode_offset)
+      UintArg.new(name, summary, type, encode_offset, interface_name)
     when "int"
-      IntArg.new(name, summary, type, encode_offset)
+      IntArg.new(name, summary, type, encode_offset, interface_name)
     when "object"
-      ObjectArg.new(name, summary, type, encode_offset)
+      ObjectArg.new(name, summary, type, encode_offset, interface_name)
     when "string"
-      StringArg.new(name, summary, type, encode_offset)
+      StringArg.new(name, summary, type, encode_offset, interface_name)
     when "fd"
-      FdArg.new(name, summary, type, encode_offset)
+      FdArg.new(name, summary, type, encode_offset, interface_name)
     when "new_id"
-      NewIdArg.new(name, summary, type, encode_offset)
+      NewIdArg.new(name, summary, type, encode_offset, interface_name)
     when "fixed"
-      FixedArg.new(name, summary, type, encode_offset)
+      FixedArg.new(name, summary, type, encode_offset, interface_name)
     when "array"
-      ArrayArg.new(name, summary, type, encode_offset)
+      ArrayArg.new(name, summary, type, encode_offset, interface_name)
     else
       raise "unhandled type: #{@type}"
     end
   end
 
   def deserialize_return_error
-    <<EOF
+    ret =<<EOF
                 let tx = request.tx.clone();
                 return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: request.sender_object_id,
                     code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
                     message: format!(
-                        "@{} opcode={} args={:?} not found",
+                        "#{@interface_name}@{} opcode={} args={:?} not found",
                         request.sender_object_id, opcode, args
                     ),
                 })).map_err(|_| ()).map(|_tx| request.into()));
 EOF
+    ret.rstrip
   end
 end
 
 class UintArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -230,6 +243,7 @@ class UintArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -248,7 +262,7 @@ DESERIAliZE
 end
 
 class IntArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -256,6 +270,7 @@ class IntArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "i32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -274,7 +289,7 @@ DESERIAliZE
 end
 
 class ObjectArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -282,6 +297,7 @@ class ObjectArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -300,7 +316,7 @@ DESERIAliZE
 end
 
 class StringArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "(4 + (self.#{name}.len() + 1 + 3) / 4 * 4)"
@@ -308,6 +324,7 @@ class StringArg < Arg
     @dynamic_len = true
     @type = type
     @rust_type = "String"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -350,7 +367,7 @@ DESERIAliZE
 end
 
 class FdArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -358,6 +375,7 @@ class FdArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "i32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -376,7 +394,7 @@ DESERIAliZE
 end
 
 class NewIdArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -384,6 +402,7 @@ class NewIdArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -402,7 +421,7 @@ DESERIAliZE
 end
 
 class FixedArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "4"
@@ -410,6 +429,7 @@ class FixedArg < Arg
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -428,7 +448,7 @@ DESERIAliZE
 end
 
 class ArrayArg < Arg
-  def initialize(name, summary, type, encode_offset)
+  def initialize(name, summary, type, encode_offset, interface_name)
     @name = name
     @summary = summary
     @encode_len = "(4 + (self.#{name}.len() + 1 + 3) / 4 * 4)"
@@ -436,6 +456,7 @@ class ArrayArg < Arg
     @dynamic_len = true
     @type = type
     @rust_type = "Vec<u8>"
+    @interface_name = interface_name
   end
 
   def serialize
@@ -485,7 +506,7 @@ class Event
         raise "Oops! multiple description" if @description
         @description = Description.new(child)
       when "arg"
-        arg = Arg.create(child, encode_offset)
+        arg = Arg.create(child, encode_offset, @name)
         @args << arg
         encode_offset += " + " + arg.encode_len
       else
@@ -653,6 +674,7 @@ protocols.each do |protocol|
 #[allow(unused_imports)] use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)] use futures::future::Future;
 #[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::convert::TryInto;
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 
 #[allow(unused_variables)]
@@ -679,7 +701,7 @@ INTO
       f.puts("")
       f.puts(<<USE)
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok};
+use futures::future::{Future, ok, err};
 
 USE
       if interface.enums
@@ -706,7 +728,7 @@ USE
             f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end
           f.puts("    ) -> Box<Future<Item = Session, Error = ()> + Send> {")
-          f.puts("        Box::new(ok(context.into()))")
+          f.puts("        Box::new(err(()))")
           f.puts("    }")
         end
         f.puts("}")

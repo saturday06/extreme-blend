@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -30,32 +30,32 @@ use byteorder::{ByteOrder, NativeEndian};
 // This event indicates the action selected by the compositor after
 // matching the source/destination side actions. Only one action (or
 // none) will be offered here.
-// 
+//
 // This event can be emitted multiple times during the drag-and-drop
 // operation in response to destination side action changes through
 // wl_data_offer.set_actions.
-// 
+//
 // This event will no longer be emitted after wl_data_device.drop
 // happened on the drag-and-drop destination, the client must
 // honor the last action received, or the last preferred one set
 // through wl_data_offer.set_actions when handling an "ask" action.
-// 
+//
 // Compositors may also change the selected action on the fly, mainly
 // in response to keyboard modifier changes during the drag-and-drop
 // operation.
-// 
+//
 // The most recent action received is always the valid one. Prior to
 // receiving wl_data_device.drop, the chosen action may change (e.g.
 // due to keyboard modifiers being pressed). At the time of receiving
 // wl_data_device.drop the drag-and-drop destination must honor the
 // last action received.
-// 
+//
 // Action changes may still happen after wl_data_device.drop,
 // especially on "ask" actions, where the drag-and-drop destination
 // may choose another action afterwards. Action changes happening
 // at this stage are always the result of inter-client negotiation, the
 // compositor shall no longer be able to induce a different action.
-// 
+//
 // Upon "ask" actions, it is expected that the drag-and-drop destination
 // may potentially choose a different action and/or mime type,
 // based on wl_data_offer.source_actions and finally chosen by the
@@ -107,14 +107,14 @@ impl super::super::super::event::Event for Offer {
         NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
         NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
 
-        
-            NativeEndian::write_u32(&mut dst[i + 8..], self.mime_type.len() as u32);
-            let mut aligned_mime_type = self.mime_type.clone();
+        NativeEndian::write_u32(&mut dst[i + 8..], self.mime_type.len() as u32);
+        let mut aligned_mime_type = self.mime_type.clone();
+        aligned_mime_type.push(0u8.into());
+        while aligned_mime_type.len() % 4 != 0 {
             aligned_mime_type.push(0u8.into());
-            while aligned_mime_type.len() % 4 != 0 {
-                aligned_mime_type.push(0u8.into());
-            }
-            dst[(i + 8 + 4)..(i + 8 + 4 + aligned_mime_type.len())].copy_from_slice(aligned_mime_type.as_bytes());
+        }
+        dst[(i + 8 + 4)..(i + 8 + 4 + aligned_mime_type.len())]
+            .copy_from_slice(aligned_mime_type.as_bytes());
 
         Ok(())
     }

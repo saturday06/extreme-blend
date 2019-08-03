@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok};
+use futures::future::{err, ok, Future};
 
 pub mod enums;
 pub mod events;
@@ -35,14 +35,11 @@ pub use lib::*;
 //
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
-pub struct WlKeyboard {
-}
+pub struct WlKeyboard {}
 
 impl WlKeyboard {
     // release the keyboard object
-    pub fn release(
-        context: Context<WlKeyboard>,
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(ok(context.into()))
+    pub fn release(context: Context<WlKeyboard>) -> Box<Future<Item = Session, Error = ()> + Send> {
+        Box::new(err(()))
     }
 }
