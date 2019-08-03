@@ -14,6 +14,7 @@ pub struct Session {
     pub wl_shm: WlShm,
     pub xdg_wm_base: XdgWmBase,
     pub tx: Sender<Box<Event + Send>>,
+    pub callback_data: u32,
 }
 
 pub struct Context<T>
@@ -29,6 +30,7 @@ where
     pub wl_shm: WlShm,
     pub xdg_wm_base: XdgWmBase,
     pub tx: Sender<Box<Event + Send>>,
+    pub callback_data: u32,
 }
 
 impl<T> Context<T>
@@ -43,6 +45,7 @@ where
             wl_shm: session.wl_shm,
             xdg_wm_base: session.xdg_wm_base,
             tx: session.tx,
+            callback_data: session.callback_data,
             sender_object_id,
             sender_object,
         }
@@ -63,6 +66,7 @@ where
             wl_shm: self.wl_shm,
             xdg_wm_base: self.xdg_wm_base,
             tx: self.tx,
+            callback_data: self.callback_data,
         }
     }
 }

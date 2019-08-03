@@ -35,7 +35,7 @@ class Protocol
         @copyright = Copyright.new(child)
       when "interface"
         @interfaces ||= []
-        @interfaces << Interface.new(child)
+        @interfaces << Interface.new(child, @name)
         @interfaces.sort_by!(&:name)
       else
         raise "unhandled element: #{child}"
@@ -53,10 +53,24 @@ class Copyright
 end
 
 class Interface
-  attr_reader :name, :description, :requests, :events, :enums
+  attr_reader :name, :description, :requests, :events, :enums, :version, :receiver_type, :protocol_name, :global_singleton, :short_receiver_type
 
-  def initialize(elem)
+  def initialize(elem, protocol_name)
     @name = elem.attributes["name"].strip
+    @protocol_name = protocol_name
+    @version = elem.attributes["version"].strip
+    @global_singleton = [
+      "wl_display",
+      "wl_compositor",
+      "xdg_wm_base",
+    ].include?(@name)
+    if @global_singleton
+      @short_receiver_type = "Arc<RwLock<#{camel_case(@name)}>>"
+      @receiver_type = "Arc<RwLock<crate::protocol::#{@protocol_name}::#{@name}::#{camel_case(@name)}>>"
+    else
+      @short_receiver_type = camel_case(@name)
+      @receiver_type = "crate::protocol::#{@protocol_name}::#{@name}::#{camel_case(@name)}"
+    end
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
       when "description"
@@ -330,13 +344,16 @@ class StringArg < Arg
   def serialize
     <<SERIALIZE
 
-            NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name}.len() as u32);
-            let mut aligned_#{name} = self.#{name}.clone();
-            aligned_#{name}.push(0u8.into());
-            while aligned_#{name}.len() % 4 != 0 {
-                aligned_#{name}.push(0u8.into());
+        NativeEndian::write_u32(&mut dst[#{@encode_offset}..], (self.#{name}.len() + 1) as u32);
+        {
+            let mut aligned = self.#{name}.clone();
+            aligned.push(0u8.into());
+            while aligned.len() % 4 != 0 {
+                aligned.push(0u8.into());
             }
-            dst[(#{@encode_offset} + 4)..(#{@encode_offset} + 4 + aligned_#{name}.len())].copy_from_slice(aligned_#{name}.as_bytes());
+            dst[(#{@encode_offset} + 4)..(#{@encode_offset} + 4 + aligned.len())]
+                .copy_from_slice(aligned.as_bytes());
+        }
 SERIALIZE
   end
 
@@ -462,12 +479,14 @@ class ArrayArg < Arg
   def serialize
     <<SERIALIZE
 
-            NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name}.len() as u32);
+        NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name}.len() as u32);
+        {
             let mut aligned_#{name} = self.#{name}.clone();
             while aligned_#{name}.len() % 4 != 0 {
                 aligned_#{name}.push(0u8);
             }
             dst[(#{@encode_offset} + 4)..(#{@encode_offset} + 4 + aligned_#{name}.len())].copy_from_slice(&aligned_#{name}[..]);
+        }
 SERIALIZE
   end
 
@@ -586,12 +605,13 @@ end
 
 open("../reflex/src/protocol/resource.rs", "wb") do |f|
   f.puts(<<EOF)
+use std::sync::{Arc, RwLock};
 
 pub enum Resource {
 EOF
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
-      f.puts("    #{camel_case(interface.name)}(super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}),")
+      f.puts("    #{camel_case(interface.name)}(#{interface.receiver_type}),")
     end
   end
   f.puts("}")
@@ -676,15 +696,18 @@ protocols.each do |protocol|
 #[allow(unused_imports)] use futures::sink::Sink;
 #[allow(unused_imports)] use std::convert::TryInto;
 #[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
+
+pub const VERSION: u32 = #{interface.version};
 
 #[allow(unused_variables)]
 USE
-      f.puts("pub fn dispatch_request(request: crate::protocol::session::Context<super::#{camel_case(interface.name)}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+      f.puts("pub fn dispatch_request(request: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
       f.puts(<<INTO)
 
-impl Into<crate::protocol::resource::Resource> for super::#{camel_case(interface.name)} {
+impl Into<crate::protocol::resource::Resource> for #{interface.receiver_type} {
     fn into(self) -> crate::protocol::resource::Resource {
         crate::protocol::resource::Resource::#{camel_case(interface.name)}(self)
     }
@@ -723,7 +746,7 @@ USE
           f.puts("") if index > 0
           f.puts(request.description.comment(1))
           f.puts("    pub fn #{request.rust_name}(")
-          f.puts("        context: Context<#{camel_case(interface.name)}>,")
+          f.puts("        context: Context<#{interface.short_receiver_type}>,")
           request.args.each do |arg|
             f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end

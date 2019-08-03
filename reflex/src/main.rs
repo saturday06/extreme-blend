@@ -47,6 +47,7 @@ fn main() {
                 xdg_wm_base: XdgWmBase {},
                 resources: HashMap::new(),
                 tx: tx0,
+                callback_data: 0,
             };
             session0
                 .resources
@@ -139,5 +140,5 @@ fn main() {
         })
         .map_err(|_| ());
     tokio::run(listener);
-    println!("ok");
+    println!("exit");
 }

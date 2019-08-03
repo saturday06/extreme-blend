@@ -4,18 +4,18 @@
 // Copyright © 2010-2013 Intel Corporation
 // Copyright © 2015-2017 Samsung Electronics Co., Ltd
 // Copyright © 2015-2017 Red Hat Inc.
-//
+// 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
 // to deal in the Software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-//
+// 
 // The above copyright notice and this permission notice (including the next
 // paragraph) shall be included in all copies or substantial portions of the
 // Software.
-//
+// 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -31,15 +31,15 @@ use byteorder::{ByteOrder, NativeEndian};
 // This event asks the popup surface to configure itself given the
 // configuration. The configured state should not be applied immediately.
 // See xdg_surface.configure for details.
-//
+// 
 // The x and y arguments represent the position the popup was placed at
 // given the xdg_positioner rule, relative to the upper left corner of the
 // window geometry of the parent surface.
 pub struct Configure {
     pub sender_object_id: u32,
-    pub x: i32,      // int: x position relative to parent surface window geometry
-    pub y: i32,      // int: y position relative to parent surface window geometry
-    pub width: i32,  // int: window geometry width
+    pub x: i32, // int: x position relative to parent surface window geometry
+    pub y: i32, // int: y position relative to parent surface window geometry
+    pub width: i32, // int: window geometry width
     pub height: i32, // int: window geometry height
 }
 

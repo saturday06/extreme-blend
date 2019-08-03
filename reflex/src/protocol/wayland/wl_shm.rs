@@ -31,6 +31,8 @@ pub mod events;
 mod lib;
 pub use lib::*;
 
+pub const GLOBAL_NAME: u32 = 2;
+
 // shared memory support
 //
 // A singleton global object that provides support for shared

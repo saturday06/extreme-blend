@@ -29,6 +29,8 @@ use futures::future::{err, ok, Future};
 mod lib;
 pub use lib::*;
 
+pub const GLOBAL_NAME: u32 = 1;
+
 // the compositor singleton
 //
 // A compositor.  This object is a singleton global.  The

@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 
 pub mod enums;
 pub mod events;
@@ -50,10 +51,41 @@ impl WlDisplay {
     // Therefore, clients should invoke get_registry as infrequently as
     // possible to avoid wasting memory.
     pub fn get_registry(
-        context: Context<WlDisplay>,
+        mut context: Context<WlDisplay>,
         registry: u32, // new_id: global registry object
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        println!("WlDisplay::get_registry({})", registry);
+        context.resources.insert(registry, crate::protocol::wayland::wl_registry::WlRegistry {}.into());
+
+        Box::new(
+            futures::future::ok(context.tx.clone())
+                .and_then(move |tx| {
+                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
+                        sender_object_id: registry,
+                        name: crate::protocol::wayland::wl_compositor::GLOBAL_NAME,
+                        interface: "wl_compositor".to_owned(),
+                        version: crate::protocol::wayland::wl_compositor::VERSION,
+                    }))
+                })
+                .and_then(move |tx| {
+                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
+                        sender_object_id: registry,
+                        name: crate::protocol::wayland::wl_shm::GLOBAL_NAME,
+                        interface: "wl_shm".to_owned(),
+                        version: crate::protocol::wayland::wl_shm::VERSION,
+                    }))
+                })
+                .and_then(move |tx| {
+                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
+                        sender_object_id: registry,
+                        name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_NAME,
+                        interface: "xdg_wm_base".to_owned(),
+                        version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
+                    }))
+                })
+                .map_err(|_| ())
+                .map(|_| context.into()),
+        )
     }
 
     // asynchronous roundtrip
@@ -70,9 +102,19 @@ impl WlDisplay {
     //
     // The callback_data passed in the callback is the event serial.
     pub fn sync(
-        context: Context<WlDisplay>,
+        mut context: Context<WlDisplay>,
         callback: u32, // new_id: callback object for the sync request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        println!("WlDisplay::sync({})", callback);
+        context.callback_data += 1;
+        let tx = context.tx.clone();
+        Box::new(
+            tx.send(Box::new(crate::protocol::wayland::wl_callback::events::Done {
+                sender_object_id: callback,
+                callback_data: context.callback_data,
+            }))
+                .map_err(|_| ())
+                .map(|_| context.into()),
+        )
     }
 }
