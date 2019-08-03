@@ -217,3 +217,9 @@ impl WlRegion {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlRegion {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlRegion(Arc::new(RwLock::new(self)))
+    }
+}

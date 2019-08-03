@@ -967,3 +967,9 @@ impl XdgToplevel {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for XdgToplevel {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::XdgToplevel(Arc::new(RwLock::new(self)))
+    }
+}

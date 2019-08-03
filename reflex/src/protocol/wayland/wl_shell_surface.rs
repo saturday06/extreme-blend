@@ -854,3 +854,9 @@ impl WlShellSurface {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlShellSurface {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlShellSurface(Arc::new(RwLock::new(self)))
+    }
+}

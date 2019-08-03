@@ -163,3 +163,9 @@ impl WlDataDeviceManager {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlDataDeviceManager {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlDataDeviceManager(Arc::new(RwLock::new(self)))
+    }
+}

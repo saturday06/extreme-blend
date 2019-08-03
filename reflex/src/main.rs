@@ -22,9 +22,6 @@ use tokio_uds::{UnixListener, UnixStream};
 
 mod protocol;
 
-//fn handle_stream(stream: UnixStream, runtime: Arc<RwLock<Runtime>>) -> Box<Future<Item = (), Error = std::io::Error> + Send> {
-//}
-
 fn main() {
     let mut runtime = Runtime::new().unwrap();
 
@@ -59,11 +56,10 @@ fn main() {
                 .insert(1, Resource::WlDisplay(Arc::new(RwLock::new(WlDisplay {}))));
 
             let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(reader0
-                .fold(session0, |session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {
+                .fold(session0, |mut session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {
                     let opt_res = session
                         .resources
-                        .get(&req.sender_object_id)
-                        .map(|r| r.clone());
+                        .remove(&req.sender_object_id);
                     if let Some(res) = opt_res {
                         let f: Box<Future<Item = Session, Error = std::io::Error> + Send> = Box::new(
                             protocol::resource::dispatch_request(

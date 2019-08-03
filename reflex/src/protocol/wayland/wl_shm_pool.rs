@@ -221,3 +221,9 @@ impl WlShmPool {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlShmPool {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlShmPool(Arc::new(RwLock::new(self)))
+    }
+}

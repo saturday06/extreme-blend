@@ -408,3 +408,9 @@ impl XdgSurface {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for XdgSurface {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::XdgSurface(Arc::new(RwLock::new(self)))
+    }
+}

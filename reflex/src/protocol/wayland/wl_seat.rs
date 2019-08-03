@@ -271,3 +271,9 @@ impl WlSeat {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlSeat {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlSeat(Arc::new(RwLock::new(self)))
+    }
+}

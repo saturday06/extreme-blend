@@ -252,3 +252,9 @@ impl XdgPopup {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for XdgPopup {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::XdgPopup(Arc::new(RwLock::new(self)))
+    }
+}

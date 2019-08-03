@@ -213,3 +213,9 @@ impl WlDisplay {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlDisplay {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlDisplay(Arc::new(RwLock::new(self)))
+    }
+}

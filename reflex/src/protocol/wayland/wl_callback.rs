@@ -70,3 +70,9 @@ pub fn dispatch_request(request: Arc<RwLock<WlCallback>>, session: crate::protoc
 pub struct WlCallback {
 }
 
+
+impl Into<crate::protocol::resource::Resource> for WlCallback {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlCallback(Arc::new(RwLock::new(self)))
+    }
+}

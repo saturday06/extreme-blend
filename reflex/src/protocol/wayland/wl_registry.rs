@@ -191,3 +191,9 @@ impl WlRegistry {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlRegistry {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlRegistry(Arc::new(RwLock::new(self)))
+    }
+}

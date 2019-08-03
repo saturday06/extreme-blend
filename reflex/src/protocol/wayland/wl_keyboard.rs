@@ -289,3 +289,9 @@ impl WlKeyboard {
         Box::new(futures::future::ok(session))
     }
 }
+
+impl Into<crate::protocol::resource::Resource> for WlKeyboard {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::WlKeyboard(Arc::new(RwLock::new(self)))
+    }
+}

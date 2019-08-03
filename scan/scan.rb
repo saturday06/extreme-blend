@@ -567,8 +567,6 @@ open("../reflex/src/protocol/resource.rs", "wb") do |f|
   f.puts(<<EOF)
 
 use std::sync::{Arc, RwLock};
-use std::rc::Rc;
-use std::cell::RefCell;
 
 #[derive(Clone)]
 pub enum Resource {
@@ -679,6 +677,14 @@ EOF
         end
         f.puts("}")
       end
+      f.puts(<<INTO)
+
+impl Into<crate::protocol::resource::Resource> for #{camel_case(interface.name)} {
+    fn into(self) -> crate::protocol::resource::Resource {
+        crate::protocol::resource::Resource::#{camel_case(interface.name)}(Arc::new(RwLock::new(self)))
+    }
+}
+INTO
     end
   end
 end
