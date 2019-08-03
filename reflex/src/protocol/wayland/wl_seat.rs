@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     // seat capability bitmask
@@ -131,7 +130,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlSeat>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -213,8 +212,8 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the keyboard capability.
     pub fn get_keyboard(
-        request: Arc<RefCell<WlSeat>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSeat>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat keyboard
@@ -232,8 +231,8 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the pointer capability.
     pub fn get_pointer(
-        request: Arc<RefCell<WlSeat>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSeat>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat pointer
@@ -251,8 +250,8 @@ impl WlSeat {
     // It is a protocol violation to issue this request on a seat that has
     // never had the touch capability.
     pub fn get_touch(
-        request: Arc<RefCell<WlSeat>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSeat>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat touch interface
@@ -265,8 +264,8 @@ impl WlSeat {
     // Using this request a client can tell the server that it is not going to
     // use the seat object anymore.
     pub fn release(
-        request: Arc<RefCell<WlSeat>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSeat>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {

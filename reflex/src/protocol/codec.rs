@@ -1,6 +1,6 @@
 use super::event::Event;
 use super::request::Request;
-use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
+use byteorder::{NativeEndian, ReadBytesExt};
 use bytes::BytesMut;
 use std::io::{Cursor, Read};
 

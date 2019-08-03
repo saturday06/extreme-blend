@@ -24,12 +24,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -84,7 +83,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<XdgSurface>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -300,8 +299,8 @@ impl XdgSurface {
     // only the last request sent before a commit indicates which configure
     // event the client really is responding to.
     pub fn ack_configure(
-        request: Arc<RefCell<XdgSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: the serial from the configure event
@@ -314,8 +313,8 @@ impl XdgSurface {
     // Destroy the xdg_surface object. An xdg_surface must only be destroyed
     // after its role object has been destroyed.
     pub fn destroy(
-        request: Arc<RefCell<XdgSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -333,8 +332,8 @@ impl XdgSurface {
     // See the documentation of xdg_popup for more details about what an
     // xdg_popup is and how it is used.
     pub fn get_popup(
-        request: Arc<RefCell<XdgSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
@@ -352,8 +351,8 @@ impl XdgSurface {
     // See the documentation of xdg_toplevel for more details about what an
     // xdg_toplevel is and how it is used.
     pub fn get_toplevel(
-        request: Arc<RefCell<XdgSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
@@ -393,8 +392,8 @@ impl XdgSurface {
     // combined geometry of the surface of the xdg_surface and the associated
     // subsurfaces.
     pub fn set_window_geometry(
-        request: Arc<RefCell<XdgSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: 

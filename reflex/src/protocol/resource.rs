@@ -1,39 +1,38 @@
 
-use std::sync::Arc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub enum Resource {
-    WlBuffer(Arc<RefCell<super::wayland::wl_buffer::WlBuffer>>),
-    WlCallback(Arc<RefCell<super::wayland::wl_callback::WlCallback>>),
-    WlCompositor(Arc<RefCell<super::wayland::wl_compositor::WlCompositor>>),
-    WlDataDevice(Arc<RefCell<super::wayland::wl_data_device::WlDataDevice>>),
-    WlDataDeviceManager(Arc<RefCell<super::wayland::wl_data_device_manager::WlDataDeviceManager>>),
-    WlDataOffer(Arc<RefCell<super::wayland::wl_data_offer::WlDataOffer>>),
-    WlDataSource(Arc<RefCell<super::wayland::wl_data_source::WlDataSource>>),
-    WlDisplay(Arc<RefCell<super::wayland::wl_display::WlDisplay>>),
-    WlKeyboard(Arc<RefCell<super::wayland::wl_keyboard::WlKeyboard>>),
-    WlOutput(Arc<RefCell<super::wayland::wl_output::WlOutput>>),
-    WlPointer(Arc<RefCell<super::wayland::wl_pointer::WlPointer>>),
-    WlRegion(Arc<RefCell<super::wayland::wl_region::WlRegion>>),
-    WlRegistry(Arc<RefCell<super::wayland::wl_registry::WlRegistry>>),
-    WlSeat(Arc<RefCell<super::wayland::wl_seat::WlSeat>>),
-    WlShell(Arc<RefCell<super::wayland::wl_shell::WlShell>>),
-    WlShellSurface(Arc<RefCell<super::wayland::wl_shell_surface::WlShellSurface>>),
-    WlShm(Arc<RefCell<super::wayland::wl_shm::WlShm>>),
-    WlShmPool(Arc<RefCell<super::wayland::wl_shm_pool::WlShmPool>>),
-    WlSubcompositor(Arc<RefCell<super::wayland::wl_subcompositor::WlSubcompositor>>),
-    WlSubsurface(Arc<RefCell<super::wayland::wl_subsurface::WlSubsurface>>),
-    WlSurface(Arc<RefCell<super::wayland::wl_surface::WlSurface>>),
-    WlTouch(Arc<RefCell<super::wayland::wl_touch::WlTouch>>),
-    XdgPopup(Arc<RefCell<super::xdg_shell::xdg_popup::XdgPopup>>),
-    XdgPositioner(Arc<RefCell<super::xdg_shell::xdg_positioner::XdgPositioner>>),
-    XdgSurface(Arc<RefCell<super::xdg_shell::xdg_surface::XdgSurface>>),
-    XdgToplevel(Arc<RefCell<super::xdg_shell::xdg_toplevel::XdgToplevel>>),
-    XdgWmBase(Arc<RefCell<super::xdg_shell::xdg_wm_base::XdgWmBase>>),
+    WlBuffer(Arc<RwLock<super::wayland::wl_buffer::WlBuffer>>),
+    WlCallback(Arc<RwLock<super::wayland::wl_callback::WlCallback>>),
+    WlCompositor(Arc<RwLock<super::wayland::wl_compositor::WlCompositor>>),
+    WlDataDevice(Arc<RwLock<super::wayland::wl_data_device::WlDataDevice>>),
+    WlDataDeviceManager(Arc<RwLock<super::wayland::wl_data_device_manager::WlDataDeviceManager>>),
+    WlDataOffer(Arc<RwLock<super::wayland::wl_data_offer::WlDataOffer>>),
+    WlDataSource(Arc<RwLock<super::wayland::wl_data_source::WlDataSource>>),
+    WlDisplay(Arc<RwLock<super::wayland::wl_display::WlDisplay>>),
+    WlKeyboard(Arc<RwLock<super::wayland::wl_keyboard::WlKeyboard>>),
+    WlOutput(Arc<RwLock<super::wayland::wl_output::WlOutput>>),
+    WlPointer(Arc<RwLock<super::wayland::wl_pointer::WlPointer>>),
+    WlRegion(Arc<RwLock<super::wayland::wl_region::WlRegion>>),
+    WlRegistry(Arc<RwLock<super::wayland::wl_registry::WlRegistry>>),
+    WlSeat(Arc<RwLock<super::wayland::wl_seat::WlSeat>>),
+    WlShell(Arc<RwLock<super::wayland::wl_shell::WlShell>>),
+    WlShellSurface(Arc<RwLock<super::wayland::wl_shell_surface::WlShellSurface>>),
+    WlShm(Arc<RwLock<super::wayland::wl_shm::WlShm>>),
+    WlShmPool(Arc<RwLock<super::wayland::wl_shm_pool::WlShmPool>>),
+    WlSubcompositor(Arc<RwLock<super::wayland::wl_subcompositor::WlSubcompositor>>),
+    WlSubsurface(Arc<RwLock<super::wayland::wl_subsurface::WlSubsurface>>),
+    WlSurface(Arc<RwLock<super::wayland::wl_surface::WlSurface>>),
+    WlTouch(Arc<RwLock<super::wayland::wl_touch::WlTouch>>),
+    XdgPopup(Arc<RwLock<super::xdg_shell::xdg_popup::XdgPopup>>),
+    XdgPositioner(Arc<RwLock<super::xdg_shell::xdg_positioner::XdgPositioner>>),
+    XdgSurface(Arc<RwLock<super::xdg_shell::xdg_surface::XdgSurface>>),
+    XdgToplevel(Arc<RwLock<super::xdg_shell::xdg_toplevel::XdgToplevel>>),
+    XdgWmBase(Arc<RwLock<super::xdg_shell::xdg_wm_base::XdgWmBase>>),
 }
 
-pub fn dispatch_request(resource: Resource, session: &mut super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     match resource {
         Resource::WlBuffer(object) => {
             super::wayland::wl_buffer::dispatch_request(object, session, tx, sender_object_id, opcode, args)

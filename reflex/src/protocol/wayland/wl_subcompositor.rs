@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -36,7 +35,7 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlSubcompositor>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -123,8 +122,8 @@ impl WlSubcompositor {
     // protocol object anymore. This does not affect any other
     // objects, wl_subsurface objects included.
     pub fn destroy(
-        request: Arc<RefCell<WlSubcompositor>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubcompositor>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -149,8 +148,8 @@ impl WlSubcompositor {
     // This request modifies the behaviour of wl_surface.commit request on
     // the sub-surface, see the documentation on wl_subsurface interface.
     pub fn get_subsurface(
-        request: Arc<RefCell<WlSubcompositor>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubcompositor>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: the new sub-surface object ID

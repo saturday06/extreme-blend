@@ -1,5 +1,3 @@
-use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
-use bytes::BytesMut;
 use futures::future::Future;
 use futures::sink::Sink;
 use futures::stream::Stream;
@@ -14,19 +12,17 @@ use protocol::wayland::wl_display::WlDisplay;
 use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::io::Cursor;
-use std::io::Read;
-use std::os::raw::{c_char, c_int};
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 use tokio::codec::Decoder;
-use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
 use tokio_uds::{UnixListener, UnixStream};
 
 mod protocol;
+
+fn handle_stream(stream: UnixStream) -> Box<Future<Item = (), Error = ()> + Send> {
+    Box::new(futures::future::ok(()))
+}
 
 fn main() {
     let mut runtime = Arc::new(RwLock::new(Runtime::new().unwrap()));
@@ -47,37 +43,36 @@ fn main() {
                     .and_then(|_| Ok(()));
                 runtime.write().unwrap().spawn(output_session);
 
-                let mut session0 = Session {
+                let mut session0 = RwLock::new(Session {
                     wl_registry: WlRegistry {},
                     wl_compositor: WlCompositor {},
                     wl_shm: WlShm {},
                     xdg_wm_base: XdgWmBase {},
                     resources: HashMap::new(),
-                };
-                /*
-                session0
+                });
+
+                session0.write().unwrap()
                     .resources
-                    .insert(1, Resource::WlDisplay(Arc::new(RefCell::new(WlDisplay {}))));
-                    */
+                    .insert(1, Resource::WlDisplay(Arc::new(RwLock::new(WlDisplay {}))));
+
                 let input_session = reader0.for_each(move |req: Request| {
-                    let opt_res = session0
+                    let opt_res = session0.read().unwrap()
                         .resources
                         .get(&req.sender_object_id)
                         .map(|r| r.clone());
                     let tx = tx0.clone();
-                    /*
                     let h = if let Some(res) = opt_res {
                         protocol::resource::dispatch_request(
                             res,
-                            &mut session0,
+                            session0,
                             tx,
                             req.sender_object_id,
                             req.opcode,
                             req.args,
                         )
-                    } else { */
+                    } else {
                         Box::new(
-                            tx.send(Box::new(wl_display::events::Error {
+                            tx0.send(Box::new(wl_display::events::Error {
                                 sender_object_id: 1,
                                 object_id: 1,
                                 code: wl_display::enums::Error::InvalidObject as u32,
@@ -86,11 +81,11 @@ fn main() {
                                     req.sender_object_id, req.opcode, req.args
                                 ),
                             }))
-                            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
+                            .map_err(|_| ())
                             .map(|_tx| ()),
                         )
-                    //};
-                    //h.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
+                    };
+                    h.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
                 });
                 Box::new(input_session)
             })

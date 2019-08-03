@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -36,7 +35,7 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlSubsurface>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -181,8 +180,8 @@ impl WlSubsurface {
     // to the parent is deleted, and the wl_surface loses its role as
     // a sub-surface. The wl_surface is unmapped immediately.
     pub fn destroy(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -207,8 +206,8 @@ impl WlSubsurface {
     // A new sub-surface is initially added as the top-most in the stack
     // of its siblings and parent.
     pub fn place_above(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         sibling: u32, // object: the reference surface
@@ -221,8 +220,8 @@ impl WlSubsurface {
     // The sub-surface is placed just below the reference surface.
     // See wl_subsurface.place_above.
     pub fn place_below(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         sibling: u32, // object: the reference surface
@@ -252,8 +251,8 @@ impl WlSubsurface {
     // If a surface's parent surface behaves as desynchronized, then
     // the cached state is applied on set_desync.
     pub fn set_desync(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -279,8 +278,8 @@ impl WlSubsurface {
     // 
     // The initial position is 0, 0.
     pub fn set_position(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: x coordinate in the parent surface
@@ -305,8 +304,8 @@ impl WlSubsurface {
     // 
     // See wl_subsurface for the recursive effect of this mode.
     pub fn set_sync(
-        request: Arc<RefCell<WlSubsurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSubsurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {

@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     // wl_surface error values
@@ -102,7 +101,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlSurface>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -451,8 +450,8 @@ impl WlSurface {
     // If wl_surface.attach is sent with a NULL wl_buffer, the
     // following wl_surface.commit will remove the surface content.
     pub fn attach(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         buffer: u32, // object: buffer of surface contents
@@ -482,8 +481,8 @@ impl WlSurface {
     // 
     // Other interfaces may add further double-buffered surface state.
     pub fn commit(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -514,8 +513,8 @@ impl WlSurface {
     // which uses buffer coordinates instead of surface coordinates,
     // and is probably the preferred and intuitive way of doing this.
     pub fn damage(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: surface-local x coordinate
@@ -561,8 +560,8 @@ impl WlSurface {
     // two requests separately and only transform from one to the other
     // after receiving the wl_surface.commit.
     pub fn damage_buffer(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: buffer-local x coordinate
@@ -577,8 +576,8 @@ impl WlSurface {
     //
     // Deletes the surface and invalidates its object ID.
     pub fn destroy(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -620,8 +619,8 @@ impl WlSurface {
     // The callback_data passed in the callback is the current time, in
     // milliseconds, with an undefined base.
     pub fn frame(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         callback: u32, // new_id: callback object for the frame request
@@ -655,8 +654,8 @@ impl WlSurface {
     // If scale is not positive the invalid_scale protocol error is
     // raised.
     pub fn set_buffer_scale(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         scale: i32, // int: positive scale for interpreting buffer contents
@@ -696,8 +695,8 @@ impl WlSurface {
     // wl_output.transform enum the invalid_transform protocol error
     // is raised.
     pub fn set_buffer_transform(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         transform: i32, // int: transform for interpreting buffer contents
@@ -730,8 +729,8 @@ impl WlSurface {
     // immediately. A NULL wl_region causes the input region to be set
     // to infinite.
     pub fn set_input_region(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         region: u32, // object: input region of the surface
@@ -766,8 +765,8 @@ impl WlSurface {
     // destroyed immediately. A NULL wl_region causes the pending opaque
     // region to be set to empty.
     pub fn set_opaque_region(
-        request: Arc<RefCell<WlSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         region: u32, // object: opaque region of the surface

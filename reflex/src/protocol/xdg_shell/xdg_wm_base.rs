@@ -24,12 +24,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -82,7 +81,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<XdgWmBase>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -175,8 +174,8 @@ impl XdgWmBase {
     // surfaces relative to some parent surface. See the interface description
     // and xdg_surface.get_popup for details.
     pub fn create_positioner(
-        request: Arc<RefCell<XdgWmBase>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgWmBase>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
@@ -192,8 +191,8 @@ impl XdgWmBase {
     // still alive created by this xdg_wm_base object instance is illegal
     // and will result in a protocol error.
     pub fn destroy(
-        request: Arc<RefCell<XdgWmBase>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgWmBase>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -214,8 +213,8 @@ impl XdgWmBase {
     // See the documentation of xdg_surface for more details about what an
     // xdg_surface is and how it is used.
     pub fn get_xdg_surface(
-        request: Arc<RefCell<XdgWmBase>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgWmBase>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
@@ -229,8 +228,8 @@ impl XdgWmBase {
     // A client must respond to a ping event with a pong request or
     // the client may be deemed unresponsive. See xdg_wm_base.ping.
     pub fn pong(
-        request: Arc<RefCell<XdgWmBase>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgWmBase>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial of the ping event

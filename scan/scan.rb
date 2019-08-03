@@ -565,21 +565,20 @@ end
 open("../reflex/src/protocol/resource.rs", "wb") do |f|
   f.puts(<<EOF)
 
-use std::sync::Arc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub enum Resource {
 EOF
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
-      f.puts("    #{camel_case(interface.name)}(Arc<RefCell<super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}>>),")
+      f.puts("    #{camel_case(interface.name)}(Arc<RwLock<super::#{protocol.name}::#{interface.name}::#{camel_case(interface.name)}>>),")
     end
   end
   f.puts("}")
   f.puts("")
   f.puts(<<DISPATCH_REQUEST)
-pub fn dispatch_request(resource: Resource, session: &mut super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(resource: Resource, session: RwLock<super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     match resource {
 DISPATCH_REQUEST
   protocols.each do |protocol|
@@ -610,12 +609,11 @@ protocols.each do |protocol|
       f.puts(render_comment(protocol.copyright.text))
       f.puts(<<EOF)
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 EOF
       if interface.enums
         f.puts("")
@@ -652,7 +650,7 @@ EOF
         f.puts("}")
       end
       f.puts("")
-      f.puts("pub fn dispatch_request(request: Arc<RefCell<#{camel_case(interface.name)}>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {")
+      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {")
       f.puts(interface.decode)
       f.puts("}")
       f.puts("")
@@ -666,8 +664,8 @@ EOF
           f.puts("") if index > 0
           f.puts(request.description.comment(1))
           f.puts("    pub fn #{request.rust_name}(")
-          f.puts("        request: Arc<RefCell<#{camel_case(interface.name)}>>,")
-          f.puts("        session: &mut super::super::session::Session,")
+          f.puts("        request: Arc<RwLock<#{camel_case(interface.name)}>>,")
+          f.puts("        session: RwLock<super::super::session::Session>,")
           f.puts("        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,")
           f.puts("        sender_object_id: u32,")
           request.args.each do |arg|

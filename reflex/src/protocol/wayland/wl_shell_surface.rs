@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     // different method to set the surface fullscreen
@@ -173,7 +172,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlShellSurface>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -610,8 +609,8 @@ impl WlShellSurface {
     // The server may ignore move requests depending on the state of
     // the surface (e.g. fullscreen or maximized).
     pub fn move_fn(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
@@ -625,8 +624,8 @@ impl WlShellSurface {
     // A client must respond to a ping event with a pong request or
     // the client may be deemed unresponsive.
     pub fn pong(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial number of the ping event
@@ -642,8 +641,8 @@ impl WlShellSurface {
     // The server may ignore resize requests depending on the state of
     // the surface (e.g. fullscreen or maximized).
     pub fn resize(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
@@ -662,8 +661,8 @@ impl WlShellSurface {
     // file name (or the full path if it is a non-standard location) of
     // the application's .desktop file as the class.
     pub fn set_class(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         class_: String, // string: surface class
@@ -707,8 +706,8 @@ impl WlShellSurface {
     // with the dimensions for the output on which the surface will
     // be made fullscreen.
     pub fn set_fullscreen(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         method: u32, // uint: method for resolving size conflict
@@ -739,8 +738,8 @@ impl WlShellSurface {
     // 
     // The details depend on the compositor implementation.
     pub fn set_maximized(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         output: u32, // object: output on which the surface is to be maximized
@@ -770,8 +769,8 @@ impl WlShellSurface {
     // corner of the surface relative to the upper left corner of the
     // parent surface, in surface-local coordinates.
     pub fn set_popup(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
@@ -794,8 +793,8 @@ impl WlShellSurface {
     // 
     // The string must be encoded in UTF-8.
     pub fn set_title(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         title: String, // string: surface title
@@ -809,8 +808,8 @@ impl WlShellSurface {
     // 
     // A toplevel surface is not fullscreen, maximized or transient.
     pub fn set_toplevel(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -827,8 +826,8 @@ impl WlShellSurface {
     // 
     // The flags argument controls details of the transient behaviour.
     pub fn set_transient(
-        request: Arc<RefCell<WlShellSurface>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlShellSurface>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         parent: u32, // object: parent surface

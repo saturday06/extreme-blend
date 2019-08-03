@@ -23,12 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -166,7 +165,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<WlDataOffer>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -368,8 +367,8 @@ impl WlDataOffer {
     // wl_data_source.cancelled. Clients may still use this event in
     // conjunction with wl_data_source.action for feedback.
     pub fn accept(
-        request: Arc<RefCell<WlDataOffer>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlDataOffer>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial number of the accept request
@@ -382,8 +381,8 @@ impl WlDataOffer {
     //
     // Destroy the data offer.
     pub fn destroy(
-        request: Arc<RefCell<WlDataOffer>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlDataOffer>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -404,8 +403,8 @@ impl WlDataOffer {
     // wl_data_offer.accept or no action was received through
     // wl_data_offer.action.
     pub fn finish(
-        request: Arc<RefCell<WlDataOffer>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlDataOffer>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -430,8 +429,8 @@ impl WlDataOffer {
     // clients may preemptively fetch data or examine it more closely to
     // determine acceptance.
     pub fn receive(
-        request: Arc<RefCell<WlDataOffer>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlDataOffer>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         mime_type: String, // string: mime type desired by receiver
@@ -474,8 +473,8 @@ impl WlDataOffer {
     // This request can only be made on drag-and-drop offers, a protocol error
     // will be raised otherwise.
     pub fn set_actions(
-        request: Arc<RefCell<WlDataOffer>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<WlDataOffer>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         dnd_actions: u32, // uint: actions supported by the destination client

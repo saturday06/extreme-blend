@@ -24,12 +24,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Anchor {
@@ -84,7 +83,7 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<XdgPositioner>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -296,8 +295,8 @@ impl XdgPositioner {
     //
     // Notify the compositor that the xdg_positioner will no longer be used.
     pub fn destroy(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -313,8 +312,8 @@ impl XdgPositioner {
     // otherwise, the derived anchor point will be centered on the specified
     // edge, or in the center of the anchor rectangle if no edge is specified.
     pub fn set_anchor(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         anchor: u32, // uint: anchor
@@ -335,8 +334,8 @@ impl XdgPositioner {
     // 
     // If a negative size is set the invalid_input error is raised.
     pub fn set_anchor_rect(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: x position of anchor rectangle
@@ -363,8 +362,8 @@ impl XdgPositioner {
     // 
     // The default adjustment is none.
     pub fn set_constraint_adjustment(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         constraint_adjustment: u32, // uint: bit mask of constraint adjustments
@@ -381,8 +380,8 @@ impl XdgPositioner {
     // surface will be centered over the anchor point on any axis that had no
     // gravity specified.
     pub fn set_gravity(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         gravity: u32, // uint: gravity direction
@@ -404,8 +403,8 @@ impl XdgPositioner {
     // element, while aligning the user interface element of the parent surface
     // with some user interface element placed somewhere in the popup surface.
     pub fn set_offset(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: surface position x offset
@@ -422,8 +421,8 @@ impl XdgPositioner {
     // 
     // If a zero or negative size is set the invalid_input error is raised.
     pub fn set_size(
-        request: Arc<RefCell<XdgPositioner>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgPositioner>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: width of positioned rectangle

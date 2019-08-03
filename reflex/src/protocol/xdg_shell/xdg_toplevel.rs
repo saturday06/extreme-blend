@@ -24,12 +24,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use futures::future::Future;
-use futures::sink::Sink;
-use std::io::{Cursor, Read};
-use std::sync::Arc;
-use std::cell::RefCell;
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     // edge values for resizing
@@ -159,7 +158,7 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RefCell<XdgToplevel>>, session: &mut super::super::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
+pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: RwLock<super::super::session::Session>, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = (), Error = ()>> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
@@ -537,8 +536,8 @@ impl XdgToplevel {
     // This request destroys the role surface and unmaps the surface;
     // see "Unmapping" behavior in interface section for details.
     pub fn destroy(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -564,8 +563,8 @@ impl XdgToplevel {
     // updating a pointer cursor, during the move. There is no guarantee
     // that the device focus will return when the move is completed.
     pub fn move_fn(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
@@ -607,8 +606,8 @@ impl XdgToplevel {
     // use this information to adapt its behavior, e.g. choose an
     // appropriate cursor image.
     pub fn resize(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
@@ -641,8 +640,8 @@ impl XdgToplevel {
     // 
     // [0] http://standards.freedesktop.org/desktop-entry-spec/
     pub fn set_app_id(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         app_id: String, // string: 
@@ -676,8 +675,8 @@ impl XdgToplevel {
     // up of subsurfaces, popups or similarly coupled surfaces) are not
     // visible below the fullscreened surface.
     pub fn set_fullscreen(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         output: u32, // object: 
@@ -722,8 +721,8 @@ impl XdgToplevel {
     // strictly negative values for width and height will result in a
     // protocol error.
     pub fn set_max_size(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: 
@@ -754,8 +753,8 @@ impl XdgToplevel {
     // effect. It may alter the state the surface is returned to when
     // unmaximized unless overridden by the compositor.
     pub fn set_maximized(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -799,8 +798,8 @@ impl XdgToplevel {
     // strictly negative values for width and height will result in a
     // protocol error.
     pub fn set_min_size(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: 
@@ -820,8 +819,8 @@ impl XdgToplevel {
     // also work with live previews on windows in Alt-Tab, Expose or
     // similar compositor features.
     pub fn set_minimized(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -847,8 +846,8 @@ impl XdgToplevel {
     // parent then the children are managed as though they have no
     // parent surface.
     pub fn set_parent(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         parent: u32, // object: 
@@ -866,8 +865,8 @@ impl XdgToplevel {
     // 
     // The string must be encoded in UTF-8.
     pub fn set_title(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         title: String, // string: 
@@ -889,8 +888,8 @@ impl XdgToplevel {
     // This request must be used in response to some sort of user action
     // like a button press, key press, or touch down event.
     pub fn show_window_menu(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
@@ -921,8 +920,8 @@ impl XdgToplevel {
     // The client must also acknowledge the configure when committing the new
     // content (see ack_configure).
     pub fn unset_fullscreen(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
@@ -953,8 +952,8 @@ impl XdgToplevel {
     // effect. It may alter the state the surface is returned to when
     // unmaximized unless overridden by the compositor.
     pub fn unset_maximized(
-        request: Arc<RefCell<XdgToplevel>>,
-        session: &mut super::super::session::Session,
+        request: Arc<RwLock<XdgToplevel>>,
+        session: RwLock<super::super::session::Session>,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = (), Error = ()>> {
