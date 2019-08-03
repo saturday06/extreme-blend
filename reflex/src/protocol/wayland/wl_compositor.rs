@@ -56,7 +56,10 @@ impl WlCompositor {
         id: u32, // new_id: the new surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("WlCompositor::create_surface(id: {})", id);
-        context.resources.insert(id, crate::protocol::wayland::wl_surface::WlSurface{}.into());
+        context.resources.insert(
+            id,
+            crate::protocol::wayland::wl_surface::WlSurface {}.into(),
+        );
         Box::new(ok(context.into()))
     }
 }

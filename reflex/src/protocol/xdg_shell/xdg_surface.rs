@@ -146,9 +146,13 @@ impl XdgSurface {
         id: u32, // new_id:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("XdgSurface::get_toplevel(id={})", id);
-        context.resources.insert(id, crate::protocol::xdg_shell::xdg_toplevel::XdgToplevel{
-            xdg_surface_id: context.sender_object_id,
-        }.into());
+        context.resources.insert(
+            id,
+            crate::protocol::xdg_shell::xdg_toplevel::XdgToplevel {
+                xdg_surface_id: context.sender_object_id,
+            }
+            .into(),
+        );
         Box::new(ok(context.into()))
     }
 

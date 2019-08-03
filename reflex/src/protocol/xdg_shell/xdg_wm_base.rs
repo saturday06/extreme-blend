@@ -87,9 +87,13 @@ impl XdgWmBase {
         surface: u32, // object:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("XdgWmBase::get_xdg_surface(id={}, surface={})", id, surface);
-        context.resources.insert(id, crate::protocol::xdg_shell::xdg_surface::XdgSurface{
-            wl_surface_id: surface,
-        }.into());
+        context.resources.insert(
+            id,
+            crate::protocol::xdg_shell::xdg_surface::XdgSurface {
+                wl_surface_id: surface,
+            }
+            .into(),
+        );
         Box::new(ok(context.into()))
     }
 
