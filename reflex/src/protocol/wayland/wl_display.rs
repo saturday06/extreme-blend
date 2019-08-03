@@ -56,33 +56,41 @@ impl WlDisplay {
         registry: u32, // new_id: global registry object
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", registry);
-        context.resources.insert(registry, crate::protocol::wayland::wl_registry::WlRegistry {}.into());
+        context
+            .resources
+            .insert(registry, context.wl_registry.clone().into());
 
         Box::new(
             futures::future::ok(context.tx.clone())
                 .and_then(move |tx| {
-                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
-                        sender_object_id: registry,
-                        name: crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME,
-                        interface: "wl_compositor".to_owned(),
-                        version: crate::protocol::wayland::wl_compositor::VERSION,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME,
+                            interface: "wl_compositor".to_owned(),
+                            version: crate::protocol::wayland::wl_compositor::VERSION,
+                        },
+                    ))
                 })
                 .and_then(move |tx| {
-                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
-                        sender_object_id: registry,
-                        name: crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME,
-                        interface: "wl_shm".to_owned(),
-                        version: crate::protocol::wayland::wl_shm::VERSION,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME,
+                            interface: "wl_shm".to_owned(),
+                            version: crate::protocol::wayland::wl_shm::VERSION,
+                        },
+                    ))
                 })
                 .and_then(move |tx| {
-                    tx.send(Box::new(crate::protocol::wayland::wl_registry::events::Global {
-                        sender_object_id: registry,
-                        name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME,
-                        interface: "xdg_wm_base".to_owned(),
-                        version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME,
+                            interface: "xdg_wm_base".to_owned(),
+                            version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
+                        },
+                    ))
                 })
                 .map_err(|_| ())
                 .map(|_| context.into()),
@@ -110,12 +118,14 @@ impl WlDisplay {
         context.callback_data += 1;
         let tx = context.tx.clone();
         Box::new(
-            tx.send(Box::new(crate::protocol::wayland::wl_callback::events::Done {
-                sender_object_id: callback,
-                callback_data: context.callback_data,
-            }))
-                .map_err(|_| ())
-                .map(|_| context.into()),
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_callback::events::Done {
+                    sender_object_id: callback,
+                    callback_data: context.callback_data,
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
         )
     }
 }

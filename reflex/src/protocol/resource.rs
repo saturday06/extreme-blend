@@ -5,7 +5,7 @@ pub enum Resource {
     WlCallback(crate::protocol::wayland::wl_callback::WlCallback),
     WlCompositor(Arc<RwLock<crate::protocol::wayland::wl_compositor::WlCompositor>>),
     WlDataDevice(crate::protocol::wayland::wl_data_device::WlDataDevice),
-    WlDataDeviceManager(crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager),
+    WlDataDeviceManager(Arc<RwLock<crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager>>),
     WlDataOffer(crate::protocol::wayland::wl_data_offer::WlDataOffer),
     WlDataSource(crate::protocol::wayland::wl_data_source::WlDataSource),
     WlDisplay(Arc<RwLock<crate::protocol::wayland::wl_display::WlDisplay>>),
@@ -13,10 +13,8 @@ pub enum Resource {
     WlOutput(crate::protocol::wayland::wl_output::WlOutput),
     WlPointer(crate::protocol::wayland::wl_pointer::WlPointer),
     WlRegion(crate::protocol::wayland::wl_region::WlRegion),
-    WlRegistry(crate::protocol::wayland::wl_registry::WlRegistry),
+    WlRegistry(Arc<RwLock<crate::protocol::wayland::wl_registry::WlRegistry>>),
     WlSeat(crate::protocol::wayland::wl_seat::WlSeat),
-    WlShell(crate::protocol::wayland::wl_shell::WlShell),
-    WlShellSurface(crate::protocol::wayland::wl_shell_surface::WlShellSurface),
     WlShm(Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>>),
     WlShmPool(crate::protocol::wayland::wl_shm_pool::WlShmPool),
     WlSubcompositor(crate::protocol::wayland::wl_subcompositor::WlSubcompositor),
@@ -73,12 +71,6 @@ pub fn dispatch_request(resource: Resource, session: crate::protocol::session::S
         }
         Resource::WlSeat(object) => {
             super::wayland::wl_seat::dispatch_request(crate::protocol::session::Context::new(session, object, sender_object_id), opcode, args)
-        }
-        Resource::WlShell(object) => {
-            super::wayland::wl_shell::dispatch_request(crate::protocol::session::Context::new(session, object, sender_object_id), opcode, args)
-        }
-        Resource::WlShellSurface(object) => {
-            super::wayland::wl_shell_surface::dispatch_request(crate::protocol::session::Context::new(session, object, sender_object_id), opcode, args)
         }
         Resource::WlShm(object) => {
             super::wayland::wl_shm::dispatch_request(crate::protocol::session::Context::new(session, object, sender_object_id), opcode, args)

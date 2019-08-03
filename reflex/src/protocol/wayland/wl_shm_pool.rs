@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok, err};
+use futures::future::{err, ok, Future};
 use std::sync::{Arc, RwLock};
 
 mod lib;
@@ -39,28 +39,27 @@ pub use lib::*;
 // underlying mapped memory. Reusing the mapped memory avoids the
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
-pub struct WlShmPool {
-}
+pub struct WlShmPool {}
 
 impl WlShmPool {
     // create a buffer from the pool
     //
     // Create a wl_buffer object from the pool.
-    // 
+    //
     // The buffer is created offset bytes into the pool and has
     // width and height as specified.  The stride argument specifies
     // the number of bytes from the beginning of one row to the beginning
     // of the next.  The format is the pixel format of the buffer and
     // must be one of those advertised through the wl_shm.format event.
-    // 
+    //
     // A buffer will keep a reference to the pool it was created from
     // so it is valid to destroy the pool immediately after creating
     // a buffer from it.
     pub fn create_buffer(
         context: Context<WlShmPool>,
-        id: u32, // new_id: buffer to create
+        id: u32,     // new_id: buffer to create
         offset: i32, // int: buffer byte offset within the pool
-        width: i32, // int: buffer width, in pixels
+        width: i32,  // int: buffer width, in pixels
         height: i32, // int: buffer height, in pixels
         stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
         format: u32, // uint: buffer pixel format
@@ -71,13 +70,11 @@ impl WlShmPool {
     // destroy the pool
     //
     // Destroy the shared memory pool.
-    // 
+    //
     // The mmapped memory will be released when all
     // buffers that have been created from this pool
     // are gone.
-    pub fn destroy(
-        context: Context<WlShmPool>,
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(context: Context<WlShmPool>) -> Box<Future<Item = Session, Error = ()> + Send> {
         Box::new(err(()))
     }
 

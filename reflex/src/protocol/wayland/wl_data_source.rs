@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok, err};
+use futures::future::{err, ok, Future};
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -38,8 +38,7 @@ pub use lib::*;
 // It is created by the source client in a data transfer and
 // provides a way to describe the offered data and a way to respond
 // to requests to transfer the data.
-pub struct WlDataSource {
-}
+pub struct WlDataSource {}
 
 impl WlDataSource {
     // destroy the data source
@@ -69,11 +68,11 @@ impl WlDataSource {
     // operation. This request may trigger wl_data_source.action and
     // wl_data_offer.action events if the compositor needs to change the
     // selected action.
-    // 
+    //
     // The dnd_actions argument must contain only values expressed in the
     // wl_data_device_manager.dnd_actions enum, otherwise it will result
     // in a protocol error.
-    // 
+    //
     // This request must be made once only, and can only be made on sources
     // used in drag-and-drop, so it must be performed before
     // wl_data_device.start_drag. Attempting to use the source other than

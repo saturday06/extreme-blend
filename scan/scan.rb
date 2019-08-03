@@ -34,8 +34,14 @@ class Protocol
         raise "Oops! multiple copyright" if @copyright
         @copyright = Copyright.new(child)
       when "interface"
+        interface = Interface.new(child, @name)
+        next if [
+          ["wayland", "wl_shell"],
+          ["wayland", "wl_shell_surface"],
+        ].find { |protocol_name, interface_name| protocol_name == @name && interface_name == interface.name }
+
         @interfaces ||= []
-        @interfaces << Interface.new(child, @name)
+        @interfaces << interface
         @interfaces.sort_by!(&:name)
       else
         raise "unhandled element: #{child}"
@@ -64,7 +70,9 @@ class Interface
       ["wayland", "wl_display", 1],
       ["wayland", "wl_compositor", 2],
       ["wayland", "wl_shm", 3],
-      ["xdg_shell", "xdg_wm_base", 4],
+      ["wayland", "wl_registry", 4],
+      ["wayland", "wl_data_device_manager", 5],
+      ["xdg_shell", "xdg_wm_base", 6],
     ].each do |protocol_name, name, name_int|
       if protocol_name == @protocol_name && name == @name
         @global_singleton = true

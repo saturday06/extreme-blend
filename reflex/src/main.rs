@@ -7,6 +7,7 @@ use protocol::request::Request;
 use protocol::resource::Resource;
 use protocol::session::Session;
 use protocol::wayland::wl_compositor::WlCompositor;
+use protocol::wayland::wl_data_device_manager::WlDataDeviceManager;
 use protocol::wayland::wl_display;
 use protocol::wayland::wl_display::WlDisplay;
 use protocol::wayland::wl_registry::WlRegistry;
@@ -25,7 +26,14 @@ fn main() {
 
     let socket_path = "/tmp/temp.unix";
     let _ = std::fs::remove_file(socket_path);
-    let wl_display = Arc::new(RwLock::new(WlDisplay{}));
+
+    let wl_display = Arc::new(RwLock::new(WlDisplay {}));
+    let wl_compositor = Arc::new(RwLock::new(WlCompositor {}));
+    let wl_registry = Arc::new(RwLock::new(WlRegistry {}));
+    let wl_shm = Arc::new(RwLock::new(WlShm {}));
+    let wl_data_device_manager = Arc::new(RwLock::new(WlDataDeviceManager {}));
+    let xdg_wm_base = Arc::new(RwLock::new(XdgWmBase {}));
+
     let listener = UnixListener::bind(socket_path)
         .unwrap()
         .incoming()
@@ -43,10 +51,12 @@ fn main() {
             };
 
             let mut session0 = Session {
-                wl_registry: WlRegistry {},
-                wl_compositor: WlCompositor {},
-                wl_shm: WlShm {},
-                xdg_wm_base: XdgWmBase {},
+                wl_display: wl_display.clone(),
+                wl_registry: wl_registry.clone(),
+                wl_compositor: wl_compositor.clone(),
+                wl_shm: wl_shm.clone(),
+                wl_data_device_manager: wl_data_device_manager.clone(),
+                xdg_wm_base: xdg_wm_base.clone(),
                 resources: HashMap::new(),
                 tx: tx0,
                 callback_data: 0,
@@ -89,56 +99,8 @@ fn main() {
                         f
                     }
                 }).map(|_| ()).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")));
-                //.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")));
 
-            //let input_session = futures::future::ok(());
-            /*
-                        session0
-                            .write()
-                            .unwrap()
-                            .resources
-                            .insert(1, Resource::WlDisplay(Arc::new(RwLock::new(WlDisplay {}))));
-
-                        let input_session = reader0.for_each(move |req: Request| {
-                            let opt_res = session0
-                                .read()
-                                .unwrap()
-                                .resources
-                                .get(&req.sender_object_id)
-                                .map(|r| r.clone());
-                            let tx = tx0;
-                            if let Some(res) = opt_res {
-                                let f: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
-                                    protocol::resource::dispatch_request(
-                                        res,
-                                        session0.clone(),
-                                        tx,
-                                        req.sender_object_id,
-                                        req.opcode,
-                                        req.args,
-                                    )
-                                    .map(|_tx| ())
-                                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
-                                );
-                                f
-                            } else {
-                                let f: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
-                                    tx.send(Box::new(wl_display::events::Error {
-                                        sender_object_id: 1,
-                                        object_id: 1,
-                                        code: wl_display::enums::Error::InvalidObject as u32,
-                                        message: format!(
-                                            "object_id={} opcode={} args={:?} not found",
-                                            req.sender_object_id, req.opcode, req.args
-                                        ),
-                                    }))
-                                    .map(|_tx| ())
-                                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
-                                );
-                                f
-                            }
-                        });*/
-            input_session0
+            input_session0.or_else(|_| futures::future::ok(()))
         })
         .map_err(|_| ());
     tokio::run(listener);

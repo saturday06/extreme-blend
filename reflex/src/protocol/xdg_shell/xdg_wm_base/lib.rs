@@ -31,7 +31,7 @@
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
-pub const GLOBAL_SINGLETON_NAME: u32 = 4;
+pub const GLOBAL_SINGLETON_NAME: u32 = 6;
 pub const VERSION: u32 = 2;
 
 #[allow(unused_variables)]
