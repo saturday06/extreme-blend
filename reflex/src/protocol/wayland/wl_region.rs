@@ -29,16 +29,17 @@
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
-pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return WlRegion::destroy(request, session, tx, sender_object_id, )
+            return WlRegion::destroy(request, session, sender_object_id, )
         },
         1 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -53,6 +54,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -67,6 +69,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -81,6 +84,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -92,12 +96,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlRegion::add(request, session, tx, sender_object_id, x, y, width, height)
+            return WlRegion::add(request, session, sender_object_id, x, y, width, height)
         },
         2 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -112,6 +117,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -126,6 +132,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -140,6 +147,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -151,7 +159,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegion>>, session: crate::protocol
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlRegion::subtract(request, session, tx, sender_object_id, x, y, width, height)
+            return WlRegion::subtract(request, session, sender_object_id, x, y, width, height)
         },
         _ => {},
     };
@@ -174,7 +182,6 @@ impl WlRegion {
     pub fn add(
         request: Arc<RwLock<WlRegion>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: region-local x coordinate
         y: i32, // int: region-local y coordinate
@@ -190,7 +197,6 @@ impl WlRegion {
     pub fn destroy(
         request: Arc<RwLock<WlRegion>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -202,7 +208,6 @@ impl WlRegion {
     pub fn subtract(
         request: Arc<RwLock<WlRegion>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: region-local x coordinate
         y: i32, // int: region-local y coordinate

@@ -144,13 +144,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlShm>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlShm>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -165,6 +166,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShm>>, session: crate::protocol::s
             let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -179,6 +181,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShm>>, session: crate::protocol::s
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -190,7 +193,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShm>>, session: crate::protocol::s
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShm::create_pool(request, session, tx, sender_object_id, id, fd, size)
+            return WlShm::create_pool(request, session, sender_object_id, id, fd, size)
         },
         _ => {},
     };
@@ -222,7 +225,6 @@ impl WlShm {
     pub fn create_pool(
         request: Arc<RwLock<WlShm>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: pool to create
         fd: i32, // fd: file descriptor for the pool

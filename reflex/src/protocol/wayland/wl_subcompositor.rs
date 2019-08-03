@@ -35,16 +35,17 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return WlSubcompositor::destroy(request, session, tx, sender_object_id, )
+            return WlSubcompositor::destroy(request, session, sender_object_id, )
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -59,6 +60,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: crate::p
             let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -73,6 +75,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: crate::p
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -84,7 +87,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubcompositor>>, session: crate::p
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSubcompositor::get_subsurface(request, session, tx, sender_object_id, id, surface, parent)
+            return WlSubcompositor::get_subsurface(request, session, sender_object_id, id, surface, parent)
         },
         _ => {},
     };
@@ -124,7 +127,6 @@ impl WlSubcompositor {
     pub fn destroy(
         request: Arc<RwLock<WlSubcompositor>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -150,7 +152,6 @@ impl WlSubcompositor {
     pub fn get_subsurface(
         request: Arc<RwLock<WlSubcompositor>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: the new sub-surface object ID
         surface: u32, // object: the surface to be turned into a sub-surface

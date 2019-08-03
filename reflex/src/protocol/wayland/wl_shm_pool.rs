@@ -29,13 +29,14 @@
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
-pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -50,6 +51,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
             let offset = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -64,6 +66,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -78,6 +81,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -92,6 +96,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
             let stride = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -106,6 +111,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
             let format = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -117,15 +123,16 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShmPool::create_buffer(request, session, tx, sender_object_id, id, offset, width, height, stride, format)
+            return WlShmPool::create_buffer(request, session, sender_object_id, id, offset, width, height, stride, format)
         },
         1 => {
-            return WlShmPool::destroy(request, session, tx, sender_object_id, )
+            return WlShmPool::destroy(request, session, sender_object_id, )
         },
         2 => {
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -137,7 +144,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShmPool>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShmPool::resize(request, session, tx, sender_object_id, size)
+            return WlShmPool::resize(request, session, sender_object_id, size)
         },
         _ => {},
     };
@@ -173,7 +180,6 @@ impl WlShmPool {
     pub fn create_buffer(
         request: Arc<RwLock<WlShmPool>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: buffer to create
         offset: i32, // int: buffer byte offset within the pool
@@ -195,7 +201,6 @@ impl WlShmPool {
     pub fn destroy(
         request: Arc<RwLock<WlShmPool>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -210,7 +215,6 @@ impl WlShmPool {
     pub fn resize(
         request: Arc<RwLock<WlShmPool>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         size: i32, // int: new size of the pool, in bytes
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {

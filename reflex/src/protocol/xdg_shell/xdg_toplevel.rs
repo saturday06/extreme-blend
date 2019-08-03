@@ -158,16 +158,17 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return XdgToplevel::destroy(request, session, tx, sender_object_id, )
+            return XdgToplevel::destroy(request, session, sender_object_id, )
         },
         1 => {
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -179,13 +180,14 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::set_parent(request, session, tx, sender_object_id, parent)
+            return XdgToplevel::set_parent(request, session, sender_object_id, parent)
         },
         2 => {
             let title = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -201,6 +203,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -215,6 +218,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -229,13 +233,14 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            return XdgToplevel::set_title(request, session, tx, sender_object_id, title)
+            return XdgToplevel::set_title(request, session, sender_object_id, title)
         },
         3 => {
             let app_id = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -251,6 +256,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -265,6 +271,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -279,12 +286,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            return XdgToplevel::set_app_id(request, session, tx, sender_object_id, app_id)
+            return XdgToplevel::set_app_id(request, session, sender_object_id, app_id)
         },
         4 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -299,6 +307,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -313,6 +322,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -327,6 +337,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -338,12 +349,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::show_window_menu(request, session, tx, sender_object_id, seat, serial, x, y)
+            return XdgToplevel::show_window_menu(request, session, sender_object_id, seat, serial, x, y)
         },
         5 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -358,6 +370,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -369,12 +382,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::move_fn(request, session, tx, sender_object_id, seat, serial)
+            return XdgToplevel::move_fn(request, session, sender_object_id, seat, serial)
         },
         6 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -389,6 +403,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -403,6 +418,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -414,12 +430,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::resize(request, session, tx, sender_object_id, seat, serial, edges)
+            return XdgToplevel::resize(request, session, sender_object_id, seat, serial, edges)
         },
         7 => {
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -434,6 +451,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -445,12 +463,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::set_max_size(request, session, tx, sender_object_id, width, height)
+            return XdgToplevel::set_max_size(request, session, sender_object_id, width, height)
         },
         8 => {
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -465,6 +484,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -476,18 +496,19 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::set_min_size(request, session, tx, sender_object_id, width, height)
+            return XdgToplevel::set_min_size(request, session, sender_object_id, width, height)
         },
         9 => {
-            return XdgToplevel::set_maximized(request, session, tx, sender_object_id, )
+            return XdgToplevel::set_maximized(request, session, sender_object_id, )
         },
         10 => {
-            return XdgToplevel::unset_maximized(request, session, tx, sender_object_id, )
+            return XdgToplevel::unset_maximized(request, session, sender_object_id, )
         },
         11 => {
             let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -499,13 +520,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgToplevel>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgToplevel::set_fullscreen(request, session, tx, sender_object_id, output)
+            return XdgToplevel::set_fullscreen(request, session, sender_object_id, output)
         },
         12 => {
-            return XdgToplevel::unset_fullscreen(request, session, tx, sender_object_id, )
+            return XdgToplevel::unset_fullscreen(request, session, sender_object_id, )
         },
         13 => {
-            return XdgToplevel::set_minimized(request, session, tx, sender_object_id, )
+            return XdgToplevel::set_minimized(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -538,7 +559,6 @@ impl XdgToplevel {
     pub fn destroy(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -565,7 +585,6 @@ impl XdgToplevel {
     pub fn move_fn(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
@@ -608,7 +627,6 @@ impl XdgToplevel {
     pub fn resize(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
@@ -642,7 +660,6 @@ impl XdgToplevel {
     pub fn set_app_id(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         app_id: String, // string: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -677,7 +694,6 @@ impl XdgToplevel {
     pub fn set_fullscreen(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         output: u32, // object: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -723,7 +739,6 @@ impl XdgToplevel {
     pub fn set_max_size(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: 
         height: i32, // int: 
@@ -755,7 +770,6 @@ impl XdgToplevel {
     pub fn set_maximized(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -800,7 +814,6 @@ impl XdgToplevel {
     pub fn set_min_size(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: 
         height: i32, // int: 
@@ -821,7 +834,6 @@ impl XdgToplevel {
     pub fn set_minimized(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -848,7 +860,6 @@ impl XdgToplevel {
     pub fn set_parent(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         parent: u32, // object: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -867,7 +878,6 @@ impl XdgToplevel {
     pub fn set_title(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         title: String, // string: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -890,7 +900,6 @@ impl XdgToplevel {
     pub fn show_window_menu(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event
@@ -922,7 +931,6 @@ impl XdgToplevel {
     pub fn unset_fullscreen(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -954,7 +962,6 @@ impl XdgToplevel {
     pub fn unset_maximized(
         request: Arc<RwLock<XdgToplevel>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))

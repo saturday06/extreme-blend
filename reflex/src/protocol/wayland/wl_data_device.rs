@@ -239,13 +239,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -260,6 +261,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
             let origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -274,6 +276,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
             let icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -288,6 +291,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -299,12 +303,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataDevice::start_drag(request, session, tx, sender_object_id, source, origin, icon, serial)
+            return WlDataDevice::start_drag(request, session, sender_object_id, source, origin, icon, serial)
         },
         1 => {
             let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -319,6 +324,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -330,10 +336,10 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataDevice::set_selection(request, session, tx, sender_object_id, source, serial)
+            return WlDataDevice::set_selection(request, session, sender_object_id, source, serial)
         },
         2 => {
-            return WlDataDevice::release(request, session, tx, sender_object_id, )
+            return WlDataDevice::release(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -357,7 +363,6 @@ impl WlDataDevice {
     pub fn release(
         request: Arc<RwLock<WlDataDevice>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -372,7 +377,6 @@ impl WlDataDevice {
     pub fn set_selection(
         request: Arc<RwLock<WlDataDevice>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         source: u32, // object: data source for the selection
         serial: u32, // uint: serial number of the event that triggered this request
@@ -412,7 +416,6 @@ impl WlDataDevice {
     pub fn start_drag(
         request: Arc<RwLock<WlDataDevice>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         source: u32, // object: data source for the eventual transfer
         origin: u32, // object: surface where the drag originates

@@ -473,13 +473,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -494,6 +495,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protoco
             let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -508,6 +510,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protoco
             let hotspot_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -522,6 +525,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protoco
             let hotspot_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -533,10 +537,10 @@ pub fn dispatch_request(request: Arc<RwLock<WlPointer>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlPointer::set_cursor(request, session, tx, sender_object_id, serial, surface, hotspot_x, hotspot_y)
+            return WlPointer::set_cursor(request, session, sender_object_id, serial, surface, hotspot_x, hotspot_y)
         },
         1 => {
-            return WlPointer::release(request, session, tx, sender_object_id, )
+            return WlPointer::release(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -567,7 +571,6 @@ impl WlPointer {
     pub fn release(
         request: Arc<RwLock<WlPointer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -609,7 +612,6 @@ impl WlPointer {
     pub fn set_cursor(
         request: Arc<RwLock<WlPointer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial number of the enter event
         surface: u32, // object: pointer surface

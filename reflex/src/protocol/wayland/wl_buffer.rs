@@ -68,11 +68,11 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlBuffer>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlBuffer>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return WlBuffer::destroy(request, session, tx, sender_object_id, )
+            return WlBuffer::destroy(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -99,7 +99,6 @@ impl WlBuffer {
     pub fn destroy(
         request: Arc<RwLock<WlBuffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))

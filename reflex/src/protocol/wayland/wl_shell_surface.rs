@@ -172,13 +172,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -190,12 +191,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::pong(request, session, tx, sender_object_id, serial)
+            return WlShellSurface::pong(request, session, sender_object_id, serial)
         },
         1 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -210,6 +212,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -221,12 +224,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::move_fn(request, session, tx, sender_object_id, seat, serial)
+            return WlShellSurface::move_fn(request, session, sender_object_id, seat, serial)
         },
         2 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -241,6 +245,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -255,6 +260,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -266,15 +272,16 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::resize(request, session, tx, sender_object_id, seat, serial, edges)
+            return WlShellSurface::resize(request, session, sender_object_id, seat, serial, edges)
         },
         3 => {
-            return WlShellSurface::set_toplevel(request, session, tx, sender_object_id, )
+            return WlShellSurface::set_toplevel(request, session, sender_object_id, )
         },
         4 => {
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -289,6 +296,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -303,6 +311,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -317,6 +326,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let flags = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -328,12 +338,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::set_transient(request, session, tx, sender_object_id, parent, x, y, flags)
+            return WlShellSurface::set_transient(request, session, sender_object_id, parent, x, y, flags)
         },
         5 => {
             let method = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -348,6 +359,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let framerate = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -362,6 +374,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -373,12 +386,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::set_fullscreen(request, session, tx, sender_object_id, method, framerate, output)
+            return WlShellSurface::set_fullscreen(request, session, sender_object_id, method, framerate, output)
         },
         6 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -393,6 +407,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -407,6 +422,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -421,6 +437,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -435,6 +452,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -449,6 +467,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
             let flags = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -460,12 +479,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::set_popup(request, session, tx, sender_object_id, seat, serial, parent, x, y, flags)
+            return WlShellSurface::set_popup(request, session, sender_object_id, seat, serial, parent, x, y, flags)
         },
         7 => {
             let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -477,13 +497,14 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlShellSurface::set_maximized(request, session, tx, sender_object_id, output)
+            return WlShellSurface::set_maximized(request, session, sender_object_id, output)
         },
         8 => {
             let title = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -499,6 +520,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -513,6 +535,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -527,13 +550,14 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            return WlShellSurface::set_title(request, session, tx, sender_object_id, title)
+            return WlShellSurface::set_title(request, session, sender_object_id, title)
         },
         9 => {
             let class_ = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -549,6 +573,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -563,6 +588,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -577,7 +603,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlShellSurface>>, session: crate::pr
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            return WlShellSurface::set_class(request, session, tx, sender_object_id, class_)
+            return WlShellSurface::set_class(request, session, sender_object_id, class_)
         },
         _ => {},
     };
@@ -611,7 +637,6 @@ impl WlShellSurface {
     pub fn move_fn(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
@@ -626,7 +651,6 @@ impl WlShellSurface {
     pub fn pong(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial number of the ping event
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -643,7 +667,6 @@ impl WlShellSurface {
     pub fn resize(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
@@ -663,7 +686,6 @@ impl WlShellSurface {
     pub fn set_class(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         class_: String, // string: surface class
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -708,7 +730,6 @@ impl WlShellSurface {
     pub fn set_fullscreen(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         method: u32, // uint: method for resolving size conflict
         framerate: u32, // uint: framerate in mHz
@@ -740,7 +761,6 @@ impl WlShellSurface {
     pub fn set_maximized(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         output: u32, // object: output on which the surface is to be maximized
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -771,7 +791,6 @@ impl WlShellSurface {
     pub fn set_popup(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: seat whose pointer is used
         serial: u32, // uint: serial number of the implicit grab on the pointer
@@ -795,7 +814,6 @@ impl WlShellSurface {
     pub fn set_title(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         title: String, // string: surface title
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -810,7 +828,6 @@ impl WlShellSurface {
     pub fn set_toplevel(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -828,7 +845,6 @@ impl WlShellSurface {
     pub fn set_transient(
         request: Arc<RwLock<WlShellSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         parent: u32, // object: parent surface
         x: i32, // int: surface-local x coordinate

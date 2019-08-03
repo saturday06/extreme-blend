@@ -64,21 +64,19 @@ fn main() {
                         .resources
                         .get(&req.sender_object_id)
                         .map(|r| r.clone());
-                    let tx = session.tx.clone();
                     if let Some(res) = opt_res {
                         let f: Box<Future<Item = Session, Error = std::io::Error> + Send> = Box::new(
                             protocol::resource::dispatch_request(
                                 res,
                                 session,
-                                tx,
                                 req.sender_object_id,
                                 req.opcode,
                                 req.args,
-                            )
-                                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
+                            ).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
                         );
                         f
                     } else {
+                        let tx = session.tx.clone();
                         let f: Box<Future<Item = Session, Error = std::io::Error> + Send> = Box::new(
                             tx.send(Box::new(wl_display::events::Error {
                                 sender_object_id: 1,

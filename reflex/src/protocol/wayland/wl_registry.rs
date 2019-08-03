@@ -110,13 +110,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlRegistry>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlRegistry>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -131,6 +132,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegistry>>, session: crate::protoc
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -142,7 +144,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlRegistry>>, session: crate::protoc
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlRegistry::bind(request, session, tx, sender_object_id, name, id)
+            return WlRegistry::bind(request, session, sender_object_id, name, id)
         },
         _ => {},
     };
@@ -182,7 +184,6 @@ impl WlRegistry {
     pub fn bind(
         request: Arc<RwLock<WlRegistry>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         name: u32, // uint: unique numeric name of the object
         id: u32, // new_id: bounded object

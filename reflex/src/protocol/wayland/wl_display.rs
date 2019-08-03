@@ -119,13 +119,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -137,12 +138,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDisplay::sync(request, session, tx, sender_object_id, callback)
+            return WlDisplay::sync(request, session, sender_object_id, callback)
         },
         1 => {
             let registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -154,7 +156,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDisplay>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDisplay::get_registry(request, session, tx, sender_object_id, registry)
+            return WlDisplay::get_registry(request, session, sender_object_id, registry)
         },
         _ => {},
     };
@@ -183,7 +185,6 @@ impl WlDisplay {
     pub fn get_registry(
         request: Arc<RwLock<WlDisplay>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         registry: u32, // new_id: global registry object
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -206,7 +207,6 @@ impl WlDisplay {
     pub fn sync(
         request: Arc<RwLock<WlDisplay>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         callback: u32, // new_id: callback object for the sync request
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {

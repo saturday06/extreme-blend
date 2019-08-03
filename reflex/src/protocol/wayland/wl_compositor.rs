@@ -29,13 +29,14 @@
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
-pub fn dispatch_request(request: Arc<RwLock<WlCompositor>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlCompositor>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -47,12 +48,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlCompositor>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlCompositor::create_surface(request, session, tx, sender_object_id, id)
+            return WlCompositor::create_surface(request, session, sender_object_id, id)
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -64,7 +66,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlCompositor>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlCompositor::create_region(request, session, tx, sender_object_id, id)
+            return WlCompositor::create_region(request, session, sender_object_id, id)
         },
         _ => {},
     };
@@ -86,7 +88,6 @@ impl WlCompositor {
     pub fn create_region(
         request: Arc<RwLock<WlCompositor>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: the new region
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -99,7 +100,6 @@ impl WlCompositor {
     pub fn create_surface(
         request: Arc<RwLock<WlCompositor>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: the new surface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {

@@ -130,13 +130,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -148,12 +149,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSeat::get_pointer(request, session, tx, sender_object_id, id)
+            return WlSeat::get_pointer(request, session, sender_object_id, id)
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -165,12 +167,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSeat::get_keyboard(request, session, tx, sender_object_id, id)
+            return WlSeat::get_keyboard(request, session, sender_object_id, id)
         },
         2 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -182,10 +185,10 @@ pub fn dispatch_request(request: Arc<RwLock<WlSeat>>, session: crate::protocol::
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSeat::get_touch(request, session, tx, sender_object_id, id)
+            return WlSeat::get_touch(request, session, sender_object_id, id)
         },
         3 => {
-            return WlSeat::release(request, session, tx, sender_object_id, )
+            return WlSeat::release(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -214,7 +217,6 @@ impl WlSeat {
     pub fn get_keyboard(
         request: Arc<RwLock<WlSeat>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat keyboard
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -233,7 +235,6 @@ impl WlSeat {
     pub fn get_pointer(
         request: Arc<RwLock<WlSeat>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat pointer
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -252,7 +253,6 @@ impl WlSeat {
     pub fn get_touch(
         request: Arc<RwLock<WlSeat>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: seat touch interface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -266,7 +266,6 @@ impl WlSeat {
     pub fn release(
         request: Arc<RwLock<WlSeat>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))

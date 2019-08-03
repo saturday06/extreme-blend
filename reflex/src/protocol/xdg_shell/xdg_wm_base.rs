@@ -81,16 +81,17 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return XdgWmBase::destroy(request, session, tx, sender_object_id, )
+            return XdgWmBase::destroy(request, session, sender_object_id, )
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -102,12 +103,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgWmBase::create_positioner(request, session, tx, sender_object_id, id)
+            return XdgWmBase::create_positioner(request, session, sender_object_id, id)
         },
         2 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -122,6 +124,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protoco
             let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -133,12 +136,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgWmBase::get_xdg_surface(request, session, tx, sender_object_id, id, surface)
+            return XdgWmBase::get_xdg_surface(request, session, sender_object_id, id, surface)
         },
         3 => {
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -150,7 +154,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgWmBase>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgWmBase::pong(request, session, tx, sender_object_id, serial)
+            return XdgWmBase::pong(request, session, sender_object_id, serial)
         },
         _ => {},
     };
@@ -176,7 +180,6 @@ impl XdgWmBase {
     pub fn create_positioner(
         request: Arc<RwLock<XdgWmBase>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -193,7 +196,6 @@ impl XdgWmBase {
     pub fn destroy(
         request: Arc<RwLock<XdgWmBase>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -215,7 +217,6 @@ impl XdgWmBase {
     pub fn get_xdg_surface(
         request: Arc<RwLock<XdgWmBase>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
         surface: u32, // object: 
@@ -230,7 +231,6 @@ impl XdgWmBase {
     pub fn pong(
         request: Arc<RwLock<XdgWmBase>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial of the ping event
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {

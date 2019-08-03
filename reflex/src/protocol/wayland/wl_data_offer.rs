@@ -165,13 +165,14 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -187,6 +188,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -202,6 +204,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -216,6 +219,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -230,13 +234,14 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            return WlDataOffer::accept(request, session, tx, sender_object_id, serial, mime_type)
+            return WlDataOffer::accept(request, session, sender_object_id, serial, mime_type)
         },
         1 => {
             let mime_type = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -252,6 +257,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -266,6 +272,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -283,6 +290,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
             let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -294,18 +302,19 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataOffer::receive(request, session, tx, sender_object_id, mime_type, fd)
+            return WlDataOffer::receive(request, session, sender_object_id, mime_type, fd)
         },
         2 => {
-            return WlDataOffer::destroy(request, session, tx, sender_object_id, )
+            return WlDataOffer::destroy(request, session, sender_object_id, )
         },
         3 => {
-            return WlDataOffer::finish(request, session, tx, sender_object_id, )
+            return WlDataOffer::finish(request, session, sender_object_id, )
         },
         4 => {
             let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -320,6 +329,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
             let preferred_action = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -331,7 +341,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataOffer>>, session: crate::proto
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataOffer::set_actions(request, session, tx, sender_object_id, dnd_actions, preferred_action)
+            return WlDataOffer::set_actions(request, session, sender_object_id, dnd_actions, preferred_action)
         },
         _ => {},
     };
@@ -369,7 +379,6 @@ impl WlDataOffer {
     pub fn accept(
         request: Arc<RwLock<WlDataOffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: serial number of the accept request
         mime_type: String, // string: mime type accepted by the client
@@ -383,7 +392,6 @@ impl WlDataOffer {
     pub fn destroy(
         request: Arc<RwLock<WlDataOffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -405,7 +413,6 @@ impl WlDataOffer {
     pub fn finish(
         request: Arc<RwLock<WlDataOffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -431,7 +438,6 @@ impl WlDataOffer {
     pub fn receive(
         request: Arc<RwLock<WlDataOffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         mime_type: String, // string: mime type desired by receiver
         fd: i32, // fd: file descriptor for data transfer
@@ -475,7 +481,6 @@ impl WlDataOffer {
     pub fn set_actions(
         request: Arc<RwLock<WlDataOffer>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         dnd_actions: u32, // uint: actions supported by the destination client
         preferred_action: u32, // uint: action preferred by the destination client

@@ -35,16 +35,17 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return WlSubsurface::destroy(request, session, tx, sender_object_id, )
+            return WlSubsurface::destroy(request, session, sender_object_id, )
         },
         1 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -59,6 +60,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::prot
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -70,12 +72,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSubsurface::set_position(request, session, tx, sender_object_id, x, y)
+            return WlSubsurface::set_position(request, session, sender_object_id, x, y)
         },
         2 => {
             let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -87,12 +90,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSubsurface::place_above(request, session, tx, sender_object_id, sibling)
+            return WlSubsurface::place_above(request, session, sender_object_id, sibling)
         },
         3 => {
             let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -104,13 +108,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSubsurface>>, session: crate::prot
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSubsurface::place_below(request, session, tx, sender_object_id, sibling)
+            return WlSubsurface::place_below(request, session, sender_object_id, sibling)
         },
         4 => {
-            return WlSubsurface::set_sync(request, session, tx, sender_object_id, )
+            return WlSubsurface::set_sync(request, session, sender_object_id, )
         },
         5 => {
-            return WlSubsurface::set_desync(request, session, tx, sender_object_id, )
+            return WlSubsurface::set_desync(request, session, sender_object_id, )
         },
         _ => {},
     };
@@ -182,7 +186,6 @@ impl WlSubsurface {
     pub fn destroy(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -208,7 +211,6 @@ impl WlSubsurface {
     pub fn place_above(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         sibling: u32, // object: the reference surface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -222,7 +224,6 @@ impl WlSubsurface {
     pub fn place_below(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         sibling: u32, // object: the reference surface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -253,7 +254,6 @@ impl WlSubsurface {
     pub fn set_desync(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -280,7 +280,6 @@ impl WlSubsurface {
     pub fn set_position(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: x coordinate in the parent surface
         y: i32, // int: y coordinate in the parent surface
@@ -306,7 +305,6 @@ impl WlSubsurface {
     pub fn set_sync(
         request: Arc<RwLock<WlSubsurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))

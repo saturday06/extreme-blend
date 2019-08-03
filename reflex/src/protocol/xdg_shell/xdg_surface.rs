@@ -83,16 +83,17 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return XdgSurface::destroy(request, session, tx, sender_object_id, )
+            return XdgSurface::destroy(request, session, sender_object_id, )
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -104,12 +105,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgSurface::get_toplevel(request, session, tx, sender_object_id, id)
+            return XdgSurface::get_toplevel(request, session, sender_object_id, id)
         },
         2 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -124,6 +126,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -138,6 +141,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
             let positioner = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -149,12 +153,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgSurface::get_popup(request, session, tx, sender_object_id, id, parent, positioner)
+            return XdgSurface::get_popup(request, session, sender_object_id, id, parent, positioner)
         },
         3 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -169,6 +174,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -183,6 +189,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -197,6 +204,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -208,12 +216,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgSurface::set_window_geometry(request, session, tx, sender_object_id, x, y, width, height)
+            return XdgSurface::set_window_geometry(request, session, sender_object_id, x, y, width, height)
         },
         4 => {
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -225,7 +234,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgSurface>>, session: crate::protoc
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgSurface::ack_configure(request, session, tx, sender_object_id, serial)
+            return XdgSurface::ack_configure(request, session, sender_object_id, serial)
         },
         _ => {},
     };
@@ -301,7 +310,6 @@ impl XdgSurface {
     pub fn ack_configure(
         request: Arc<RwLock<XdgSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         serial: u32, // uint: the serial from the configure event
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -315,7 +323,6 @@ impl XdgSurface {
     pub fn destroy(
         request: Arc<RwLock<XdgSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -334,7 +341,6 @@ impl XdgSurface {
     pub fn get_popup(
         request: Arc<RwLock<XdgSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
         parent: u32, // object: 
@@ -353,7 +359,6 @@ impl XdgSurface {
     pub fn get_toplevel(
         request: Arc<RwLock<XdgSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: 
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -394,7 +399,6 @@ impl XdgSurface {
     pub fn set_window_geometry(
         request: Arc<RwLock<XdgSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: 
         y: i32, // int: 

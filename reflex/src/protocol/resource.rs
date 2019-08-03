@@ -34,88 +34,88 @@ pub enum Resource {
     XdgWmBase(Arc<RwLock<super::xdg_shell::xdg_wm_base::XdgWmBase>>),
 }
 
-pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     match resource {
         Resource::WlBuffer(object) => {
-            super::wayland::wl_buffer::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_buffer::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlCallback(object) => {
-            super::wayland::wl_callback::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_callback::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlCompositor(object) => {
-            super::wayland::wl_compositor::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_compositor::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlDataDevice(object) => {
-            super::wayland::wl_data_device::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_data_device::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlDataDeviceManager(object) => {
-            super::wayland::wl_data_device_manager::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_data_device_manager::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlDataOffer(object) => {
-            super::wayland::wl_data_offer::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_data_offer::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlDataSource(object) => {
-            super::wayland::wl_data_source::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_data_source::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlDisplay(object) => {
-            super::wayland::wl_display::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_display::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlKeyboard(object) => {
-            super::wayland::wl_keyboard::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_keyboard::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlOutput(object) => {
-            super::wayland::wl_output::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_output::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlPointer(object) => {
-            super::wayland::wl_pointer::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_pointer::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlRegion(object) => {
-            super::wayland::wl_region::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_region::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlRegistry(object) => {
-            super::wayland::wl_registry::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_registry::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlSeat(object) => {
-            super::wayland::wl_seat::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_seat::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlShell(object) => {
-            super::wayland::wl_shell::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_shell::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlShellSurface(object) => {
-            super::wayland::wl_shell_surface::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_shell_surface::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlShm(object) => {
-            super::wayland::wl_shm::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_shm::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlShmPool(object) => {
-            super::wayland::wl_shm_pool::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_shm_pool::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlSubcompositor(object) => {
-            super::wayland::wl_subcompositor::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_subcompositor::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlSubsurface(object) => {
-            super::wayland::wl_subsurface::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_subsurface::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlSurface(object) => {
-            super::wayland::wl_surface::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_surface::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::WlTouch(object) => {
-            super::wayland::wl_touch::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::wayland::wl_touch::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::XdgPopup(object) => {
-            super::xdg_shell::xdg_popup::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::xdg_shell::xdg_popup::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::XdgPositioner(object) => {
-            super::xdg_shell::xdg_positioner::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::xdg_shell::xdg_positioner::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::XdgSurface(object) => {
-            super::xdg_shell::xdg_surface::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::xdg_shell::xdg_surface::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::XdgToplevel(object) => {
-            super::xdg_shell::xdg_toplevel::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::xdg_shell::xdg_toplevel::dispatch_request(object, session, sender_object_id, opcode, args)
         }
         Resource::XdgWmBase(object) => {
-            super::xdg_shell::xdg_wm_base::dispatch_request(object, session, tx, sender_object_id, opcode, args)
+            super::xdg_shell::xdg_wm_base::dispatch_request(object, session, sender_object_id, opcode, args)
         }
     }
 }

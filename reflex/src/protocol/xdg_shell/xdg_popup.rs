@@ -104,16 +104,17 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<XdgPopup>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<XdgPopup>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return XdgPopup::destroy(request, session, tx, sender_object_id, )
+            return XdgPopup::destroy(request, session, sender_object_id, )
         },
         1 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -128,6 +129,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPopup>>, session: crate::protocol
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -139,7 +141,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPopup>>, session: crate::protocol
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPopup::grab(request, session, tx, sender_object_id, seat, serial)
+            return XdgPopup::grab(request, session, sender_object_id, seat, serial)
         },
         _ => {},
     };
@@ -192,7 +194,6 @@ impl XdgPopup {
     pub fn destroy(
         request: Arc<RwLock<XdgPopup>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -244,7 +245,6 @@ impl XdgPopup {
     pub fn grab(
         request: Arc<RwLock<XdgPopup>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         seat: u32, // object: the wl_seat of the user event
         serial: u32, // uint: the serial of the user event

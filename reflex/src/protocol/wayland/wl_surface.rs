@@ -101,16 +101,17 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return WlSurface::destroy(request, session, tx, sender_object_id, )
+            return WlSurface::destroy(request, session, sender_object_id, )
         },
         1 => {
             let buffer = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -125,6 +126,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -139,6 +141,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -150,12 +153,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::attach(request, session, tx, sender_object_id, buffer, x, y)
+            return WlSurface::attach(request, session, sender_object_id, buffer, x, y)
         },
         2 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -170,6 +174,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -184,6 +189,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -198,6 +204,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -209,12 +216,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::damage(request, session, tx, sender_object_id, x, y, width, height)
+            return WlSurface::damage(request, session, sender_object_id, x, y, width, height)
         },
         3 => {
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -226,12 +234,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::frame(request, session, tx, sender_object_id, callback)
+            return WlSurface::frame(request, session, sender_object_id, callback)
         },
         4 => {
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -243,12 +252,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::set_opaque_region(request, session, tx, sender_object_id, region)
+            return WlSurface::set_opaque_region(request, session, sender_object_id, region)
         },
         5 => {
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -260,15 +270,16 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::set_input_region(request, session, tx, sender_object_id, region)
+            return WlSurface::set_input_region(request, session, sender_object_id, region)
         },
         6 => {
-            return WlSurface::commit(request, session, tx, sender_object_id, )
+            return WlSurface::commit(request, session, sender_object_id, )
         },
         7 => {
             let transform = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -280,12 +291,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::set_buffer_transform(request, session, tx, sender_object_id, transform)
+            return WlSurface::set_buffer_transform(request, session, sender_object_id, transform)
         },
         8 => {
             let scale = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -297,12 +309,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::set_buffer_scale(request, session, tx, sender_object_id, scale)
+            return WlSurface::set_buffer_scale(request, session, sender_object_id, scale)
         },
         9 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -317,6 +330,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -331,6 +345,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -345,6 +360,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -356,7 +372,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlSurface>>, session: crate::protoco
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlSurface::damage_buffer(request, session, tx, sender_object_id, x, y, width, height)
+            return WlSurface::damage_buffer(request, session, sender_object_id, x, y, width, height)
         },
         _ => {},
     };
@@ -452,7 +468,6 @@ impl WlSurface {
     pub fn attach(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         buffer: u32, // object: buffer of surface contents
         x: i32, // int: surface-local x coordinate
@@ -483,7 +498,6 @@ impl WlSurface {
     pub fn commit(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -515,7 +529,6 @@ impl WlSurface {
     pub fn damage(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: surface-local x coordinate
         y: i32, // int: surface-local y coordinate
@@ -562,7 +575,6 @@ impl WlSurface {
     pub fn damage_buffer(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: buffer-local x coordinate
         y: i32, // int: buffer-local y coordinate
@@ -578,7 +590,6 @@ impl WlSurface {
     pub fn destroy(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -621,7 +632,6 @@ impl WlSurface {
     pub fn frame(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         callback: u32, // new_id: callback object for the frame request
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -656,7 +666,6 @@ impl WlSurface {
     pub fn set_buffer_scale(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         scale: i32, // int: positive scale for interpreting buffer contents
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -697,7 +706,6 @@ impl WlSurface {
     pub fn set_buffer_transform(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         transform: i32, // int: transform for interpreting buffer contents
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -731,7 +739,6 @@ impl WlSurface {
     pub fn set_input_region(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         region: u32, // object: input region of the surface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -767,7 +774,6 @@ impl WlSurface {
     pub fn set_opaque_region(
         request: Arc<RwLock<WlSurface>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         region: u32, // object: opaque region of the surface
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {

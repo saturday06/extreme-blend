@@ -63,13 +63,14 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -81,12 +82,13 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crat
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataDeviceManager::create_data_source(request, session, tx, sender_object_id, id)
+            return WlDataDeviceManager::create_data_source(request, session, sender_object_id, id)
         },
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -101,6 +103,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crat
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -112,7 +115,7 @@ pub fn dispatch_request(request: Arc<RwLock<WlDataDeviceManager>>, session: crat
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return WlDataDeviceManager::get_data_device(request, session, tx, sender_object_id, id, seat)
+            return WlDataDeviceManager::get_data_device(request, session, sender_object_id, id, seat)
         },
         _ => {},
     };
@@ -141,7 +144,6 @@ impl WlDataDeviceManager {
     pub fn create_data_source(
         request: Arc<RwLock<WlDataDeviceManager>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: data source to create
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -154,7 +156,6 @@ impl WlDataDeviceManager {
     pub fn get_data_device(
         request: Arc<RwLock<WlDataDeviceManager>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         id: u32, // new_id: data device to create
         seat: u32, // object: seat associated with the data device

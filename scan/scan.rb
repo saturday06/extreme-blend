@@ -91,7 +91,7 @@ EOF
       @requests.sort_by(&:index).each do |request|
         result += "        #{request.index} => {\n"
         result += request.args.map(&:deserialize).join("")
-        result += "            return #{camel_case(@name)}::#{request.rust_name}(request, session, tx, sender_object_id, "
+        result += "            return #{camel_case(@name)}::#{request.rust_name}(request, session, sender_object_id, "
         result += request.args.map(&:name).join(", ")
         result += ")\n"
         result += "        },\n"
@@ -207,6 +207,7 @@ class Arg
 
   def deserialize_return_error
     <<EOF
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -580,13 +581,13 @@ EOF
   f.puts("}")
   f.puts("")
   f.puts(<<DISPATCH_REQUEST)
-pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     match resource {
 DISPATCH_REQUEST
   protocols.each do |protocol|
     protocol.interfaces.each do |interface|
       f.puts("        Resource::#{camel_case(interface.name)}(object) => {")
-      f.puts("            super::#{protocol.name}::#{interface.name}::dispatch_request(object, session, tx, sender_object_id, opcode, args)")
+      f.puts("            super::#{protocol.name}::#{interface.name}::dispatch_request(object, session, sender_object_id, opcode, args)")
       f.puts("        }")
     end
   end
@@ -652,7 +653,7 @@ EOF
         f.puts("}")
       end
       f.puts("")
-      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+      f.puts("pub fn dispatch_request(request: Arc<RwLock<#{camel_case(interface.name)}>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
       f.puts("")
@@ -668,7 +669,6 @@ EOF
           f.puts("    pub fn #{request.rust_name}(")
           f.puts("        request: Arc<RwLock<#{camel_case(interface.name)}>>,")
           f.puts("        session: crate::protocol::session::Session,")
-          f.puts("        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,")
           f.puts("        sender_object_id: u32,")
           request.args.each do |arg|
             f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")

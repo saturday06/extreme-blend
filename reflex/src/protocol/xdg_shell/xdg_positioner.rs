@@ -83,16 +83,17 @@ pub mod enums {
     }
 }
 
-pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            return XdgPositioner::destroy(request, session, tx, sender_object_id, )
+            return XdgPositioner::destroy(request, session, sender_object_id, )
         },
         1 => {
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -107,6 +108,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -118,12 +120,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_size(request, session, tx, sender_object_id, width, height)
+            return XdgPositioner::set_size(request, session, sender_object_id, width, height)
         },
         2 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -138,6 +141,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -152,6 +156,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -166,6 +171,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -177,12 +183,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_anchor_rect(request, session, tx, sender_object_id, x, y, width, height)
+            return XdgPositioner::set_anchor_rect(request, session, sender_object_id, x, y, width, height)
         },
         3 => {
             let anchor = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -194,12 +201,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_anchor(request, session, tx, sender_object_id, anchor)
+            return XdgPositioner::set_anchor(request, session, sender_object_id, anchor)
         },
         4 => {
             let gravity = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -211,12 +219,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_gravity(request, session, tx, sender_object_id, gravity)
+            return XdgPositioner::set_gravity(request, session, sender_object_id, gravity)
         },
         5 => {
             let constraint_adjustment = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -228,12 +237,13 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_constraint_adjustment(request, session, tx, sender_object_id, constraint_adjustment)
+            return XdgPositioner::set_constraint_adjustment(request, session, sender_object_id, constraint_adjustment)
         },
         6 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -248,6 +258,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
+                let tx = session.tx.clone();
                 return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
                     sender_object_id: 1,
                     object_id: sender_object_id,
@@ -259,7 +270,7 @@ pub fn dispatch_request(request: Arc<RwLock<XdgPositioner>>, session: crate::pro
                 })).map_err(|_| ()).map(|_tx| session));
 
             };
-            return XdgPositioner::set_offset(request, session, tx, sender_object_id, x, y)
+            return XdgPositioner::set_offset(request, session, sender_object_id, x, y)
         },
         _ => {},
     };
@@ -297,7 +308,6 @@ impl XdgPositioner {
     pub fn destroy(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
         Box::new(futures::future::ok(session))
@@ -314,7 +324,6 @@ impl XdgPositioner {
     pub fn set_anchor(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         anchor: u32, // uint: anchor
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -336,7 +345,6 @@ impl XdgPositioner {
     pub fn set_anchor_rect(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: x position of anchor rectangle
         y: i32, // int: y position of anchor rectangle
@@ -364,7 +372,6 @@ impl XdgPositioner {
     pub fn set_constraint_adjustment(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         constraint_adjustment: u32, // uint: bit mask of constraint adjustments
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -382,7 +389,6 @@ impl XdgPositioner {
     pub fn set_gravity(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         gravity: u32, // uint: gravity direction
     ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -405,7 +411,6 @@ impl XdgPositioner {
     pub fn set_offset(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         x: i32, // int: surface position x offset
         y: i32, // int: surface position y offset
@@ -423,7 +428,6 @@ impl XdgPositioner {
     pub fn set_size(
         request: Arc<RwLock<XdgPositioner>>,
         session: crate::protocol::session::Session,
-        tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         width: i32, // int: width of positioned rectangle
         height: i32, // int: height of positioned rectangle
