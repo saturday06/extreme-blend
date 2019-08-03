@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-//
+// 
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-//
+// 
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-//
+// 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,16 +23,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[allow(unused_imports)]
-use byteorder::{NativeEndian, ReadBytesExt};
-#[allow(unused_imports)]
-use futures::future::Future;
-#[allow(unused_imports)]
-use futures::sink::Sink;
-#[allow(unused_imports)]
-use std::io::{Cursor, Read};
-#[allow(unused_imports)]
-use std::sync::{Arc, RwLock};
+#[allow(unused_imports)] use byteorder::{NativeEndian, ReadBytesExt};
+#[allow(unused_imports)] use futures::future::Future;
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::io::{Cursor, Read};
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 pub mod enums {
     pub enum Error {
@@ -79,13 +74,13 @@ pub mod events {
     //
     // The event is sent when a drag-and-drop operation is ended
     // because the implicit grab is removed.
-    //
+    // 
     // The drag-and-drop destination is expected to honor the last action
     // received through wl_data_offer.action, if the resulting action is
     // "copy" or "move", the destination can still perform
     // wl_data_offer.receive requests, and is expected to end all
     // transfers with a wl_data_offer.finish request.
-    //
+    // 
     // If the resulting action is "ask", the action will not be considered
     // final. The drag-and-drop destination is expected to perform one last
     // wl_data_offer.set_actions request, or wl_data_offer.destroy in order
@@ -119,11 +114,11 @@ pub mod events {
     // coordinates.
     pub struct Enter {
         pub sender_object_id: u32,
-        pub serial: u32,  // uint: serial number of the enter event
+        pub serial: u32, // uint: serial number of the enter event
         pub surface: u32, // object: client surface entered
-        pub x: u32,       // fixed: surface-local x coordinate
-        pub y: u32,       // fixed: surface-local y coordinate
-        pub id: u32,      // object: source data_offer object
+        pub x: u32, // fixed: surface-local x coordinate
+        pub y: u32, // fixed: surface-local y coordinate
+        pub id: u32, // object: source data_offer object
     }
 
     impl super::super::super::event::Event for Enter {
@@ -183,8 +178,8 @@ pub mod events {
     pub struct Motion {
         pub sender_object_id: u32,
         pub time: u32, // uint: timestamp with millisecond granularity
-        pub x: u32,    // fixed: surface-local x coordinate
-        pub y: u32,    // fixed: surface-local y coordinate
+        pub x: u32, // fixed: surface-local x coordinate
+        pub y: u32, // fixed: surface-local y coordinate
     }
 
     impl super::super::super::event::Event for Motion {
@@ -244,154 +239,116 @@ pub mod events {
     }
 }
 
-pub fn dispatch_request(
-    request: Arc<RwLock<WlDataDevice>>,
-    session: RwLock<super::super::session::Session>,
-    tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
-    sender_object_id: u32,
-    opcode: u16,
-    args: Vec<u8>,
-) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
+pub fn dispatch_request(request: Arc<RwLock<WlDataDevice>>, session: crate::protocol::session::Session, tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
             let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
             let origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
             let icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
-            return WlDataDevice::start_drag(
-                request,
-                session,
-                tx,
-                sender_object_id,
-                source,
-                origin,
-                icon,
-                serial,
-            );
-        }
+            return WlDataDevice::start_drag(request, session, tx, sender_object_id, source, origin, icon, serial)
+        },
         1 => {
             let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
+                x 
             } else {
-                return Box::new(
-                    tx.send(Box::new(super::super::wayland::wl_display::events::Error {
-                        sender_object_id: 1,
-                        object_id: sender_object_id,
-                        code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                        message: format!(
-                            "@{} opcode={} args={:?} not found",
-                            sender_object_id, opcode, args
-                        ),
-                    }))
-                    .map_err(|_| ())
-                    .map(|_tx| ()),
-                );
+                return Box::new(tx.send(Box::new(super::super::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: sender_object_id,
+                    code: super::super::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "@{} opcode={} args={:?} not found",
+                        sender_object_id, opcode, args
+                    ),
+                })).map_err(|_| ()).map(|_tx| session));
+
             };
-            return WlDataDevice::set_selection(
-                request,
-                session,
-                tx,
-                sender_object_id,
-                source,
-                serial,
-            );
-        }
-        2 => return WlDataDevice::release(request, session, tx, sender_object_id),
-        _ => {}
+            return WlDataDevice::set_selection(request, session, tx, sender_object_id, source, serial)
+        },
+        2 => {
+            return WlDataDevice::release(request, session, tx, sender_object_id, )
+        },
+        _ => {},
     };
-    Box::new(futures::future::ok(()))
+    Box::new(futures::future::ok(session))
 }
 
 // data transfer device
 //
 // There is one wl_data_device per seat which can be obtained
 // from the global wl_data_device_manager singleton.
-//
+// 
 // A wl_data_device provides access to inter-client data transfer
 // mechanisms such as copy-and-paste and drag-and-drop.
-pub struct WlDataDevice {}
+pub struct WlDataDevice {
+}
 
 impl WlDataDevice {
     // destroy data device
@@ -399,45 +356,45 @@ impl WlDataDevice {
     // This request destroys the data device.
     pub fn release(
         request: Arc<RwLock<WlDataDevice>>,
-        session: RwLock<super::super::session::Session>,
+        session: crate::protocol::session::Session,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
-    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
-        Box::new(futures::future::ok(()))
+    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+        Box::new(futures::future::ok(session))
     }
 
     // copy data to the selection
     //
     // This request asks the compositor to set the selection
     // to the data from the source on behalf of the client.
-    //
+    // 
     // To unset the selection, set the source to NULL.
     pub fn set_selection(
         request: Arc<RwLock<WlDataDevice>>,
-        session: RwLock<super::super::session::Session>,
+        session: crate::protocol::session::Session,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         source: u32, // object: data source for the selection
         serial: u32, // uint: serial number of the event that triggered this request
-    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
-        Box::new(futures::future::ok(()))
+    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+        Box::new(futures::future::ok(session))
     }
 
     // start drag-and-drop operation
     //
     // This request asks the compositor to start a drag-and-drop
     // operation on behalf of the client.
-    //
+    // 
     // The source argument is the data source that provides the data
     // for the eventual data transfer. If source is NULL, enter, leave
     // and motion events are sent only to the client that initiated the
     // drag and the client is expected to handle the data passing
     // internally.
-    //
+    // 
     // The origin surface is the surface where the drag originates and
     // the client must have an active implicit grab that matches the
     // serial.
-    //
+    // 
     // The icon surface is an optional (can be NULL) surface that
     // provides an icon to be moved around with the cursor.  Initially,
     // the top-left corner of the icon surface is placed at the cursor
@@ -446,7 +403,7 @@ impl WlDataDevice {
     // wl_surface.commit as usual. The icon surface is given the role of
     // a drag-and-drop icon. If the icon surface already has another role,
     // it raises a protocol error.
-    //
+    // 
     // The current and pending input regions of the icon wl_surface are
     // cleared, and wl_surface.set_input_region is ignored until the
     // wl_surface is no longer used as the icon surface. When the use
@@ -454,14 +411,14 @@ impl WlDataDevice {
     // undefined, and the wl_surface is unmapped.
     pub fn start_drag(
         request: Arc<RwLock<WlDataDevice>>,
-        session: RwLock<super::super::session::Session>,
+        session: crate::protocol::session::Session,
         tx: tokio::sync::mpsc::Sender<Box<super::super::event::Event + Send>>,
         sender_object_id: u32,
         source: u32, // object: data source for the eventual transfer
         origin: u32, // object: surface where the drag originates
-        icon: u32,   // object: drag-and-drop icon surface
+        icon: u32, // object: drag-and-drop icon surface
         serial: u32, // uint: serial number of the implicit grab on the origin
-    ) -> Box<futures::future::Future<Item = (), Error = ()> + Send> {
-        Box::new(futures::future::ok(()))
+    ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+        Box::new(futures::future::ok(session))
     }
 }
