@@ -105,10 +105,7 @@ impl XdgSurface {
         context: Context<XdgSurface>,
         _serial: u32, // uint: the serial from the configure event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_surface@{}::ack_configure is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_surface::ack_configure is not implemented yet".to_string())
     }
 
     // destroy the xdg_surface
@@ -116,10 +113,7 @@ impl XdgSurface {
     // Destroy the xdg_surface object. An xdg_surface must only be destroyed
     // after its role object has been destroyed.
     pub fn destroy(context: Context<XdgSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_surface@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_surface::destroy is not implemented yet".to_string())
     }
 
     // assign the xdg_popup surface role
