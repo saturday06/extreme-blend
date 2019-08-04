@@ -9,6 +9,8 @@ use crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
+use futures::sink::Sink;
+use futures::future::Future;
 
 pub struct Session {
     pub resources: HashMap<u32, Resource>,
@@ -68,18 +70,20 @@ where
         self,
         message: String,
     ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
+        let tx = self.tx.clone();
+        let sender_object_id = self.sender_object_id;
+        let session: Session = self.into();
         return Box::new(
             tx.send(Box::new(
                 crate::protocol::wayland::wl_display::events::Error {
                     sender_object_id: 1,
-                    object_id: context.sender_object_id,
+                    object_id: sender_object_id,
                     code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
                     message,
                 },
             ))
             .map_err(|_| ())
-            .map(|_| context.into()),
+            .map(|_| session),
         );
     }
 }

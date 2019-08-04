@@ -115,7 +115,7 @@ class Interface
     result = ""
     if @requests
       result +=<<EOF
-    let mut cursor = Cursor::new(&args);
+    #[allow(unused_mut)] let mut cursor = Cursor::new(&args);
     match opcode {
 EOF
       @requests.sort_by(&:index).each do |request|
@@ -777,10 +777,7 @@ USE
           end
           f.puts(<<FUNC_BODY)
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "#{interface.name}@{}::#{request.name} is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("#{interface.name}::#{request.name} is not implemented yet")
     }
 FUNC_BODY
         end
