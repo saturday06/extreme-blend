@@ -13,6 +13,7 @@ use protocol::wayland::wl_display::WlDisplay;
 use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
+use std::os::unix::io::AsRawFd;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::codec::Decoder;
@@ -38,6 +39,7 @@ fn main() {
         .unwrap()
         .incoming()
         .for_each(move |stream| {
+            let fd = stream.as_raw_fd();
             let (reader0, tx0) = {
                 let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(1000);
                 let (writer0, reader0) = Codec::new().framed(stream).split();
@@ -102,7 +104,7 @@ fn main() {
 
             input_session0.or_else(|_| futures::future::ok(()))
         })
-        .map_err(|_| ());
+        .map_err(|err| println!("Error: {:?}", err));
     tokio::run(listener);
     println!("exit");
 }

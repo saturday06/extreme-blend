@@ -147,7 +147,8 @@ impl WlSurface {
     //
     // Other interfaces may add further double-buffered surface state.
     pub fn commit(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method("wl_surface::commit is not implemented yet".to_string())
+        println!("WlSurface::commit");
+        context.ok()
     }
 
     // mark part of the surface damaged
