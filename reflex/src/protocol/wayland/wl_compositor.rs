@@ -24,6 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
+use crate::protocol::{wayland, xdg_shell};
 use futures::future::{err, ok, Future};
 use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
@@ -68,24 +69,10 @@ impl WlCompositor {
     //
     // Ask the compositor to create a new surface.
     pub fn create_surface(
-        context: Context<Arc<RwLock<WlCompositor>>>,
-        _id: u32, // new_id: the new surface
+        mut context: Context<Arc<RwLock<WlCompositor>>>,
+        id: u32, // new_id: the new surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_compositor@{}::create_surface is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.resources.insert(id, wayland::wl_surface::WlSurface{}.into());
+        return context.ok();
     }
 }

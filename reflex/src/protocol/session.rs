@@ -59,6 +59,26 @@ where
             sender_object,
         }
     }
+
+    pub fn ok(self) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+        Box::new(futures::future::ok(self.into()))
+    }
+
+    pub fn invalid_method(self, message: String) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message,
+                },
+            ))
+                .map_err(|_| ())
+                .map(|_| context.into()),
+        );
+    }
 }
 
 impl<T> Into<Session> for Context<T>
