@@ -195,6 +195,7 @@ impl XdgSurface {
         _width: i32,  // int:
         _height: i32, // int:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method("xdg_surface::set_window_geometry is not implemented yet".to_string())
+        context
+            .invalid_method("xdg_surface::set_window_geometry is not implemented yet".to_string())
     }
 }

@@ -57,7 +57,9 @@ impl WlCompositor {
         mut context: Context<Arc<RwLock<WlCompositor>>>,
         id: u32, // new_id: the new surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.resources.insert(id, wayland::wl_surface::WlSurface{}.into());
+        context
+            .resources
+            .insert(id, wayland::wl_surface::WlSurface {}.into());
         return context.ok();
     }
 }
