@@ -65,10 +65,7 @@ impl WlDataOffer {
         _serial: u32,       // uint: serial number of the accept request
         _mime_type: String, // string: mime type accepted by the client
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_offer@{}::accept is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_offer::accept is not implemented yet".to_string())
     }
 
     // destroy data offer
@@ -77,10 +74,7 @@ impl WlDataOffer {
     pub fn destroy(
         context: Context<WlDataOffer>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_offer@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_offer::destroy is not implemented yet".to_string())
     }
 
     // the offer will no longer be used
@@ -97,10 +91,7 @@ impl WlDataOffer {
     // wl_data_offer.accept or no action was received through
     // wl_data_offer.action.
     pub fn finish(context: Context<WlDataOffer>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_offer@{}::finish is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_offer::finish is not implemented yet".to_string())
     }
 
     // request that the data is transferred
@@ -125,10 +116,7 @@ impl WlDataOffer {
         _mime_type: String, // string: mime type desired by receiver
         _fd: i32,           // fd: file descriptor for data transfer
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_offer@{}::receive is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_offer::receive is not implemented yet".to_string())
     }
 
     // set the available/preferred drag-and-drop actions
@@ -169,9 +157,6 @@ impl WlDataOffer {
         _dnd_actions: u32,      // uint: actions supported by the destination client
         _preferred_action: u32, // uint: action preferred by the destination client
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_offer@{}::set_actions is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_offer::set_actions is not implemented yet".to_string())
     }
 }

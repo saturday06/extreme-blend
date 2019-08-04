@@ -6,11 +6,11 @@ use super::wayland::wl_registry::WlRegistry;
 use super::wayland::wl_shm::WlShm;
 use super::xdg_shell::xdg_wm_base::XdgWmBase;
 use crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager;
+use futures::future::Future;
+use futures::sink::Sink;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
-use futures::sink::Sink;
-use futures::future::Future;
 
 pub struct Session {
     pub resources: HashMap<u32, Resource>,

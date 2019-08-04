@@ -47,10 +47,7 @@ impl WlCompositor {
         context: Context<Arc<RwLock<WlCompositor>>>,
         _id: u32, // new_id: the new region
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_compositor@{}::create_region is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_compositor::create_region is not implemented yet".to_string())
     }
 
     // create new surface

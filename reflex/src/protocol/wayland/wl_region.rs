@@ -50,20 +50,14 @@ impl WlRegion {
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_region@{}::add is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_region::add is not implemented yet".to_string())
     }
 
     // destroy region
     //
     // Destroy the region.  This will invalidate the object ID.
     pub fn destroy(context: Context<WlRegion>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_region@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_region::destroy is not implemented yet".to_string())
     }
 
     // subtract rectangle from region
@@ -76,9 +70,6 @@ impl WlRegion {
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_region@{}::subtract is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_region::subtract is not implemented yet".to_string())
     }
 }

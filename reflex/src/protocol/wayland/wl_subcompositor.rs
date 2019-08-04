@@ -64,10 +64,7 @@ impl WlSubcompositor {
     pub fn destroy(
         context: Context<WlSubcompositor>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subcompositor@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subcompositor::destroy is not implemented yet".to_string())
     }
 
     // give a surface the role sub-surface
@@ -93,9 +90,7 @@ impl WlSubcompositor {
         _surface: u32, // object: the surface to be turned into a sub-surface
         _parent: u32,  // object: the parent surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subcompositor@{}::get_subsurface is not implemented yet",
-            context.sender_object_id
-        ))
+        context
+            .invalid_method("wl_subcompositor::get_subsurface is not implemented yet".to_string())
     }
 }

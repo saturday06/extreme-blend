@@ -42,9 +42,6 @@ pub struct WlKeyboard {}
 impl WlKeyboard {
     // release the keyboard object
     pub fn release(context: Context<WlKeyboard>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_keyboard@{}::release is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_keyboard::release is not implemented yet".to_string())
     }
 }

@@ -96,10 +96,7 @@ impl WlSubsurface {
     pub fn destroy(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::destroy is not implemented yet".to_string())
     }
 
     // restack the sub-surface
@@ -123,10 +120,7 @@ impl WlSubsurface {
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::place_above is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::place_above is not implemented yet".to_string())
     }
 
     // restack the sub-surface
@@ -137,10 +131,7 @@ impl WlSubsurface {
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::place_below is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::place_below is not implemented yet".to_string())
     }
 
     // set sub-surface to desynchronized mode
@@ -167,10 +158,7 @@ impl WlSubsurface {
     pub fn set_desync(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::set_desync is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::set_desync is not implemented yet".to_string())
     }
 
     // reposition the sub-surface
@@ -196,10 +184,7 @@ impl WlSubsurface {
         _x: i32, // int: x coordinate in the parent surface
         _y: i32, // int: y coordinate in the parent surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::set_position is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::set_position is not implemented yet".to_string())
     }
 
     // set sub-surface to synchronized mode
@@ -220,9 +205,6 @@ impl WlSubsurface {
     pub fn set_sync(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_subsurface@{}::set_sync is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_subsurface::set_sync is not implemented yet".to_string())
     }
 }

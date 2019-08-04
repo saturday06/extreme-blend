@@ -77,10 +77,7 @@ impl XdgPopup {
     // If this xdg_popup is not the "topmost" popup, a protocol error
     // will be sent.
     pub fn destroy(context: Context<XdgPopup>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_popup@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_popup::destroy is not implemented yet".to_string())
     }
 
     // make the popup take an explicit grab
@@ -131,9 +128,6 @@ impl XdgPopup {
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_popup@{}::grab is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_popup::grab is not implemented yet".to_string())
     }
 }

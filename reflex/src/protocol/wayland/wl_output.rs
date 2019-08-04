@@ -49,9 +49,6 @@ impl WlOutput {
     // Using this request a client can tell the server that it is not going to
     // use the output object anymore.
     pub fn release(context: Context<WlOutput>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_output@{}::release is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_output::release is not implemented yet".to_string())
     }
 }

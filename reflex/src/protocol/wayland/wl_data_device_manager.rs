@@ -54,10 +54,9 @@ impl WlDataDeviceManager {
         context: Context<Arc<RwLock<WlDataDeviceManager>>>,
         _id: u32, // new_id: data source to create
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_device_manager@{}::create_data_source is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method(
+            "wl_data_device_manager::create_data_source is not implemented yet".to_string(),
+        )
     }
 
     // create a new data device
@@ -68,9 +67,8 @@ impl WlDataDeviceManager {
         _id: u32,   // new_id: data device to create
         _seat: u32, // object: seat associated with the data device
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_device_manager@{}::get_data_device is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method(
+            "wl_data_device_manager::get_data_device is not implemented yet".to_string(),
+        )
     }
 }

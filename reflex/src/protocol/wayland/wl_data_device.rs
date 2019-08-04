@@ -49,10 +49,7 @@ impl WlDataDevice {
     pub fn release(
         context: Context<WlDataDevice>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_device@{}::release is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_device::release is not implemented yet".to_string())
     }
 
     // copy data to the selection
@@ -66,10 +63,7 @@ impl WlDataDevice {
         _source: u32, // object: data source for the selection
         _serial: u32, // uint: serial number of the event that triggered this request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_device@{}::set_selection is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_device::set_selection is not implemented yet".to_string())
     }
 
     // start drag-and-drop operation
@@ -108,9 +102,6 @@ impl WlDataDevice {
         _icon: u32,   // object: drag-and-drop icon surface
         _serial: u32, // uint: serial number of the implicit grab on the origin
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_data_device@{}::start_drag is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_data_device::start_drag is not implemented yet".to_string())
     }
 }

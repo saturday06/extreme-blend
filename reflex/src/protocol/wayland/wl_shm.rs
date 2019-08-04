@@ -60,9 +60,6 @@ impl WlShm {
         _fd: i32,   // fd: file descriptor for the pool
         _size: i32, // int: pool size, in bytes
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_shm@{}::create_pool is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_shm::create_pool is not implemented yet".to_string())
     }
 }

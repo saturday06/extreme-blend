@@ -55,10 +55,7 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat keyboard
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_seat@{}::get_keyboard is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_seat::get_keyboard is not implemented yet".to_string())
     }
 
     // return pointer object
@@ -74,10 +71,7 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat pointer
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_seat@{}::get_pointer is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_seat::get_pointer is not implemented yet".to_string())
     }
 
     // return touch object
@@ -93,10 +87,7 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat touch interface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_seat@{}::get_touch is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_seat::get_touch is not implemented yet".to_string())
     }
 
     // release the seat object
@@ -104,9 +95,6 @@ impl WlSeat {
     // Using this request a client can tell the server that it is not going to
     // use the seat object anymore.
     pub fn release(context: Context<WlSeat>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_seat@{}::release is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_seat::release is not implemented yet".to_string())
     }
 }

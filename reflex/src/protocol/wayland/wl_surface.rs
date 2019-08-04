@@ -124,10 +124,7 @@ impl WlSurface {
         _x: i32,      // int: surface-local x coordinate
         _y: i32,      // int: surface-local y coordinate
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::attach is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::attach is not implemented yet".to_string())
     }
 
     // commit pending surface state
@@ -150,10 +147,7 @@ impl WlSurface {
     //
     // Other interfaces may add further double-buffered surface state.
     pub fn commit(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::commit is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::commit is not implemented yet".to_string())
     }
 
     // mark part of the surface damaged
@@ -186,10 +180,7 @@ impl WlSurface {
         _width: i32,  // int: width of damage rectangle
         _height: i32, // int: height of damage rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::damage is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::damage is not implemented yet".to_string())
     }
 
     // mark part of the surface damaged using buffer coordinates
@@ -233,20 +224,14 @@ impl WlSurface {
         _width: i32,  // int: width of damage rectangle
         _height: i32, // int: height of damage rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::damage_buffer is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::damage_buffer is not implemented yet".to_string())
     }
 
     // delete surface
     //
     // Deletes the surface and invalidates its object ID.
     pub fn destroy(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::destroy is not implemented yet".to_string())
     }
 
     // request a frame throttling hint
@@ -287,10 +272,7 @@ impl WlSurface {
         context: Context<WlSurface>,
         _callback: u32, // new_id: callback object for the frame request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::frame is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::frame is not implemented yet".to_string())
     }
 
     // sets the buffer scaling factor
@@ -322,10 +304,7 @@ impl WlSurface {
         context: Context<WlSurface>,
         _scale: i32, // int: positive scale for interpreting buffer contents
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::set_buffer_scale is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::set_buffer_scale is not implemented yet".to_string())
     }
 
     // sets the buffer transformation
@@ -363,10 +342,8 @@ impl WlSurface {
         context: Context<WlSurface>,
         _transform: i32, // int: transform for interpreting buffer contents
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::set_buffer_transform is not implemented yet",
-            context.sender_object_id
-        ))
+        context
+            .invalid_method("wl_surface::set_buffer_transform is not implemented yet".to_string())
     }
 
     // set input region
@@ -397,10 +374,7 @@ impl WlSurface {
         context: Context<WlSurface>,
         _region: u32, // object: input region of the surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::set_input_region is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::set_input_region is not implemented yet".to_string())
     }
 
     // set opaque region
@@ -433,9 +407,6 @@ impl WlSurface {
         context: Context<WlSurface>,
         _region: u32, // object: opaque region of the surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_surface@{}::set_opaque_region is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_surface::set_opaque_region is not implemented yet".to_string())
     }
 }

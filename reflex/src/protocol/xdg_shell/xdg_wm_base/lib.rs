@@ -48,6 +48,7 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {

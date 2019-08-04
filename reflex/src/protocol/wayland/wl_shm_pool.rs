@@ -65,10 +65,7 @@ impl WlShmPool {
         _stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
         _format: u32, // uint: buffer pixel format
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_shm_pool@{}::create_buffer is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_shm_pool::create_buffer is not implemented yet".to_string())
     }
 
     // destroy the pool
@@ -79,10 +76,7 @@ impl WlShmPool {
     // buffers that have been created from this pool
     // are gone.
     pub fn destroy(context: Context<WlShmPool>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_shm_pool@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_shm_pool::destroy is not implemented yet".to_string())
     }
 
     // change the size of the pool mapping
@@ -95,9 +89,6 @@ impl WlShmPool {
         context: Context<WlShmPool>,
         _size: i32, // int: new size of the pool, in bytes
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_shm_pool@{}::resize is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_shm_pool::resize is not implemented yet".to_string())
     }
 }

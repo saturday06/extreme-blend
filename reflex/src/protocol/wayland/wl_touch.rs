@@ -47,9 +47,6 @@ pub struct WlTouch {}
 impl WlTouch {
     // release the touch object
     pub fn release(context: Context<WlTouch>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "wl_touch@{}::release is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("wl_touch::release is not implemented yet".to_string())
     }
 }

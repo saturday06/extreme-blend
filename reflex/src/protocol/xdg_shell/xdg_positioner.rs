@@ -63,10 +63,7 @@ impl XdgPositioner {
     pub fn destroy(
         context: Context<XdgPositioner>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::destroy is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::destroy is not implemented yet".to_string())
     }
 
     // set anchor rectangle anchor
@@ -81,10 +78,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         _anchor: u32, // uint: anchor
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_anchor is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::set_anchor is not implemented yet".to_string())
     }
 
     // set the anchor rectangle within the parent surface
@@ -106,10 +100,7 @@ impl XdgPositioner {
         _width: i32,  // int: width of anchor rectangle
         _height: i32, // int: height of anchor rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_anchor_rect is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::set_anchor_rect is not implemented yet".to_string())
     }
 
     // set the adjustment to be done when constrained
@@ -131,10 +122,9 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         _constraint_adjustment: u32, // uint: bit mask of constraint adjustments
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_constraint_adjustment is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method(
+            "xdg_positioner::set_constraint_adjustment is not implemented yet".to_string(),
+        )
     }
 
     // set child surface gravity
@@ -149,10 +139,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         _gravity: u32, // uint: gravity direction
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_gravity is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::set_gravity is not implemented yet".to_string())
     }
 
     // set surface position offset
@@ -173,10 +160,7 @@ impl XdgPositioner {
         _x: i32, // int: surface position x offset
         _y: i32, // int: surface position y offset
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_offset is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::set_offset is not implemented yet".to_string())
     }
 
     // set the size of the to-be positioned rectangle
@@ -191,9 +175,6 @@ impl XdgPositioner {
         _width: i32,  // int: width of positioned rectangle
         _height: i32, // int: height of positioned rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method(format!(
-            "xdg_positioner@{}::set_size is not implemented yet",
-            context.sender_object_id
-        ))
+        context.invalid_method("xdg_positioner::set_size is not implemented yet".to_string())
     }
 }

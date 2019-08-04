@@ -777,7 +777,7 @@ USE
           end
           f.puts(<<FUNC_BODY)
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method("#{interface.name}::#{request.name} is not implemented yet")
+        context.invalid_method("#{interface.name}::#{request.name} is not implemented yet".to_string())
     }
 FUNC_BODY
         end
