@@ -26,6 +26,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -60,7 +61,22 @@ impl XdgToplevel {
     pub fn destroy(
         context: Context<XdgToplevel>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // start an interactive move
@@ -83,10 +99,25 @@ impl XdgToplevel {
     // that the device focus will return when the move is completed.
     pub fn move_fn(
         context: Context<XdgToplevel>,
-        seat: u32,   // object: the wl_seat of the user event
-        serial: u32, // uint: the serial of the user event
+        _seat: u32,   // object: the wl_seat of the user event
+        _serial: u32, // uint: the serial of the user event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::move is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // start an interactive resize
@@ -123,11 +154,26 @@ impl XdgToplevel {
     // appropriate cursor image.
     pub fn resize(
         context: Context<XdgToplevel>,
-        seat: u32,   // object: the wl_seat of the user event
-        serial: u32, // uint: the serial of the user event
-        edges: u32,  // uint: which edge or corner is being dragged
+        _seat: u32,   // object: the wl_seat of the user event
+        _serial: u32, // uint: the serial of the user event
+        _edges: u32,  // uint: which edge or corner is being dragged
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::resize is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set application ID
@@ -154,9 +200,24 @@ impl XdgToplevel {
     // [0] http://standards.freedesktop.org/desktop-entry-spec/
     pub fn set_app_id(
         context: Context<XdgToplevel>,
-        app_id: String, // string:
+        _app_id: String, // string:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_app_id is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the window as fullscreen on an output
@@ -186,9 +247,24 @@ impl XdgToplevel {
     // visible below the fullscreened surface.
     pub fn set_fullscreen(
         context: Context<XdgToplevel>,
-        output: u32, // object:
+        _output: u32, // object:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_fullscreen is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the maximum size
@@ -229,10 +305,25 @@ impl XdgToplevel {
     // protocol error.
     pub fn set_max_size(
         context: Context<XdgToplevel>,
-        width: i32,  // int:
-        height: i32, // int:
+        _width: i32,  // int:
+        _height: i32, // int:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_max_size is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // maximize the window
@@ -259,7 +350,22 @@ impl XdgToplevel {
     pub fn set_maximized(
         context: Context<XdgToplevel>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_maximized is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the minimum size
@@ -300,10 +406,25 @@ impl XdgToplevel {
     // protocol error.
     pub fn set_min_size(
         context: Context<XdgToplevel>,
-        width: i32,  // int:
-        height: i32, // int:
+        _width: i32,  // int:
+        _height: i32, // int:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_min_size is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the window as minimized
@@ -319,7 +440,22 @@ impl XdgToplevel {
     pub fn set_minimized(
         context: Context<XdgToplevel>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_minimized is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the parent of this surface
@@ -342,9 +478,24 @@ impl XdgToplevel {
     // parent surface.
     pub fn set_parent(
         context: Context<XdgToplevel>,
-        parent: u32, // object:
+        _parent: u32, // object:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_parent is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set surface title
@@ -358,9 +509,24 @@ impl XdgToplevel {
     // The string must be encoded in UTF-8.
     pub fn set_title(
         context: Context<XdgToplevel>,
-        title: String, // string:
+        _title: String, // string:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::set_title is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // show the window menu
@@ -378,12 +544,27 @@ impl XdgToplevel {
     // like a button press, key press, or touch down event.
     pub fn show_window_menu(
         context: Context<XdgToplevel>,
-        seat: u32,   // object: the wl_seat of the user event
-        serial: u32, // uint: the serial of the user event
-        x: i32,      // int: the x position to pop up the window menu at
-        y: i32,      // int: the y position to pop up the window menu at
+        _seat: u32,   // object: the wl_seat of the user event
+        _serial: u32, // uint: the serial of the user event
+        _x: i32,      // int: the x position to pop up the window menu at
+        _y: i32,      // int: the y position to pop up the window menu at
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::show_window_menu is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // unset the window as fullscreen
@@ -408,7 +589,22 @@ impl XdgToplevel {
     pub fn unset_fullscreen(
         context: Context<XdgToplevel>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::unset_fullscreen is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // unmaximize the window
@@ -437,6 +633,21 @@ impl XdgToplevel {
     pub fn unset_maximized(
         context: Context<XdgToplevel>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_toplevel@{}::unset_maximized is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }
