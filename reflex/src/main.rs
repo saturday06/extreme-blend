@@ -16,14 +16,19 @@ use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::os::unix::io::AsRawFd;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use std::os::unix::io::FromRawFd;
 use tokio::codec::Decoder;
 use tokio::runtime::Runtime;
-use tokio_uds::UnixListener;
+use tokio::net::{UnixListener, UnixStream};
+use mio::Ready;
 
 mod protocol;
+mod uds;
 
 fn main() {
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
+    let executor = runtime.executor();
+    let reactor = runtime.reactor().clone();
 
     let socket_path = "/tmp/temp.unix";
     let _ = std::fs::remove_file(socket_path);
@@ -39,8 +44,11 @@ fn main() {
         .unwrap()
         .incoming()
         .for_each(move |stream| {
-            let fd = stream.as_raw_fd();
-            let (reader0, tx0) = {
+            let input_stream0 = UnixStream::from_std(unsafe {
+                std::os::unix::net::UnixStream::from_raw_fd(stream.as_raw_fd())
+            }, &reactor).unwrap();
+
+            let tx0 = {
                 let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(1000);
                 let (writer0, reader0) = Codec::new().framed(stream).split();
                 let output_session = rx0
@@ -48,8 +56,8 @@ fn main() {
                     .forward(writer0)
                     .map_err(|_| ())
                     .and_then(|_| Ok(()));
-                runtime.spawn(output_session);
-                (reader0, tx0)
+                executor.spawn(output_session);
+                tx0
             };
 
             let mut session0 = Session {
@@ -66,7 +74,18 @@ fn main() {
             session0
                 .resources
                 .insert(1, Resource::WlDisplay(wl_display.clone()));
+/*
+            let x: Box<Future<Item = (), Error = std::io::Error>> = Box::new(futures::future::loop_fn(input_stream0, |input_stream| {
+                let fd = input_stream.as_raw_fd();
+                let poll = input_stream.poll_read_ready(Ready::readable());
+                futures::future::ok(input_stream)
+                    .and_then(|input_stream| poll)
+                    .and_then(|_| futures::future::ok(()))
+                    .and_then(|_: ()|  Ok(futures::future::Loop::Continue(input_stream)))
+            }));
+*/
 
+/*
             let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(reader0
                 .fold(session0, |mut session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {
                     let opt_res = session
@@ -101,10 +120,14 @@ fn main() {
                         f
                     }
                 }).map(|_| ()).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")));
-
-            input_session0.or_else(|_| futures::future::ok(()))
+*/
+            let input_session0 = Box::new(futures::future::ok(()));
+            //input_session0.or_else(|_| futures::future::ok(()))
+            input_session0
         })
         .map_err(|err| println!("Error: {:?}", err));
-    tokio::run(listener);
-    println!("exit");
+    if let Err(err) = runtime.block_on_all(listener) {
+        println!("Error: {:?}", err);
+    }
+    println!("Exit");
 }
