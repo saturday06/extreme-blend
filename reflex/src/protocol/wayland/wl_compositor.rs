@@ -47,22 +47,10 @@ impl WlCompositor {
         context: Context<Arc<RwLock<WlCompositor>>>,
         _id: u32, // new_id: the new region
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_compositor@{}::create_region is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_compositor@{}::create_region is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // create new surface

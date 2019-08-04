@@ -77,22 +77,10 @@ impl XdgPopup {
     // If this xdg_popup is not the "topmost" popup, a protocol error
     // will be sent.
     pub fn destroy(context: Context<XdgPopup>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_popup@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_popup@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // make the popup take an explicit grab
@@ -143,21 +131,9 @@ impl XdgPopup {
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_popup@{}::grab is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_popup@{}::grab is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

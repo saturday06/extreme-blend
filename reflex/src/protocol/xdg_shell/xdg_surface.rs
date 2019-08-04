@@ -105,22 +105,10 @@ impl XdgSurface {
         context: Context<XdgSurface>,
         _serial: u32, // uint: the serial from the configure event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_surface@{}::ack_configure is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_surface@{}::ack_configure is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // destroy the xdg_surface
@@ -128,22 +116,10 @@ impl XdgSurface {
     // Destroy the xdg_surface object. An xdg_surface must only be destroyed
     // after its role object has been destroyed.
     pub fn destroy(context: Context<XdgSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_surface@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_surface@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // assign the xdg_popup surface role
@@ -162,22 +138,10 @@ impl XdgSurface {
         _parent: u32,     // object:
         _positioner: u32, // object:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_surface@{}::get_popup is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_surface@{}::get_popup is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // assign the xdg_toplevel surface role
@@ -240,21 +204,9 @@ impl XdgSurface {
         _width: i32,  // int:
         _height: i32, // int:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_surface@{}::set_window_geometry is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_surface@{}::set_window_geometry is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

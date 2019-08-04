@@ -53,22 +53,10 @@ impl XdgWmBase {
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _id: u32, // new_id:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_wm_base@{}::create_positioner is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_wm_base@{}::create_positioner is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // destroy xdg_wm_base
@@ -81,22 +69,10 @@ impl XdgWmBase {
     pub fn destroy(
         context: Context<Arc<RwLock<XdgWmBase>>>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_wm_base@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_wm_base@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // create a shell surface from a surface
@@ -136,21 +112,9 @@ impl XdgWmBase {
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _serial: u32, // uint: serial of the ping event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "xdg_wm_base@{}::pong is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "xdg_wm_base@{}::pong is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

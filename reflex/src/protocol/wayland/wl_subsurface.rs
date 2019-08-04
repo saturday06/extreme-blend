@@ -96,22 +96,10 @@ impl WlSubsurface {
     pub fn destroy(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // restack the sub-surface
@@ -135,22 +123,10 @@ impl WlSubsurface {
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::place_above is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::place_above is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // restack the sub-surface
@@ -161,22 +137,10 @@ impl WlSubsurface {
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::place_below is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::place_below is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // set sub-surface to desynchronized mode
@@ -203,22 +167,10 @@ impl WlSubsurface {
     pub fn set_desync(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::set_desync is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::set_desync is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // reposition the sub-surface
@@ -244,22 +196,10 @@ impl WlSubsurface {
         _x: i32, // int: x coordinate in the parent surface
         _y: i32, // int: y coordinate in the parent surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::set_position is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::set_position is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // set sub-surface to synchronized mode
@@ -280,21 +220,9 @@ impl WlSubsurface {
     pub fn set_sync(
         context: Context<WlSubsurface>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subsurface@{}::set_sync is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subsurface@{}::set_sync is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

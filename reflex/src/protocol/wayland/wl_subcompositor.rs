@@ -64,22 +64,10 @@ impl WlSubcompositor {
     pub fn destroy(
         context: Context<WlSubcompositor>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subcompositor@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subcompositor@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // give a surface the role sub-surface
@@ -105,21 +93,9 @@ impl WlSubcompositor {
         _surface: u32, // object: the surface to be turned into a sub-surface
         _parent: u32,  // object: the parent surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_subcompositor@{}::get_subsurface is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_subcompositor@{}::get_subsurface is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

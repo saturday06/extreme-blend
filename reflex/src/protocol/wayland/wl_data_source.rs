@@ -48,22 +48,10 @@ impl WlDataSource {
     pub fn destroy(
         context: Context<WlDataSource>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{}::destroy is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_source@{}::destroy is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // add an offered mime type
@@ -75,22 +63,10 @@ impl WlDataSource {
         context: Context<WlDataSource>,
         _mime_type: String, // string: mime type offered by the data source
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{}::offer is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_source@{}::offer is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // set the available drag-and-drop actions
@@ -112,21 +88,9 @@ impl WlDataSource {
         context: Context<WlDataSource>,
         _dnd_actions: u32, // uint: actions supported by the data source
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{}::set_actions is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_source@{}::set_actions is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

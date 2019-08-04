@@ -49,22 +49,10 @@ impl WlDataDevice {
     pub fn release(
         context: Context<WlDataDevice>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_device@{}::release is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_device@{}::release is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // copy data to the selection
@@ -78,22 +66,10 @@ impl WlDataDevice {
         _source: u32, // object: data source for the selection
         _serial: u32, // uint: serial number of the event that triggered this request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_device@{}::set_selection is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_device@{}::set_selection is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // start drag-and-drop operation
@@ -132,21 +108,9 @@ impl WlDataDevice {
         _icon: u32,   // object: drag-and-drop icon surface
         _serial: u32, // uint: serial number of the implicit grab on the origin
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_device@{}::start_drag is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_data_device@{}::start_drag is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

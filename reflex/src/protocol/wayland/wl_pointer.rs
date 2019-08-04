@@ -54,22 +54,10 @@ impl WlPointer {
     // This request destroys the pointer proxy object, so clients must not call
     // wl_pointer_destroy() after using this request.
     pub fn release(context: Context<WlPointer>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_pointer@{}::release is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_pointer@{}::release is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // set the pointer surface
@@ -112,21 +100,9 @@ impl WlPointer {
         _hotspot_x: i32, // int: surface-local x coordinate
         _hotspot_y: i32, // int: surface-local y coordinate
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_pointer@{}::set_cursor is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_pointer@{}::set_cursor is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }

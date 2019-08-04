@@ -55,22 +55,10 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat keyboard
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_seat@{}::get_keyboard is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_seat@{}::get_keyboard is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // return pointer object
@@ -86,22 +74,10 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat pointer
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_seat@{}::get_pointer is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_seat@{}::get_pointer is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // return touch object
@@ -117,22 +93,10 @@ impl WlSeat {
         context: Context<WlSeat>,
         _id: u32, // new_id: seat touch interface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_seat@{}::get_touch is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_seat@{}::get_touch is not implemented yet",
+            context.sender_object_id
+        ))
     }
 
     // release the seat object
@@ -140,21 +104,9 @@ impl WlSeat {
     // Using this request a client can tell the server that it is not going to
     // use the seat object anymore.
     pub fn release(context: Context<WlSeat>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        let tx = context.tx.clone();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_seat@{}::release is not implemented yet",
-                        context.sender_object_id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| context.into()),
-        );
+        context.invalid_method(format!(
+            "wl_seat@{}::release is not implemented yet",
+            context.sender_object_id
+        ))
     }
 }
