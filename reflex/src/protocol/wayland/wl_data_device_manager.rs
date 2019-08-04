@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -51,9 +52,24 @@ impl WlDataDeviceManager {
     // Create a new data source.
     pub fn create_data_source(
         context: Context<Arc<RwLock<WlDataDeviceManager>>>,
-        id: u32, // new_id: data source to create
+        _id: u32, // new_id: data source to create
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_data_device_manager@{}::create_data_source is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // create a new data device
@@ -61,9 +77,24 @@ impl WlDataDeviceManager {
     // Create a new data device for a given seat.
     pub fn get_data_device(
         context: Context<Arc<RwLock<WlDataDeviceManager>>>,
-        id: u32,   // new_id: data device to create
-        seat: u32, // object: seat associated with the data device
+        _id: u32,   // new_id: data device to create
+        _seat: u32, // object: seat associated with the data device
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_data_device_manager@{}::get_data_device is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

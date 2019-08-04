@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -48,7 +49,22 @@ impl WlDataDevice {
     pub fn release(
         context: Context<WlDataDevice>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_data_device@{}::release is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // copy data to the selection
@@ -59,10 +75,25 @@ impl WlDataDevice {
     // To unset the selection, set the source to NULL.
     pub fn set_selection(
         context: Context<WlDataDevice>,
-        source: u32, // object: data source for the selection
-        serial: u32, // uint: serial number of the event that triggered this request
+        _source: u32, // object: data source for the selection
+        _serial: u32, // uint: serial number of the event that triggered this request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_data_device@{}::set_selection is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // start drag-and-drop operation
@@ -96,11 +127,26 @@ impl WlDataDevice {
     // undefined, and the wl_surface is unmapped.
     pub fn start_drag(
         context: Context<WlDataDevice>,
-        source: u32, // object: data source for the eventual transfer
-        origin: u32, // object: surface where the drag originates
-        icon: u32,   // object: drag-and-drop icon surface
-        serial: u32, // uint: serial number of the implicit grab on the origin
+        _source: u32, // object: data source for the eventual transfer
+        _origin: u32, // object: surface where the drag originates
+        _icon: u32,   // object: drag-and-drop icon surface
+        _serial: u32, // uint: serial number of the implicit grab on the origin
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_data_device@{}::start_drag is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

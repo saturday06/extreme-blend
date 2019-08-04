@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod events;
@@ -46,6 +47,21 @@ pub struct WlTouch {}
 impl WlTouch {
     // release the touch object
     pub fn release(context: Context<WlTouch>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_touch@{}::release is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

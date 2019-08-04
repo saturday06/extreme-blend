@@ -41,7 +41,7 @@ pub const VERSION: u32 = 2;
 
 #[allow(unused_variables)]
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<crate::protocol::xdg_shell::xdg_popup::XdgPopup>,
+    context: crate::protocol::session::Context<crate::protocol::xdg_shell::xdg_popup::XdgPopup>,
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -49,94 +49,94 @@ pub fn dispatch_request(
     match opcode {
         0 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "xdg_popup@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::XdgPopup::destroy(request);
+            return super::XdgPopup::destroy(context);
         }
         1 => {
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "xdg_popup@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "xdg_popup@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "xdg_popup@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::XdgPopup::grab(request, seat, serial);
+            return super::XdgPopup::grab(context, seat, serial);
         }
         _ => {}
     };
-    Box::new(futures::future::ok(request.into()))
+    Box::new(futures::future::ok(context.into()))
 }
 
 impl Into<crate::protocol::resource::Resource> for crate::protocol::xdg_shell::xdg_popup::XdgPopup {

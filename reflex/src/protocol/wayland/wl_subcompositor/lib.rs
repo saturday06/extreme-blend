@@ -40,7 +40,7 @@ pub const VERSION: u32 = 1;
 
 #[allow(unused_variables)]
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<
+    context: crate::protocol::session::Context<
         crate::protocol::wayland::wl_subcompositor::WlSubcompositor,
     >,
     opcode: u16,
@@ -50,115 +50,115 @@ pub fn dispatch_request(
     match opcode {
         0 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_subcompositor@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlSubcompositor::destroy(request);
+            return super::WlSubcompositor::destroy(context);
         }
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_subcompositor@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_subcompositor@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_subcompositor@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_subcompositor@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlSubcompositor::get_subsurface(request, id, surface, parent);
+            return super::WlSubcompositor::get_subsurface(context, id, surface, parent);
         }
         _ => {}
     };
-    Box::new(futures::future::ok(request.into()))
+    Box::new(futures::future::ok(context.into()))
 }
 
 impl Into<crate::protocol::resource::Resource>

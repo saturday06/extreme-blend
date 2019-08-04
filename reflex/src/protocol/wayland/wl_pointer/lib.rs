@@ -40,7 +40,7 @@ pub const VERSION: u32 = 6;
 
 #[allow(unused_variables)]
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<crate::protocol::wayland::wl_pointer::WlPointer>,
+    context: crate::protocol::session::Context<crate::protocol::wayland::wl_pointer::WlPointer>,
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
@@ -50,134 +50,134 @@ pub fn dispatch_request(
             let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let hotspot_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let hotspot_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlPointer::set_cursor(request, serial, surface, hotspot_x, hotspot_y);
+            return super::WlPointer::set_cursor(context, serial, surface, hotspot_x, hotspot_y);
         }
         1 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_pointer@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlPointer::release(request);
+            return super::WlPointer::release(context);
         }
         _ => {}
     };
-    Box::new(futures::future::ok(request.into()))
+    Box::new(futures::future::ok(context.into()))
 }
 
 impl Into<crate::protocol::resource::Resource> for crate::protocol::wayland::wl_pointer::WlPointer {

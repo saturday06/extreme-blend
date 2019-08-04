@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 mod lib;
@@ -44,19 +45,49 @@ impl WlRegion {
     // Add the specified rectangle to the region.
     pub fn add(
         context: Context<WlRegion>,
-        x: i32,      // int: region-local x coordinate
-        y: i32,      // int: region-local y coordinate
-        width: i32,  // int: rectangle width
-        height: i32, // int: rectangle height
+        _x: i32,      // int: region-local x coordinate
+        _y: i32,      // int: region-local y coordinate
+        _width: i32,  // int: rectangle width
+        _height: i32, // int: rectangle height
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_region@{}::add is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // destroy region
     //
     // Destroy the region.  This will invalidate the object ID.
     pub fn destroy(context: Context<WlRegion>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_region@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // subtract rectangle from region
@@ -64,11 +95,26 @@ impl WlRegion {
     // Subtract the specified rectangle from the region.
     pub fn subtract(
         context: Context<WlRegion>,
-        x: i32,      // int: region-local x coordinate
-        y: i32,      // int: region-local y coordinate
-        width: i32,  // int: rectangle width
-        height: i32, // int: rectangle height
+        _x: i32,      // int: region-local x coordinate
+        _y: i32,      // int: region-local y coordinate
+        _width: i32,  // int: rectangle width
+        _height: i32, // int: rectangle height
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_region@{}::subtract is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -63,7 +64,22 @@ impl WlSubcompositor {
     pub fn destroy(
         context: Context<WlSubcompositor>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_subcompositor@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // give a surface the role sub-surface
@@ -85,10 +101,25 @@ impl WlSubcompositor {
     // the sub-surface, see the documentation on wl_subsurface interface.
     pub fn get_subsurface(
         context: Context<WlSubcompositor>,
-        id: u32,      // new_id: the new sub-surface object ID
-        surface: u32, // object: the surface to be turned into a sub-surface
-        parent: u32,  // object: the parent surface
+        _id: u32,      // new_id: the new sub-surface object ID
+        _surface: u32, // object: the surface to be turned into a sub-surface
+        _parent: u32,  // object: the parent surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_subcompositor@{}::get_subsurface is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

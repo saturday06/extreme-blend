@@ -41,7 +41,7 @@ pub const VERSION: u32 = 3;
 
 #[allow(unused_variables)]
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<
+    context: crate::protocol::session::Context<
         Arc<RwLock<crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager>>,
     >,
     opcode: u16,
@@ -53,114 +53,114 @@ pub fn dispatch_request(
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_data_device_manager@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_data_device_manager@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlDataDeviceManager::create_data_source(request, id);
+            return super::WlDataDeviceManager::create_data_source(context, id);
         }
         1 => {
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_data_device_manager@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
             let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_data_device_manager@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(
                     tx.send(Box::new(
                         crate::protocol::wayland::wl_display::events::Error {
                             sender_object_id: 1,
-                            object_id: request.sender_object_id,
+                            object_id: context.sender_object_id,
                             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
                                 as u32,
                             message: format!(
                                 "wl_data_device_manager@{} opcode={} args={:?} not found",
-                                request.sender_object_id, opcode, args
+                                context.sender_object_id, opcode, args
                             ),
                         },
                     ))
                     .map_err(|_| ())
-                    .map(|_tx| request.into()),
+                    .map(|_tx| context.into()),
                 );
             }
-            return super::WlDataDeviceManager::get_data_device(request, id, seat);
+            return super::WlDataDeviceManager::get_data_device(context, id, seat);
         }
         _ => {}
     };
-    Box::new(futures::future::ok(request.into()))
+    Box::new(futures::future::ok(context.into()))
 }
 
 impl Into<crate::protocol::resource::Resource>

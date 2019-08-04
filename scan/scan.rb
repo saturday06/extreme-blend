@@ -123,18 +123,18 @@ EOF
         #{request.index} => {
 #{request.args.map(&:deserialize).join("")}
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
                     sender_object_id: 1,
-                    object_id: request.sender_object_id,
+                    object_id: context.sender_object_id,
                     code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
                     message: format!(
                         "#{@name}@{} opcode={} args={:?} not found",
-                        request.sender_object_id, opcode, args
+                        context.sender_object_id, opcode, args
                     ),
-                })).map_err(|_| ()).map(|_tx| request.into()));
+                })).map_err(|_| ()).map(|_tx| context.into()));
             }
-            return super::#{camel_case(@name)}::#{request.rust_name}(request#{request.args.map { |arg| ", " + arg.name }.join});
+            return super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join});
         },
 DESERIALIZE
       end
@@ -143,7 +143,7 @@ DESERIALIZE
     };
 EOF
     end
-    result += "    Box::new(futures::future::ok(request.into()))"
+    result += "    Box::new(futures::future::ok(context.into()))"
     result
   end
 end
@@ -249,16 +249,16 @@ class Arg
 
   def deserialize_return_error
     ret =<<EOF
-                let tx = request.tx.clone();
+                let tx = context.tx.clone();
                 return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
                     sender_object_id: 1,
-                    object_id: request.sender_object_id,
+                    object_id: context.sender_object_id,
                     code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
                     message: format!(
                         "#{@interface_name}@{} opcode={} args={:?} not found",
-                        request.sender_object_id, opcode, args
+                        context.sender_object_id, opcode, args
                     ),
-                })).map_err(|_| ()).map(|_tx| request.into()));
+                })).map_err(|_| ()).map(|_tx| context.into()));
 EOF
     ret.rstrip
   end
@@ -725,7 +725,7 @@ pub const VERSION: u32 = #{interface.version};
 
 #[allow(unused_variables)]
 CODE
-      f.puts("pub fn dispatch_request(request: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+      f.puts("pub fn dispatch_request(context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
       f.puts("}")
       f.puts(<<INTO)
@@ -748,6 +748,7 @@ INTO
       f.puts(<<USE)
 use crate::protocol::session::{Context, Session};
 use futures::future::{Future, ok, err};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 USE
@@ -772,11 +773,22 @@ USE
           f.puts("    pub fn #{request.rust_name}(")
           f.puts("        context: Context<#{interface.short_receiver_type}>,")
           request.args.each do |arg|
-            f.print("        #{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
+            f.print("        _#{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end
-          f.puts("    ) -> Box<Future<Item = Session, Error = ()> + Send> {")
-          f.puts("        Box::new(err(()))")
-          f.puts("    }")
+          f.puts(<<FUNC_BODY)
+    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+        let tx = context.tx.clone();
+        return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
+            sender_object_id: 1,
+            object_id: context.sender_object_id,
+            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+            message: format!(
+                "#{interface.name}@{}::#{request.name} is not implemented yet",
+                context.sender_object_id
+            ),
+        })).map_err(|_| ()).map(|_| context.into()));
+    }
+FUNC_BODY
         end
         f.puts("}")
       end

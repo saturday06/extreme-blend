@@ -26,6 +26,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -50,9 +51,24 @@ impl XdgWmBase {
     // and xdg_surface.get_popup for details.
     pub fn create_positioner(
         context: Context<Arc<RwLock<XdgWmBase>>>,
-        id: u32, // new_id:
+        _id: u32, // new_id:
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_wm_base@{}::create_positioner is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // destroy xdg_wm_base
@@ -65,7 +81,22 @@ impl XdgWmBase {
     pub fn destroy(
         context: Context<Arc<RwLock<XdgWmBase>>>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_wm_base@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // create a shell surface from a surface
@@ -103,8 +134,23 @@ impl XdgWmBase {
     // the client may be deemed unresponsive. See xdg_wm_base.ping.
     pub fn pong(
         context: Context<Arc<RwLock<XdgWmBase>>>,
-        serial: u32, // uint: serial of the ping event
+        _serial: u32, // uint: serial of the ping event
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_wm_base@{}::pong is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -119,11 +120,26 @@ impl WlSurface {
     // following wl_surface.commit will remove the surface content.
     pub fn attach(
         context: Context<WlSurface>,
-        buffer: u32, // object: buffer of surface contents
-        x: i32,      // int: surface-local x coordinate
-        y: i32,      // int: surface-local y coordinate
+        _buffer: u32, // object: buffer of surface contents
+        _x: i32,      // int: surface-local x coordinate
+        _y: i32,      // int: surface-local y coordinate
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::attach is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // commit pending surface state
@@ -146,7 +162,22 @@ impl WlSurface {
     //
     // Other interfaces may add further double-buffered surface state.
     pub fn commit(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::commit is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // mark part of the surface damaged
@@ -174,12 +205,27 @@ impl WlSurface {
     // and is probably the preferred and intuitive way of doing this.
     pub fn damage(
         context: Context<WlSurface>,
-        x: i32,      // int: surface-local x coordinate
-        y: i32,      // int: surface-local y coordinate
-        width: i32,  // int: width of damage rectangle
-        height: i32, // int: height of damage rectangle
+        _x: i32,      // int: surface-local x coordinate
+        _y: i32,      // int: surface-local y coordinate
+        _width: i32,  // int: width of damage rectangle
+        _height: i32, // int: height of damage rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::damage is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // mark part of the surface damaged using buffer coordinates
@@ -218,19 +264,49 @@ impl WlSurface {
     // after receiving the wl_surface.commit.
     pub fn damage_buffer(
         context: Context<WlSurface>,
-        x: i32,      // int: buffer-local x coordinate
-        y: i32,      // int: buffer-local y coordinate
-        width: i32,  // int: width of damage rectangle
-        height: i32, // int: height of damage rectangle
+        _x: i32,      // int: buffer-local x coordinate
+        _y: i32,      // int: buffer-local y coordinate
+        _width: i32,  // int: width of damage rectangle
+        _height: i32, // int: height of damage rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::damage_buffer is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // delete surface
     //
     // Deletes the surface and invalidates its object ID.
     pub fn destroy(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // request a frame throttling hint
@@ -269,9 +345,24 @@ impl WlSurface {
     // milliseconds, with an undefined base.
     pub fn frame(
         context: Context<WlSurface>,
-        callback: u32, // new_id: callback object for the frame request
+        _callback: u32, // new_id: callback object for the frame request
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::frame is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // sets the buffer scaling factor
@@ -301,9 +392,24 @@ impl WlSurface {
     // raised.
     pub fn set_buffer_scale(
         context: Context<WlSurface>,
-        scale: i32, // int: positive scale for interpreting buffer contents
+        _scale: i32, // int: positive scale for interpreting buffer contents
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::set_buffer_scale is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // sets the buffer transformation
@@ -339,9 +445,24 @@ impl WlSurface {
     // is raised.
     pub fn set_buffer_transform(
         context: Context<WlSurface>,
-        transform: i32, // int: transform for interpreting buffer contents
+        _transform: i32, // int: transform for interpreting buffer contents
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::set_buffer_transform is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set input region
@@ -370,9 +491,24 @@ impl WlSurface {
     // to infinite.
     pub fn set_input_region(
         context: Context<WlSurface>,
-        region: u32, // object: input region of the surface
+        _region: u32, // object: input region of the surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::set_input_region is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set opaque region
@@ -403,8 +539,23 @@ impl WlSurface {
     // region to be set to empty.
     pub fn set_opaque_region(
         context: Context<WlSurface>,
-        region: u32, // object: opaque region of the surface
+        _region: u32, // object: opaque region of the surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_surface@{}::set_opaque_region is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

@@ -40,11 +40,11 @@ pub const VERSION: u32 = 1;
 
 #[allow(unused_variables)]
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<crate::protocol::wayland::wl_callback::WlCallback>,
+    context: crate::protocol::session::Context<crate::protocol::wayland::wl_callback::WlCallback>,
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    Box::new(futures::future::ok(request.into()))
+    Box::new(futures::future::ok(context.into()))
 }
 
 impl Into<crate::protocol::resource::Resource>

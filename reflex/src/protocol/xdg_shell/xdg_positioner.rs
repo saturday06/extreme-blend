@@ -26,6 +26,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -62,7 +63,22 @@ impl XdgPositioner {
     pub fn destroy(
         context: Context<XdgPositioner>,
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set anchor rectangle anchor
@@ -75,9 +91,24 @@ impl XdgPositioner {
     // edge, or in the center of the anchor rectangle if no edge is specified.
     pub fn set_anchor(
         context: Context<XdgPositioner>,
-        anchor: u32, // uint: anchor
+        _anchor: u32, // uint: anchor
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_anchor is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the anchor rectangle within the parent surface
@@ -94,12 +125,27 @@ impl XdgPositioner {
     // If a negative size is set the invalid_input error is raised.
     pub fn set_anchor_rect(
         context: Context<XdgPositioner>,
-        x: i32,      // int: x position of anchor rectangle
-        y: i32,      // int: y position of anchor rectangle
-        width: i32,  // int: width of anchor rectangle
-        height: i32, // int: height of anchor rectangle
+        _x: i32,      // int: x position of anchor rectangle
+        _y: i32,      // int: y position of anchor rectangle
+        _width: i32,  // int: width of anchor rectangle
+        _height: i32, // int: height of anchor rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_anchor_rect is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the adjustment to be done when constrained
@@ -119,9 +165,24 @@ impl XdgPositioner {
     // The default adjustment is none.
     pub fn set_constraint_adjustment(
         context: Context<XdgPositioner>,
-        constraint_adjustment: u32, // uint: bit mask of constraint adjustments
+        _constraint_adjustment: u32, // uint: bit mask of constraint adjustments
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_constraint_adjustment is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set child surface gravity
@@ -134,9 +195,24 @@ impl XdgPositioner {
     // gravity specified.
     pub fn set_gravity(
         context: Context<XdgPositioner>,
-        gravity: u32, // uint: gravity direction
+        _gravity: u32, // uint: gravity direction
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_gravity is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set surface position offset
@@ -154,10 +230,25 @@ impl XdgPositioner {
     // with some user interface element placed somewhere in the popup surface.
     pub fn set_offset(
         context: Context<XdgPositioner>,
-        x: i32, // int: surface position x offset
-        y: i32, // int: surface position y offset
+        _x: i32, // int: surface position x offset
+        _y: i32, // int: surface position y offset
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_offset is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the size of the to-be positioned rectangle
@@ -169,9 +260,24 @@ impl XdgPositioner {
     // If a zero or negative size is set the invalid_input error is raised.
     pub fn set_size(
         context: Context<XdgPositioner>,
-        width: i32,  // int: width of positioned rectangle
-        height: i32, // int: height of positioned rectangle
+        _width: i32,  // int: width of positioned rectangle
+        _height: i32, // int: height of positioned rectangle
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "xdg_positioner@{}::set_size is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

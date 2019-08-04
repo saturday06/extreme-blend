@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 mod lib;
@@ -43,23 +44,48 @@ impl WlCompositor {
     // Ask the compositor to create a new region.
     pub fn create_region(
         context: Context<Arc<RwLock<WlCompositor>>>,
-        id: u32, // new_id: the new region
+        _id: u32, // new_id: the new region
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_compositor@{}::create_region is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // create new surface
     //
     // Ask the compositor to create a new surface.
     pub fn create_surface(
-        mut context: Context<Arc<RwLock<WlCompositor>>>,
-        id: u32, // new_id: the new surface
+        context: Context<Arc<RwLock<WlCompositor>>>,
+        _id: u32, // new_id: the new surface
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        println!("WlCompositor::create_surface(id: {})", id);
-        context.resources.insert(
-            id,
-            crate::protocol::wayland::wl_surface::WlSurface {}.into(),
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_compositor@{}::create_surface is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
         );
-        Box::new(ok(context.into()))
     }
 }

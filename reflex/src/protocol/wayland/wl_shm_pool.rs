@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 mod lib;
@@ -57,14 +58,29 @@ impl WlShmPool {
     // a buffer from it.
     pub fn create_buffer(
         context: Context<WlShmPool>,
-        id: u32,     // new_id: buffer to create
-        offset: i32, // int: buffer byte offset within the pool
-        width: i32,  // int: buffer width, in pixels
-        height: i32, // int: buffer height, in pixels
-        stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
-        format: u32, // uint: buffer pixel format
+        _id: u32,     // new_id: buffer to create
+        _offset: i32, // int: buffer byte offset within the pool
+        _width: i32,  // int: buffer width, in pixels
+        _height: i32, // int: buffer height, in pixels
+        _stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
+        _format: u32, // uint: buffer pixel format
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_shm_pool@{}::create_buffer is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // destroy the pool
@@ -75,7 +91,22 @@ impl WlShmPool {
     // buffers that have been created from this pool
     // are gone.
     pub fn destroy(context: Context<WlShmPool>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_shm_pool@{}::destroy is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // change the size of the pool mapping
@@ -86,8 +117,23 @@ impl WlShmPool {
     // used to make the pool bigger.
     pub fn resize(
         context: Context<WlShmPool>,
-        size: i32, // int: new size of the pool, in bytes
+        _size: i32, // int: new size of the pool, in bytes
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_shm_pool@{}::resize is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }

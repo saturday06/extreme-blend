@@ -25,6 +25,7 @@
 
 use crate::protocol::session::{Context, Session};
 use futures::future::{err, ok, Future};
+use futures::sink::Sink;
 use std::sync::{Arc, RwLock};
 
 pub mod enums;
@@ -53,7 +54,22 @@ impl WlPointer {
     // This request destroys the pointer proxy object, so clients must not call
     // wl_pointer_destroy() after using this request.
     pub fn release(context: Context<WlPointer>) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_pointer@{}::release is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 
     // set the pointer surface
@@ -91,11 +107,26 @@ impl WlPointer {
     // undefined, and the wl_surface is unmapped.
     pub fn set_cursor(
         context: Context<WlPointer>,
-        serial: u32,    // uint: serial number of the enter event
-        surface: u32,   // object: pointer surface
-        hotspot_x: i32, // int: surface-local x coordinate
-        hotspot_y: i32, // int: surface-local y coordinate
+        _serial: u32,    // uint: serial number of the enter event
+        _surface: u32,   // object: pointer surface
+        _hotspot_x: i32, // int: surface-local x coordinate
+        _hotspot_y: i32, // int: surface-local y coordinate
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        Box::new(err(()))
+        let tx = context.tx.clone();
+        return Box::new(
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_pointer@{}::set_cursor is not implemented yet",
+                        context.sender_object_id
+                    ),
+                },
+            ))
+            .map_err(|_| ())
+            .map(|_| context.into()),
+        );
     }
 }
