@@ -26,6 +26,7 @@
 // wl_surface error values
 //
 // These errors can be emitted in response to wl_surface requests.
+#[allow(dead_code)]
 pub enum Error {
     InvalidScale = 0,     // buffer scale value is invalid
     InvalidTransform = 1, // buffer transform value is invalid

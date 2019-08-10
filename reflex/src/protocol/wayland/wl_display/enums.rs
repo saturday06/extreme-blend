@@ -27,6 +27,7 @@
 //
 // These errors are global and can be emitted in response to any
 // server request.
+#[allow(dead_code)]
 pub enum Error {
     InvalidObject = 0, // server couldn't find object
     InvalidMethod = 1, // method doesn't exist on the specified interface

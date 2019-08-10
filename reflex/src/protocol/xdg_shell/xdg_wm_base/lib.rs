@@ -37,10 +37,13 @@ use std::io::{Cursor, Read};
 #[allow(unused_imports)]
 use std::sync::{Arc, RwLock};
 
+#[allow(dead_code)]
 pub const GLOBAL_SINGLETON_NAME: u32 = 6;
+#[allow(dead_code)]
 pub const VERSION: u32 = 2;
 
 #[allow(unused_variables)]
+#[allow(dead_code)]
 pub fn dispatch_request(
     context: crate::protocol::session::Context<
         Arc<RwLock<crate::protocol::xdg_shell::xdg_wm_base::XdgWmBase>>,

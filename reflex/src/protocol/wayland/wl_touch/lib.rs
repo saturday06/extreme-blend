@@ -36,9 +36,11 @@ use std::io::{Cursor, Read};
 #[allow(unused_imports)]
 use std::sync::{Arc, RwLock};
 
+#[allow(dead_code)]
 pub const VERSION: u32 = 6;
 
 #[allow(unused_variables)]
+#[allow(dead_code)]
 pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::wayland::wl_touch::WlTouch>,
     opcode: u16,

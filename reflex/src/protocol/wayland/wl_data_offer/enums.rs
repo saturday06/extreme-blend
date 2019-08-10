@@ -23,6 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     InvalidFinish = 0,     // finish request was called untimely
     InvalidActionMask = 1, // action mask contains invalid values

@@ -28,6 +28,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // done event
 //
 // Notify the client when the related request is done.
+#[allow(dead_code)]
 pub struct Done {
     pub sender_object_id: u32,
     pub callback_data: u32, // uint: request-specific data for the callback

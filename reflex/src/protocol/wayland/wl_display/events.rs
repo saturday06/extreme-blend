@@ -32,6 +32,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // this event to acknowledge that it has seen the delete request.
 // When the client receives this event, it will know that it can
 // safely reuse the object ID.
+#[allow(dead_code)]
 pub struct DeleteId {
     pub sender_object_id: u32,
     pub id: u32, // uint: deleted object ID
@@ -64,6 +65,7 @@ impl super::super::super::event::Event for DeleteId {
 // by the object interface.  As such, each interface defines its
 // own set of error codes.  The message is a brief description
 // of the error, for (debugging) convenience.
+#[allow(dead_code)]
 pub struct Error {
     pub sender_object_id: u32,
     pub object_id: u32,  // object: object where the error occurred

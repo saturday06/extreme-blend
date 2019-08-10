@@ -32,6 +32,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // The event notifies the client that a global object with
 // the given name is now available, and it implements the
 // given version of the given interface.
+#[allow(dead_code)]
 pub struct Global {
     pub sender_object_id: u32,
     pub name: u32,         // uint: numeric name of the global object
@@ -85,6 +86,7 @@ impl super::super::super::event::Event for Global {
 // The object remains valid and requests to the object will be
 // ignored until the client destroys it, to avoid races between
 // the global going away and a client sending a request to it.
+#[allow(dead_code)]
 pub struct GlobalRemove {
     pub sender_object_id: u32,
     pub name: u32, // uint: numeric name of the global object

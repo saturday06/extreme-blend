@@ -23,6 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     Role = 0, // given wl_surface has another role
 }

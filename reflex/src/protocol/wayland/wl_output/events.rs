@@ -32,6 +32,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // other property changes done after that. This allows
 // changes to the output properties to be seen as
 // atomic, even if they happen via multiple events.
+#[allow(dead_code)]
 pub struct Done {
     pub sender_object_id: u32,
 }
@@ -61,6 +62,7 @@ impl super::super::super::event::Event for Done {
 //
 // The physical size can be set to zero if it doesn't make sense for this
 // output (e.g. for projectors or virtual outputs).
+#[allow(dead_code)]
 pub struct Geometry {
     pub sender_object_id: u32,
     pub x: i32,               // int: x position within the global compositor space
@@ -168,6 +170,7 @@ impl super::super::super::event::Event for Geometry {
 // the output size in the global compositor space. For instance,
 // the output may be scaled, as described in wl_output.scale,
 // or transformed, as described in wl_output.transform.
+#[allow(dead_code)]
 pub struct Mode {
     pub sender_object_id: u32,
     pub flags: u32,   // uint: bitfield of mode flags
@@ -217,6 +220,7 @@ impl super::super::super::event::Event for Mode {
 // the scale of the output. That way the compositor can
 // avoid scaling the surface, and the client can supply
 // a higher detail image.
+#[allow(dead_code)]
 pub struct Scale {
     pub sender_object_id: u32,
     pub factor: i32, // int: scaling factor of output

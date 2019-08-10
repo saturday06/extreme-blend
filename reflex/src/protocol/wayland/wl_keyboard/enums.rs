@@ -26,6 +26,7 @@
 // physical key state
 //
 // Describes the physical state of a key that produced the key event.
+#[allow(dead_code)]
 pub enum KeyState {
     Released = 0, // key is not pressed
     Pressed = 1,  // key is pressed
@@ -35,6 +36,7 @@ pub enum KeyState {
 //
 // This specifies the format of the keymap provided to the
 // client with the wl_keyboard.keymap event.
+#[allow(dead_code)]
 pub enum KeymapFormat {
     NoKeymap = 0, // no keymap; client must understand how to interpret the raw keycode
     XkbV1 = 1, // libxkbcommon compatible; to determine the xkb keycode, clients must add 8 to the key event keycode

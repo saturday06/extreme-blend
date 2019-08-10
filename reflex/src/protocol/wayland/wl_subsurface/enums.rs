@@ -23,6 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     BadSurface = 0, // wl_surface is not a sibling or the parent
 }

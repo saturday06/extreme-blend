@@ -34,6 +34,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // following the data_device_data_offer event, the new data_offer
 // object will send out data_offer.offer events to describe the
 // mime types it offers.
+#[allow(dead_code)]
 pub struct DataOffer {
     pub sender_object_id: u32,
     pub id: u32, // new_id: the new data_offer object
@@ -72,6 +73,7 @@ impl super::super::super::event::Event for DataOffer {
 // final. The drag-and-drop destination is expected to perform one last
 // wl_data_offer.set_actions request, or wl_data_offer.destroy in order
 // to cancel the operation.
+#[allow(dead_code)]
 pub struct Drop {
     pub sender_object_id: u32,
 }
@@ -99,6 +101,7 @@ impl super::super::super::event::Event for Drop {
 // a surface owned by the client.  The position of the pointer at
 // enter time is provided by the x and y arguments, in surface-local
 // coordinates.
+#[allow(dead_code)]
 pub struct Enter {
     pub sender_object_id: u32,
     pub serial: u32,  // uint: serial number of the enter event
@@ -135,6 +138,7 @@ impl super::super::super::event::Event for Enter {
 // This event is sent when the drag-and-drop pointer leaves the
 // surface and the session ends.  The client must destroy the
 // wl_data_offer introduced at enter time at this point.
+#[allow(dead_code)]
 pub struct Leave {
     pub sender_object_id: u32,
 }
@@ -162,6 +166,7 @@ impl super::super::super::event::Event for Leave {
 // the currently focused surface. The new position of the pointer
 // is provided by the x and y arguments, in surface-local
 // coordinates.
+#[allow(dead_code)]
 pub struct Motion {
     pub sender_object_id: u32,
     pub time: u32, // uint: timestamp with millisecond granularity
@@ -202,6 +207,7 @@ impl super::super::super::event::Event for Motion {
 // or until the client loses keyboard focus.  The client must
 // destroy the previous selection data_offer, if any, upon receiving
 // this event.
+#[allow(dead_code)]
 pub struct Selection {
     pub sender_object_id: u32,
     pub id: u32, // object: selection data_offer object

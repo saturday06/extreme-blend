@@ -51,6 +51,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // The above behavior also applies to wl_keyboard and wl_touch with the
 // keyboard and touch capabilities, respectively.
+#[allow(dead_code)]
 pub struct Capabilities {
     pub sender_object_id: u32,
     pub capabilities: u32, // uint: capabilities of the seat
@@ -79,6 +80,7 @@ impl super::super::super::event::Event for Capabilities {
 // In a multiseat configuration this can be used by the client to help
 // identify which physical devices the seat represents. Based on
 // the seat configuration used by the compositor.
+#[allow(dead_code)]
 pub struct Name {
     pub sender_object_id: u32,
     pub name: String, // string: seat identifier

@@ -33,6 +33,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // currently active on this client's surface. The client is
 // responsible for finalizing the touch points, future touch points on
 // this surface may reuse the touch point ID.
+#[allow(dead_code)]
 pub struct Cancel {
     pub sender_object_id: u32,
 }
@@ -60,6 +61,7 @@ impl super::super::super::event::Event for Cancel {
 // assigned a unique ID. Future events from this touch point reference
 // this ID. The ID ceases to be valid after a touch up event and may be
 // reused in the future.
+#[allow(dead_code)]
 pub struct Down {
     pub sender_object_id: u32,
     pub serial: u32,  // uint: serial number of the touch down event
@@ -103,6 +105,7 @@ impl super::super::super::event::Event for Down {
 // guarantee is provided about the set of events within a frame. A client
 // must assume that any state not updated in a frame is unchanged from the
 // previously known state.
+#[allow(dead_code)]
 pub struct Frame {
     pub sender_object_id: u32,
 }
@@ -127,6 +130,7 @@ impl super::super::super::event::Event for Frame {
 // update of touch point coordinates
 //
 // A touch point has changed coordinates.
+#[allow(dead_code)]
 pub struct Motion {
     pub sender_object_id: u32,
     pub time: u32, // uint: timestamp with millisecond granularity
@@ -181,6 +185,7 @@ impl super::super::super::event::Event for Motion {
 //
 // This event is only sent by the compositor if the touch device supports
 // orientation reports.
+#[allow(dead_code)]
 pub struct Orientation {
     pub sender_object_id: u32,
     pub id: i32,          // int: the unique ID of this touch point
@@ -233,6 +238,7 @@ impl super::super::super::event::Event for Orientation {
 // This event is only sent by the compositor if the touch device supports
 // shape reports. The client has to make reasonable assumptions about the
 // shape if it did not receive this event.
+#[allow(dead_code)]
 pub struct Shape {
     pub sender_object_id: u32,
     pub id: i32,    // int: the unique ID of this touch point
@@ -265,6 +271,7 @@ impl super::super::super::event::Event for Shape {
 // The touch point has disappeared. No further events will be sent for
 // this touch point and the touch point's ID is released and may be
 // reused in a future touch down event.
+#[allow(dead_code)]
 pub struct Up {
     pub sender_object_id: u32,
     pub serial: u32, // uint: serial number of the touch up event

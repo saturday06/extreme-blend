@@ -52,6 +52,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // Clients can trigger cursor surface changes from this point, so
 // they reflect the current action.
+#[allow(dead_code)]
 pub struct Action {
     pub sender_object_id: u32,
     pub dnd_action: u32, // uint: action selected by the compositor
@@ -97,6 +98,7 @@ impl super::super::super::event::Event for Action {
 // For objects of version 2 or older, wl_data_source.cancelled will
 // only be emitted if the data source was replaced by another data
 // source.
+#[allow(dead_code)]
 pub struct Cancelled {
     pub sender_object_id: u32,
 }
@@ -129,6 +131,7 @@ impl super::super::super::event::Event for Cancelled {
 //
 // Note that the data_source may still be used in the future and should
 // not be destroyed here.
+#[allow(dead_code)]
 pub struct DndDropPerformed {
     pub sender_object_id: u32,
 }
@@ -158,6 +161,7 @@ impl super::super::super::event::Event for DndDropPerformed {
 //
 // If the action used to perform the operation was "move", the
 // source can now delete the transferred data.
+#[allow(dead_code)]
 pub struct DndFinished {
     pub sender_object_id: u32,
 }
@@ -184,6 +188,7 @@ impl super::super::super::event::Event for DndFinished {
 // Request for data from the client.  Send the data as the
 // specified mime type over the passed file descriptor, then
 // close it.
+#[allow(dead_code)]
 pub struct Send {
     pub sender_object_id: u32,
     pub mime_type: String, // string: mime type for the data
@@ -227,6 +232,7 @@ impl super::super::super::event::Event for Send {
 // a target does not accept any of the offered types, type is NULL.
 //
 // Used for feedback during drag-and-drop.
+#[allow(dead_code)]
 pub struct Target {
     pub sender_object_id: u32,
     pub mime_type: String, // string: mime type accepted by the target

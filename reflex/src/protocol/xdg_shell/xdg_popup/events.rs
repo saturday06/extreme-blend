@@ -35,6 +35,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // The x and y arguments represent the position the popup was placed at
 // given the xdg_positioner rule, relative to the upper left corner of the
 // window geometry of the parent surface.
+#[allow(dead_code)]
 pub struct Configure {
     pub sender_object_id: u32,
     pub x: i32,      // int: x position relative to parent surface window geometry
@@ -69,6 +70,7 @@ impl super::super::super::event::Event for Configure {
 // The popup_done event is sent out when a popup is dismissed by the
 // compositor. The client should destroy the xdg_popup object at this
 // point.
+#[allow(dead_code)]
 pub struct PopupDone {
     pub sender_object_id: u32,
 }

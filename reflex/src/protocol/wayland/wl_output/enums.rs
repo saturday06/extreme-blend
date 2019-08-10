@@ -27,6 +27,7 @@
 //
 // These flags describe properties of an output mode.
 // They are used in the flags bitfield of the mode event.
+#[allow(dead_code)]
 pub enum Mode {
     Current = 0x1,   // indicates this is the current mode
     Preferred = 0x2, // indicates this is the preferred mode
@@ -36,6 +37,7 @@ pub enum Mode {
 //
 // This enumeration describes how the physical
 // pixels on an output are laid out.
+#[allow(dead_code)]
 pub enum Subpixel {
     Unknown = 0,       // unknown geometry
     None = 1,          // no geometry
@@ -58,6 +60,7 @@ pub enum Subpixel {
 // tell the compositor, so that for fullscreen surfaces, the
 // compositor will still be able to scan out directly from client
 // surfaces.
+#[allow(dead_code)]
 pub enum Transform {
     TransformNormal = 0,     // no transform
     Transform90 = 1,         // 90 degrees counter-clockwise

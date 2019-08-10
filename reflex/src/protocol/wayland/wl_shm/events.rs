@@ -30,6 +30,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // Informs the client about a valid pixel format that
 // can be used for buffers. Known formats include
 // argb8888 and xrgb8888.
+#[allow(dead_code)]
 pub struct Format {
     pub sender_object_id: u32,
     pub format: u32, // uint: buffer pixel format

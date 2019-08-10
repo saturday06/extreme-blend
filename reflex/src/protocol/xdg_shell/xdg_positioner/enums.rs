@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Anchor {
     None = 0,        //
     Top = 1,         //
@@ -49,6 +50,7 @@ pub enum Anchor {
 //
 // The adjustments can be combined, according to a defined precedence: 1)
 // Flip, 2) Slide, 3) Resize.
+#[allow(dead_code)]
 pub enum ConstraintAdjustment {
     None = 0,     //
     SlideX = 1,   //
@@ -59,10 +61,12 @@ pub enum ConstraintAdjustment {
     ResizeY = 32, //
 }
 
+#[allow(dead_code)]
 pub enum Error {
     InvalidInput = 0, // invalid input provided
 }
 
+#[allow(dead_code)]
 pub enum Gravity {
     None = 0,        //
     Top = 1,         //

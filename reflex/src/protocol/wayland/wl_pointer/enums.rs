@@ -26,6 +26,7 @@
 // axis types
 //
 // Describes the axis types of scroll events.
+#[allow(dead_code)]
 pub enum Axis {
     VerticalScroll = 0,   // vertical axis
     HorizontalScroll = 1, // horizontal axis
@@ -49,6 +50,7 @@ pub enum Axis {
 // The "wheel tilt" axis source indicates that the actual device is a
 // wheel but the scroll event is not caused by a rotation but a
 // (usually sideways) tilt of the wheel.
+#[allow(dead_code)]
 pub enum AxisSource {
     Wheel = 0,      // a physical wheel rotation
     Finger = 1,     // finger on a touch surface
@@ -60,11 +62,13 @@ pub enum AxisSource {
 //
 // Describes the physical state of a button that produced the button
 // event.
+#[allow(dead_code)]
 pub enum ButtonState {
     Released = 0, // the button is not pressed
     Pressed = 1,  // the button is pressed
 }
 
+#[allow(dead_code)]
 pub enum Error {
     Role = 0, // given wl_surface has another role
 }

@@ -36,6 +36,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // This is only a request that the user intends to close the
 // window. The client may choose to ignore this request, or show
 // a dialog to ask the user to save their data, etc.
+#[allow(dead_code)]
 pub struct Close {
     pub sender_object_id: u32,
 }
@@ -78,6 +79,7 @@ impl super::super::super::event::Event for Close {
 //
 // Clients must send an ack_configure in response to this event. See
 // xdg_surface.configure and xdg_surface.ack_configure for details.
+#[allow(dead_code)]
 pub struct Configure {
     pub sender_object_id: u32,
     pub width: i32,      // int:

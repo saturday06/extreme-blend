@@ -26,6 +26,7 @@
 // wl_shm error values
 //
 // These errors can be emitted in response to wl_shm requests.
+#[allow(dead_code)]
 pub enum Error {
     InvalidFormat = 0, // buffer format is not known
     InvalidStride = 1, // invalid size or stride during pool or buffer creation
@@ -43,6 +44,7 @@ pub enum Error {
 // The drm format codes match the macros defined in drm_fourcc.h.
 // The formats actually supported by the compositor will be
 // reported by the format event.
+#[allow(dead_code)]
 pub enum Format {
     Argb8888 = 0,             // 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
     Xrgb8888 = 1,             // 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian

@@ -24,9 +24,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#[allow(unused_imports)]
 use crate::protocol::session::{Context, Session};
+#[allow(unused_imports)]
 use futures::future::{err, ok, Future};
+#[allow(unused_imports)]
 use futures::sink::Sink;
+#[allow(unused_imports)]
 use std::sync::{Arc, RwLock};
 
 pub mod enums;

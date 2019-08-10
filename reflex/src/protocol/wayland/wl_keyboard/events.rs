@@ -29,6 +29,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // Notification that this seat's keyboard focus is on a certain
 // surface.
+#[allow(dead_code)]
 pub struct Enter {
     pub sender_object_id: u32,
     pub serial: u32,   // uint: serial number of the enter event
@@ -71,6 +72,7 @@ impl super::super::super::event::Event for Enter {
 // A key was pressed or released.
 // The time argument is a timestamp with millisecond
 // granularity, with an undefined base.
+#[allow(dead_code)]
 pub struct Key {
     pub sender_object_id: u32,
     pub serial: u32, // uint: serial number of the key event
@@ -104,6 +106,7 @@ impl super::super::super::event::Event for Key {
 //
 // This event provides a file descriptor to the client which can be
 // memory-mapped to provide a keyboard mapping description.
+#[allow(dead_code)]
 pub struct Keymap {
     pub sender_object_id: u32,
     pub format: u32, // uint: keymap format
@@ -138,6 +141,7 @@ impl super::super::super::event::Event for Keymap {
 //
 // The leave notification is sent before the enter notification
 // for the new focus.
+#[allow(dead_code)]
 pub struct Leave {
     pub sender_object_id: u32,
     pub serial: u32,  // uint: serial number of the leave event
@@ -167,6 +171,7 @@ impl super::super::super::event::Event for Leave {
 //
 // Notifies clients that the modifier and/or group state has
 // changed, and it should update its local state.
+#[allow(dead_code)]
 pub struct Modifiers {
     pub sender_object_id: u32,
     pub serial: u32,         // uint: serial number of the modifiers event
@@ -212,6 +217,7 @@ impl super::super::super::event::Event for Modifiers {
 // This event can be sent later on as well with a new value if necessary,
 // so clients should continue listening for the event past the creation
 // of wl_keyboard.
+#[allow(dead_code)]
 pub struct RepeatInfo {
     pub sender_object_id: u32,
     pub rate: i32,  // int: the rate of repeating keys in characters per second

@@ -44,6 +44,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // If the client receives multiple configure events before it can respond
 // to one, it is free to discard all but the last event it received.
+#[allow(dead_code)]
 pub struct Configure {
     pub sender_object_id: u32,
     pub serial: u32, // uint: serial of the configure event

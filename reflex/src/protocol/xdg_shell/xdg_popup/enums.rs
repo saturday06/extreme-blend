@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     InvalidGrab = 0, // tried to grab after being mapped
 }

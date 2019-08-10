@@ -39,6 +39,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // A compositor is free to ping in any way it wants, but a client must
 // always respond to any xdg_wm_base object it created.
+#[allow(dead_code)]
 pub struct Ping {
     pub sender_object_id: u32,
     pub serial: u32, // uint: pass this to the pong request

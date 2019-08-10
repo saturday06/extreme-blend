@@ -32,6 +32,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // output.
 //
 // Note that a surface may be overlapping with zero or more outputs.
+#[allow(dead_code)]
 pub struct Enter {
     pub sender_object_id: u32,
     pub output: u32, // object: output entered by the surface
@@ -60,6 +61,7 @@ impl super::super::super::event::Event for Enter {
 // This is emitted whenever a surface's creation, movement, or resizing
 // results in it no longer having any part of it within the scanout region
 // of an output.
+#[allow(dead_code)]
 pub struct Leave {
     pub sender_object_id: u32,
     pub output: u32, // object: output left by the surface

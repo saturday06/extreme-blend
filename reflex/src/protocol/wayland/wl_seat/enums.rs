@@ -27,6 +27,7 @@
 //
 // This is a bitmask of capabilities this seat has; if a member is
 // set, then it is present on the seat.
+#[allow(dead_code)]
 pub enum Capability {
     Pointer = 1,  // the seat has pointer devices
     Keyboard = 2, // the seat has one or more keyboards

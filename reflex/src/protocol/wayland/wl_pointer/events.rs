@@ -43,6 +43,7 @@ use byteorder::{ByteOrder, NativeEndian};
 //
 // When applicable, a client can transform its content relative to the
 // scroll distance.
+#[allow(dead_code)]
 pub struct Axis {
     pub sender_object_id: u32,
     pub time: u32,  // uint: timestamp with millisecond granularity
@@ -98,6 +99,7 @@ impl super::super::super::event::Event for Axis {
 //
 // The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 // not guaranteed.
+#[allow(dead_code)]
 pub struct AxisDiscrete {
     pub sender_object_id: u32,
     pub axis: u32,     // uint: axis type
@@ -150,6 +152,7 @@ impl super::super::super::event::Event for AxisDiscrete {
 //
 // The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 // not guaranteed.
+#[allow(dead_code)]
 pub struct AxisSource {
     pub sender_object_id: u32,
     pub axis_source: u32, // uint: source of the axis event
@@ -189,6 +192,7 @@ impl super::super::super::event::Event for AxisSource {
 // The timestamp is to be interpreted identical to the timestamp in the
 // wl_pointer.axis event. The timestamp value may be the same as a
 // preceding wl_pointer.axis event.
+#[allow(dead_code)]
 pub struct AxisStop {
     pub sender_object_id: u32,
     pub time: u32, // uint: timestamp with millisecond granularity
@@ -230,6 +234,7 @@ impl super::super::super::event::Event for AxisStop {
 // kernel's event code list. All other button codes above 0xFFFF are
 // currently undefined but may be used in future versions of this
 // protocol.
+#[allow(dead_code)]
 pub struct Button {
     pub sender_object_id: u32,
     pub serial: u32, // uint: serial number of the button event
@@ -267,6 +272,7 @@ impl super::super::super::event::Event for Button {
 // When a seat's focus enters a surface, the pointer image
 // is undefined and a client should respond to this event by setting
 // an appropriate pointer image with the set_cursor request.
+#[allow(dead_code)]
 pub struct Enter {
     pub sender_object_id: u32,
     pub serial: u32,    // uint: serial number of the enter event
@@ -332,6 +338,7 @@ impl super::super::super::event::Event for Enter {
 // Compositor-specific policies may require the wl_pointer.leave and
 // wl_pointer.enter event being split across multiple wl_pointer.frame
 // groups.
+#[allow(dead_code)]
 pub struct Frame {
     pub sender_object_id: u32,
 }
@@ -360,6 +367,7 @@ impl super::super::super::event::Event for Frame {
 //
 // The leave notification is sent before the enter notification
 // for the new focus.
+#[allow(dead_code)]
 pub struct Leave {
     pub sender_object_id: u32,
     pub serial: u32,  // uint: serial number of the leave event
@@ -390,6 +398,7 @@ impl super::super::super::event::Event for Leave {
 // Notification of pointer location change. The arguments
 // surface_x and surface_y are the location relative to the
 // focused surface.
+#[allow(dead_code)]
 pub struct Motion {
     pub sender_object_id: u32,
     pub time: u32,      // uint: timestamp with millisecond granularity

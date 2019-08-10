@@ -39,6 +39,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // this is possible, when the compositor maintains a copy of the
 // wl_surface contents, e.g. as a GL texture. This is an important
 // optimization for GL(ES) compositors with wl_shm clients.
+#[allow(dead_code)]
 pub struct Release {
     pub sender_object_id: u32,
 }

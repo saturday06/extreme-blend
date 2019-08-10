@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     Role = 0,                // given wl_surface has another role
     DefunctSurfaces = 1,     // xdg_wm_base was destroyed before children

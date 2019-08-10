@@ -668,6 +668,7 @@ protocols.each do |protocol|
       interface.enums.each do |enum|
         f.puts("")
         f.puts(enum.description.comment()) if enum.description
+        f.puts("#[allow(dead_code)]")
         f.puts("pub enum #{camel_case(enum.name)} {")
         enum.entries.each do |entry|
           f.puts("    #{camel_case(entry.name)} = #{entry.value}, // #{entry.summary}")
@@ -688,6 +689,7 @@ protocols.each do |protocol|
       interface.events.each do |event|
         f.puts("")
         f.puts(event.description.comment())
+        f.puts("#[allow(dead_code)]")
         f.puts("pub struct #{camel_case(event.name)} {")
         f.puts("    pub sender_object_id: u32,")
         event.args.each do |arg|
@@ -718,12 +720,15 @@ protocols.each do |protocol|
 USE
 
       if interface.global_singleton
+        f.puts("#[allow(dead_code)]")
         f.puts("pub const GLOBAL_SINGLETON_NAME: u32 = #{interface.global_singleton_name_int};")
       end
       f.puts(<<CODE)
+#[allow(dead_code)]
 pub const VERSION: u32 = #{interface.version};
 
 #[allow(unused_variables)]
+#[allow(dead_code)]
 CODE
       f.puts("pub fn dispatch_request(context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
       f.puts(interface.decode)
@@ -746,10 +751,10 @@ INTO
       f.puts(render_comment(protocol.copyright.text))
       f.puts("")
       f.puts(<<USE)
-use crate::protocol::session::{Context, Session};
-use futures::future::{Future, ok, err};
-use futures::sink::Sink;
-use std::sync::{Arc, RwLock};
+#[allow(unused_imports)] use crate::protocol::session::{Context, Session};
+#[allow(unused_imports)] use futures::future::{err, ok, Future};
+#[allow(unused_imports)] use futures::sink::Sink;
+#[allow(unused_imports)] use std::sync::{Arc, RwLock};
 
 USE
       if interface.enums

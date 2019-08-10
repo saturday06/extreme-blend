@@ -48,6 +48,7 @@
 // Compositors may for example bind other modifiers (like Alt/Meta)
 // or drags initiated with other buttons than BTN_LEFT to specific
 // actions (e.g. "ask").
+#[allow(dead_code)]
 pub enum DndAction {
     None = 0, // no action
     Copy = 1, // copy action

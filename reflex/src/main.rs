@@ -1,8 +1,9 @@
+use crate::protocol::request_stream::RequestStream;
+use crate::protocol::event_sink::EventSink;
 use futures::future::Future;
 use futures::sink::Sink;
 use futures::stream::Stream;
-use mio::Ready;
-use protocol::codec::Codec;
+//use protocol::codec::Codec;
 use protocol::event::Event;
 use protocol::request::Request;
 use protocol::resource::Resource;
@@ -15,11 +16,12 @@ use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
-use std::os::unix::io::AsRawFd;
-use std::os::unix::io::FromRawFd;
+//use std::os::unix::io::AsRawFd;
+//use std::os::unix::io::FromRawFd;
 use std::sync::{Arc, RwLock};
-use tokio::codec::Decoder;
-use tokio::net::{UnixListener, UnixStream};
+//use tokio::codec::Decoder;
+use tokio::net::UnixListener;
+//use tokio::reactor::Handle;
 use tokio::runtime::Runtime;
 
 mod protocol;
@@ -28,7 +30,6 @@ mod uds;
 fn main() {
     let runtime = Runtime::new().unwrap();
     let executor = runtime.executor();
-    let reactor = runtime.reactor().clone();
 
     let socket_path = "/tmp/temp.unix";
     let _ = std::fs::remove_file(socket_path);
@@ -44,23 +45,16 @@ fn main() {
         .unwrap()
         .incoming()
         .for_each(move |stream| {
-            let input_stream0 = UnixStream::from_std(
-                unsafe { std::os::unix::net::UnixStream::from_raw_fd(stream.as_raw_fd()) },
-                &reactor,
-            )
-            .unwrap();
-
-            let tx0 = {
-                let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(1000);
-                let (writer0, reader0) = Codec::new().framed(stream).split();
-                let output_session = rx0
-                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
-                    .forward(writer0)
-                    .map_err(|_| ())
-                    .and_then(|_| Ok(()));
-                executor.spawn(output_session);
-                tx0
-            };
+            let arc_stream = Arc::new(stream);
+            let reader0 = RequestStream::new(arc_stream.clone());
+            let writer0 = EventSink::new(arc_stream.clone());
+            let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(48000);
+            let output_session = rx0
+                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
+                .forward(writer0)
+                .map_err(|_| ())
+                .and_then(|_| Ok(()));
+            executor.spawn(output_session);
 
             let mut session0 = Session {
                 wl_display: wl_display.clone(),
@@ -76,60 +70,53 @@ fn main() {
             session0
                 .resources
                 .insert(1, Resource::WlDisplay(wl_display.clone()));
-            /*
-                        let x: Box<Future<Item = (), Error = std::io::Error>> = Box::new(futures::future::loop_fn(input_stream0, |input_stream| {
-                            let fd = input_stream.as_raw_fd();
-                            let poll = input_stream.poll_read_ready(Ready::readable());
-                            futures::future::ok(input_stream)
-                                .and_then(|input_stream| poll)
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_: ()|  Ok(futures::future::Loop::Continue(input_stream)))
-                        }));
-            */
-
-            /*
-                        let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(reader0
-                            .fold(session0, |mut session: Session, req: Request| -> Box<Future<Item = Session, Error = std::io::Error> + Send> {
-                                let opt_res = session
-                                    .resources
-                                    .remove(&req.sender_object_id);
-                                if let Some(res) = opt_res {
-                                    let f: Box<Future<Item = Session, Error = std::io::Error> + Send> = Box::new(
-                                        protocol::resource::dispatch_request(
-                                            res,
-                                            session,
-                                            req.sender_object_id,
-                                            req.opcode,
-                                            req.args,
-                                        ).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
-                                    );
-                                    f
-                                } else {
-                                    let tx = session.tx.clone();
-                                    let f: Box<Future<Item = Session, Error = std::io::Error> + Send> = Box::new(
-                                        tx.send(Box::new(wl_display::events::Error {
-                                            sender_object_id: 1,
-                                            object_id: 1,
-                                            code: wl_display::enums::Error::InvalidObject as u32,
-                                            message: format!(
-                                                "object_id={} opcode={} args={:?} not found",
-                                                req.sender_object_id, req.opcode, req.args
-                                            ),
-                                        }))
-                                            .map(|_| session)
-                                            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
-                                    );
-                                    f
-                                }
-                            }).map(|_| ()).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")));
-            */
-            let input_session0 = Box::new(futures::future::ok(()));
-            //input_session0.or_else(|_| futures::future::ok(()))
+            let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
+                reader0
+                    .fold(
+                        session0,
+                        |mut session: Session,
+                         req: Request|
+                         -> Box<Future<Item = Session, Error = ()> + Send> {
+                            let opt_res = session.resources.remove(&req.sender_object_id);
+                            if let Some(res) = opt_res {
+                                let f: Box<Future<Item = Session, Error = ()> + Send> = Box::new(
+                                    protocol::resource::dispatch_request(
+                                        res,
+                                        session,
+                                        req.sender_object_id,
+                                        req.opcode,
+                                        req.args,
+                                    )
+                                    .map_err(|_| ()),
+                                );
+                                f
+                            } else {
+                                let tx = session.tx.clone();
+                                let f: Box<Future<Item = Session, Error = ()> + Send> = Box::new(
+                                    tx.send(Box::new(wl_display::events::Error {
+                                        sender_object_id: 1,
+                                        object_id: 1,
+                                        code: wl_display::enums::Error::InvalidObject as u32,
+                                        message: format!(
+                                            "object_id={} opcode={} args={:?} not found",
+                                            req.sender_object_id, req.opcode, req.args
+                                        ),
+                                    }))
+                                    .map(|_| session)
+                                    .map_err(|_| ()),
+                                );
+                                f
+                            }
+                        },
+                    )
+                    .map(|_| ())
+                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
+            );
             input_session0
         })
         .map_err(|err| println!("Error: {:?}", err));
     if let Err(err) = runtime.block_on_all(listener) {
-        println!("Error: {:?}", err);
+        println!("Error");
     }
     println!("Exit");
 }

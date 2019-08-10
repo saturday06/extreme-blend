@@ -28,6 +28,7 @@
 //
 // These values are used to indicate which edge of a surface
 // is being dragged in a resize operation.
+#[allow(dead_code)]
 pub enum ResizeEdge {
     None = 0,         //
     Top = 1,          //
@@ -49,6 +50,7 @@ pub enum ResizeEdge {
 //
 // States set in this way are double-buffered. They will get applied on
 // the next commit.
+#[allow(dead_code)]
 pub enum State {
     Maximized = 1,   // the surface is maximized
     Fullscreen = 2,  // the surface is fullscreen

@@ -62,6 +62,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // user (e.g. popping up a menu with the available options). The
 // final wl_data_offer.set_actions and wl_data_offer.accept requests
 // must happen before the call to wl_data_offer.finish.
+#[allow(dead_code)]
 pub struct Action {
     pub sender_object_id: u32,
     pub dnd_action: u32, // uint: action selected by the compositor
@@ -89,6 +90,7 @@ impl super::super::super::event::Event for Action {
 //
 // Sent immediately after creating the wl_data_offer object.  One
 // event per offered mime type.
+#[allow(dead_code)]
 pub struct Offer {
     pub sender_object_id: u32,
     pub mime_type: String, // string: offered mime type
@@ -126,6 +128,7 @@ impl super::super::super::event::Event for Offer {
 // This event indicates the actions offered by the data source. It
 // will be sent right after wl_data_device.enter, or anytime the source
 // side changes its offered actions through wl_data_source.set_actions.
+#[allow(dead_code)]
 pub struct SourceActions {
     pub sender_object_id: u32,
     pub source_actions: u32, // uint: actions offered by the data source

@@ -23,6 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#[allow(dead_code)]
 pub enum Error {
     InvalidActionMask = 0, // action mask contains invalid values
     InvalidSource = 1,     // source doesn't accept this request
