@@ -16,15 +16,16 @@ use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
-use std::os::unix::io::AsRawFd;
-use std::os::unix::io::RawFd;
+//use std::os::unix::io::AsRawFd;
+//use std::os::unix::io::RawFd;
 //use std::os::unix::io::FromRawFd;
 use std::sync::{Arc, RwLock};
 //use tokio::codec::Decoder;
-use tokio::net::UnixListener;
+//use tokio::net::UnixListener;
 //use tokio::reactor::Handle;
 use crate::protocol::connection_stream::ConnectionStream;
 use tokio::runtime::Runtime;
+use crate::protocol::fd_drop::FdDrop;
 
 mod protocol;
 //mod uds;
@@ -44,12 +45,16 @@ fn main() {
     let xdg_wm_base = Arc::new(RwLock::new(XdgWmBase {}));
 
     let listener = ConnectionStream::bind(socket_path.to_string()).for_each(move |fd| {
+        //let fd = default_stream.as_raw_fd();
+        //unsafe { libc::fcntl(fd, libc::F_SETFL, libc::O_NONBLOCK) };
+        //let arc_stream = Arc::new(default_stream);
+        let fd_drop = Arc::new(FdDrop::new(fd));
         let tokio_registration = Arc::new(tokio::reactor::Registration::new());
         tokio_registration
             .register(&mio::unix::EventedFd(&fd))
             .expect("register request fd");
-        let reader0 = RequestStream::new(fd, tokio_registration.clone());
-        let writer0 = EventSink::new(fd, tokio_registration.clone());
+        let reader0 = RequestStream::new(fd, fd_drop.clone(),tokio_registration.clone());
+        let writer0 = EventSink::new(fd,fd_drop.clone(), tokio_registration.clone());
         let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(48000);
         let output_session = rx0
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
@@ -72,7 +77,7 @@ fn main() {
         session0
             .resources
             .insert(1, Resource::WlDisplay(wl_display.clone()));
-        let input_session0: Box<Future<Item = (), Error = std::io::Error> + Send> = Box::new(
+        let input_session0: Box<Future<Item = (), Error = ()> + Send> = Box::new(
             reader0
                 .fold(
                     session0,
@@ -110,13 +115,17 @@ fn main() {
                     },
                 )
                 .map(|_| ())
-                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
+                //.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
+                .then(|_| futures::future::ok(()))
         );
-        input_session0
+
+        executor.spawn(input_session0);
+
+        futures::future::ok(())
     });
     //.map_err(|err| println!("Error: {:?}", err));
     if let Err(err) = runtime.block_on_all(listener) {
-        println!("Error");
+        println!("Error {:?}", err);
     }
     println!("Exit");
 }

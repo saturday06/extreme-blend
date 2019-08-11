@@ -24,8 +24,8 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, Session};
-use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
-use futures::future::{err, ok, Future};
+use byteorder::{NativeEndian, ReadBytesExt};
+use futures::future::{ok, Future};
 use futures::sink::Sink;
 use std::convert::TryInto;
 use std::io::{Cursor, Read};
@@ -35,52 +35,27 @@ pub mod events;
 mod lib;
 pub use lib::{GLOBAL_SINGLETON_NAME, VERSION};
 
-fn dispatch_request_error(
-    request: crate::protocol::session::Context<
-        Arc<RwLock<crate::protocol::wayland::wl_registry::WlRegistry>>,
-    >,
-    opcode: u16,
-    args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    let tx = request.tx.clone();
-    Box::new(
-        tx.send(Box::new(
-            crate::protocol::wayland::wl_display::events::Error {
-                sender_object_id: 1,
-                object_id: request.sender_object_id,
-                code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                message: format!(
-                    "wl_registry@{} opcode={} args={:?} not found",
-                    request.sender_object_id, opcode, args
-                ),
-            },
-        ))
-        .map_err(|_| ())
-        .map(|_tx| request.into()),
-    )
-}
-
 pub fn dispatch_request(
-    request: crate::protocol::session::Context<
+    context: crate::protocol::session::Context<
         Arc<RwLock<crate::protocol::wayland::wl_registry::WlRegistry>>,
     >,
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    if (opcode != 0 && args.len() <= 8) {
-        return lib::dispatch_request(request, opcode, args);
+    if opcode != 0 && args.len() <= 8 {
+        return lib::dispatch_request(context, opcode, args);
     }
 
     let mut cursor = Cursor::new(&args);
     let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return dispatch_request_error(request, opcode, args);
+        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
     };
     let name_buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x as usize
     } else {
-        return dispatch_request_error(request, opcode, args);
+        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
     };
     let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
     let mut name_buf = Vec::new();
@@ -90,20 +65,20 @@ pub fn dispatch_request(
     let _version = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return dispatch_request_error(request, opcode, args);
+        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
     };
 
     let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return dispatch_request_error(request, opcode, args);
+        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
     };
 
     if Ok(cursor.position()) != args.len().try_into() {
-        return dispatch_request_error(request, opcode, args);
+        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
     }
 
-    WlRegistry::bind(request, name, id)
+    WlRegistry::bind(context, name, id)
 }
 
 // global registry object

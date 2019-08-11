@@ -1,46 +1,41 @@
 use crate::protocol::event::Event;
-use byteorder::{NativeEndian, ReadBytesExt};
 use bytes::BytesMut;
-use futures::future::Future;
-use futures::future::{err, ok};
 use futures::sink::Sink;
 use futures::AsyncSink;
 use nix::fcntl::fcntl;
 use nix::fcntl::FcntlArg::F_GETFD;
 use nix::sys::socket::*;
-use nix::sys::uio::IoVec;
-use nix::unistd::{close, dup, pipe};
-use std::error::Error;
-use std::fs;
-use std::io;
-use std::io::{Cursor, Read};
-use std::os::raw::c_void;
-use std::os::unix::io::AsRawFd;
 use std::os::unix::io::RawFd;
 use std::sync::Arc;
-use tokio::net::{UnixListener, UnixStream};
-use tokio::prelude::{Async, Poll};
+use tokio::prelude::Async;
+use crate::protocol::fd_drop::FdDrop;
 
 pub struct EventSink {
     fd: RawFd,
+    _fd_drop: Arc<FdDrop>,
     tokio_registration: Arc<tokio::reactor::Registration>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
     pending_events: Vec<Box<Event + Send>>,
+  //  _tokio_stream: Arc<UnixStream>,
     closed: bool,
 }
 
 impl EventSink {
     pub(crate) fn new(
         fd: RawFd,
+        fd_drop: Arc<FdDrop>,
         tokio_registration: Arc<tokio::reactor::Registration>,
+        //tokio_stream: Arc<UnixStream>,
     ) -> EventSink {
         EventSink {
             fd,
+            _fd_drop: fd_drop,
             tokio_registration,
             pending_bytes: Vec::new(),
             pending_fds: Vec::new(),
             pending_events: Vec::new(),
+            //_tokio_stream: tokio_stream,
             closed: false,
         }
     }

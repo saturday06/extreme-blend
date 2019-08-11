@@ -5,5 +5,6 @@ pub mod request;
 pub mod request_stream;
 pub mod resource;
 pub mod session;
+pub mod fd_drop;
 pub mod wayland;
 pub mod xdg_shell;

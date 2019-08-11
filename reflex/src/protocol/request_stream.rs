@@ -1,46 +1,30 @@
 use crate::protocol::request::Request;
 use byteorder::{NativeEndian, ReadBytesExt};
-//use futures::future::Future;
-//use futures::future::{err, ok};
 use futures::stream::Stream;
-//use mio::Ready;
-use nix::cmsg_space;
-use nix::sys::socket::*;
-use nix::sys::uio::IoVec;
-//use nix::unistd::{close, dup, pipe};
-//use std::error::Error;
-//use std::fs;
-//use std::io;
 use std::io::{Cursor, Read};
-//use std::mem;
-//use std::os::raw::c_void;
-use std::os::unix::io::AsRawFd;
-//use std::os::unix::io::FromRawFd;
-//use std::os::unix::io::IntoRawFd;
 use std::os::unix::io::RawFd;
-//use std::path::Path;
-//use std::time::Duration;
-use nix::fcntl::fcntl;
-use nix::fcntl::FcntlArg::F_GETFD;
-use nix::unistd::dup;
 use std::sync::Arc;
-use tokio::net::UnixStream;
 use tokio::prelude::Async;
 use tokio::reactor::Registration;
+use crate::protocol::fd_drop::FdDrop;
 
 pub struct RequestStream {
     fd: RawFd,
+    _fd_drop: Arc<FdDrop>,
     tokio_registration: Arc<tokio::reactor::Registration>,
+    //_tokio_stream: Arc<UnixStream>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
     pending_requests: Vec<Request>,
 }
 
 impl RequestStream {
-    pub(crate) fn new(fd: RawFd, tokio_registration: Arc<Registration>) -> RequestStream {
+    pub(crate) fn new(fd: RawFd,   fd_drop: Arc<FdDrop>, tokio_registration: Arc<Registration>) -> RequestStream {
         RequestStream {
             fd,
+            _fd_drop: fd_drop,
             tokio_registration,
+            //_tokio_stream: tokio_stream,
             pending_bytes: Vec::new(),
             pending_fds: Vec::new(),
             pending_requests: Vec::new(),
@@ -88,7 +72,119 @@ impl Stream for RequestStream {
         let mut received_fds: Vec<RawFd> = Vec::new();
         let mut buf: Vec<u8> = Vec::new();
         buf.resize(16, 0);
+        let mut fd_len = 8;
         loop {
+            let buf_len = buf.len();
+
+            unsafe {
+                let cmsg_space = std::cmp::max(
+                    libc::CMSG_SPACE(std::mem::size_of::<std::os::raw::c_int>() as u32 * fd_len),
+                    std::mem::size_of::<libc::cmsghdr>() as u32
+                );
+                {
+                    let mut msg_control: Vec<u8> = Vec::new();
+                    msg_control.resize(cmsg_space as usize, 0);
+
+                    let mut io_vec = libc::iovec {
+                        iov_len: buf.len(),
+                        iov_base: buf.as_mut_ptr() as *mut std::os::raw::c_void,
+                    };
+                    let mut msg_hdr = libc::msghdr {
+                        msg_name: std::ptr::null_mut(),
+                        msg_namelen: 0,
+                        msg_iov: &mut io_vec,
+                        msg_iovlen: 1,
+                        msg_control: msg_control.as_mut_ptr() as *mut std::os::raw::c_void,
+                        msg_controllen: msg_control.len(),
+                        msg_flags: 0,
+                    };
+                    let read = libc::recvmsg(self.fd, &mut msg_hdr, libc::MSG_PEEK);
+                    if read < 0 {
+                        let errno = *libc::__errno_location();
+                        if errno == libc::EAGAIN || errno == libc::EWOULDBLOCK {
+                            println!("[Stream] EAGAIN not ready");
+                            return Ok(Async::NotReady);
+                        }
+                        println!("[Stream] err {}", errno);
+                        return Err(());
+                    }
+                    if (msg_hdr.msg_flags & libc::MSG_TRUNC) != 0 {
+                        buf.resize(buf.len() * 2, 0);
+                        continue;
+                    }
+                    if (msg_hdr.msg_flags & libc::MSG_CTRUNC) != 0 {
+                        fd_len = fd_len * 2;
+                        continue;
+                    }
+                    if read as usize == buf_len {
+                        buf.resize(buf.len() * 2, 0);
+                        continue;
+                    }
+                }
+                {
+                    let mut msg_control: Vec<u8> = Vec::new();
+                    msg_control.resize(cmsg_space as usize, 0);
+
+                    let mut io_vec = libc::iovec {
+                        iov_len: buf.len(),
+                        iov_base: buf.as_mut_ptr() as *mut std::os::raw::c_void,
+                    };
+                    let mut msg_hdr = libc::msghdr {
+                        msg_name: std::ptr::null_mut(),
+                        msg_namelen: 0,
+                        msg_iov: &mut io_vec,
+                        msg_iovlen: 1,
+                        msg_control: msg_control.as_mut_ptr() as *mut std::os::raw::c_void,
+                        msg_controllen: msg_control.len(),
+                        msg_flags: 0,
+                    };
+                    let read = libc::recvmsg(self.fd, &mut msg_hdr, 0);
+                    if read < 0 {
+                        let errno = *libc::__errno_location();
+                        if errno == libc::EAGAIN || errno == libc::EWOULDBLOCK {
+                            println!("[Stream] EAGAIN not ready");
+                            return Ok(Async::NotReady);
+                        }
+                        println!("[Stream] err {}", errno);
+                        return Err(());
+                    }
+                    if (msg_hdr.msg_flags & libc::MSG_TRUNC) != 0 {
+                        println!("[Stream] Oops MSG_TRUNC");
+                    }
+                    if (msg_hdr.msg_flags & libc::MSG_CTRUNC) != 0 {
+                        println!("[Stream] Oops MSG_CTRUNC");
+                    }
+
+                    buf.resize(read as usize, 0);
+
+                    let mut cmsg_hdr = libc::CMSG_FIRSTHDR(&msg_hdr);
+                    while cmsg_hdr != std::ptr::null_mut() {
+                        println!("[Stream] cmsg");
+                        let cmsg_level = (*cmsg_hdr).cmsg_level;
+                        let cmsg_type = (*cmsg_hdr).cmsg_type;
+                        if cmsg_level == libc::SOL_SOCKET &&cmsg_type == libc::SCM_RIGHTS {
+                            println!("[Stream] SCM_RIGHTS cmsg_len={}", (*cmsg_hdr).cmsg_len);
+                            let received_fds_ptr = libc::CMSG_DATA(cmsg_hdr) as *mut std::os::raw::c_int;
+                            let mut received_fds_len = 1;
+                            while libc::CMSG_LEN(std::mem::size_of::<std::os::raw::c_int>() as u32 * received_fds_len) <= (*cmsg_hdr).cmsg_len as u32 {
+                                println!("[Stream] SCM_RIGHTS  vs {}",
+                                libc::CMSG_LEN(std::mem::size_of::<std::os::raw::c_int>() as u32 * received_fds_len));
+                                received_fds_len += 1;
+                            }
+                            received_fds_len -= 1;
+                            println!("[Stream] len={}", received_fds_len);
+                            for offset in 0..received_fds_len {
+                                received_fds.push(*received_fds_ptr.offset(offset as isize));
+                            }
+                        } else {
+                            println!("[Stream] UNHANDLED CMSG: level={} type={}", cmsg_level, cmsg_type);
+                        }
+                        cmsg_hdr = libc::CMSG_NXTHDR(&msg_hdr, cmsg_hdr);
+                    }
+                }
+            }
+
+            /*
             println!("[Stream] ----- read loop -----");
             let buf_len = buf.len();
             let iov = [IoVec::from_mut_slice(&mut buf[..])];
@@ -150,6 +246,7 @@ impl Stream for RequestStream {
                 .flags
                 .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
             buf.resize(msg.bytes, 0);
+            */
             break;
         }
 
@@ -190,8 +287,8 @@ impl Stream for RequestStream {
             args.resize(message_size - header_size, 0);
             cursor.read_exact(&mut args).unwrap();
             println!(
-                "[Stream] decode: id={} opcode={} args={:?}",
-                sender_object_id, opcode, &args
+                "[Stream] decode: id={} opcode={} args={:?} fds={:?}",
+                sender_object_id, opcode, &args, &self.pending_fds
             );
             let fds = self.pending_fds.clone();
             self.pending_fds.clear();

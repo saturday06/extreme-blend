@@ -1,34 +1,9 @@
-use crate::protocol::request::Request;
-use byteorder::{NativeEndian, ReadBytesExt};
-//use futures::future::Future;
-//use futures::future::{err, ok};
 use futures::stream::Stream;
-//use mio::Ready;
-use nix::cmsg_space;
 use nix::sys::socket::*;
-use nix::sys::uio::IoVec;
-//use nix::unistd::{close, dup, pipe};
 use std::os::unix::fs::PermissionsExt;
-//use std::error::Error;
-//use std::fs;
-//use std::io;
-use std::io::{Cursor, Read};
-//use std::mem;
-//use std::os::raw::c_void;
-use std::os::unix::io::AsRawFd;
-//use std::os::unix::io::FromRawFd;
-//use std::os::unix::io::IntoRawFd;
 use std::os::unix::io::RawFd;
-//use std::path::Path;
-//use std::time::Duration;
-use nix::unistd::dup;
 use std::fs;
-use std::path::Path;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::net::UnixStream;
 use tokio::prelude::Async;
-use tokio::reactor::Registration;
 
 pub struct ConnectionStream {
     fd: RawFd,

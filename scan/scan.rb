@@ -602,6 +602,7 @@ open("../reflex/src/protocol.rs", "wb") do |f|
 pub mod connection_stream;
 pub mod event;
 pub mod event_sink;
+pub mod fd_drop;
 pub mod request;
 pub mod request_stream;
 pub mod resource;
