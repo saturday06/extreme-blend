@@ -57,43 +57,13 @@ pub fn dispatch_request(
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_compositor@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_compositor@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlCompositor::create_surface(context, id);
         }
@@ -101,43 +71,13 @@ pub fn dispatch_request(
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_compositor@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_compositor@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlCompositor::create_region(context, id);
         }

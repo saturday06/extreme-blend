@@ -1,5 +1,6 @@
 use std::os::unix::io::RawFd;
 
+#[derive(Debug)]
 pub struct Request {
     pub sender_object_id: u32,
     pub opcode: u16,

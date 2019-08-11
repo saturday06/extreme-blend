@@ -53,148 +53,43 @@ pub fn dispatch_request(
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let offset = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let stride = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let format = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlShmPool::create_buffer(
                 context, id, offset, width, height, stride, format,
@@ -202,23 +97,8 @@ pub fn dispatch_request(
         }
         1 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlShmPool::destroy(context);
         }
@@ -226,43 +106,13 @@ pub fn dispatch_request(
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_shm_pool@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlShmPool::resize(context, size);
         }

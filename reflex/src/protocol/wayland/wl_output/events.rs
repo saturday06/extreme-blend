@@ -101,7 +101,6 @@ impl super::super::super::event::Event for Geometry {
         NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4..], self.physical_width);
         NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4 + 4..], self.physical_height);
         NativeEndian::write_i32(&mut dst[i + 8 + 4 + 4 + 4 + 4..], self.subpixel);
-
         NativeEndian::write_u32(
             &mut dst[i + 8 + 4 + 4 + 4 + 4 + 4..],
             (self.make.len() + 1) as u32,

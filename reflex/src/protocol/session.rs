@@ -73,18 +73,13 @@ where
         let tx = self.tx.clone();
         let sender_object_id = self.sender_object_id;
         let session: Session = self.into();
-        return Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message,
-                },
-            ))
-            .map_err(|_| ())
-            .map(|_| session),
-        );
+        let error = crate::protocol::wayland::wl_display::events::Error {
+            sender_object_id: 1,
+            object_id: sender_object_id,
+            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+            message,
+        };
+        return Box::new(tx.send(Box::new(error)).map_err(|_| ()).map(|_| session));
     }
 }
 

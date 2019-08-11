@@ -54,7 +54,6 @@ impl super::super::super::event::Event for Global {
         NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
 
         NativeEndian::write_u32(&mut dst[i + 8..], self.name);
-
         NativeEndian::write_u32(&mut dst[i + 8 + 4..], (self.interface.len() + 1) as u32);
         {
             let mut aligned = self.interface.clone();

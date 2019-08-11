@@ -62,7 +62,10 @@ impl Sink for EventSink {
 
     fn poll_complete(&mut self) -> Result<Async<()>, Self::SinkError> {
         loop {
-            println!("[Sink] poll complete events.len={}", self.pending_events.len());
+            println!(
+                "[Sink] poll complete events.len={}",
+                self.pending_events.len()
+            );
             match self.tokio_registration.poll_write_ready() {
                 Ok(Async::Ready(ready)) if ready.is_writable() => {
                     println!("[Sink] write ready");

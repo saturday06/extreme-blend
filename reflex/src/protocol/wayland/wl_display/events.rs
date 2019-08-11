@@ -88,7 +88,6 @@ impl super::super::super::event::Event for Error {
 
         NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
         NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.code);
-
         NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], (self.message.len() + 1) as u32);
         {
             let mut aligned = self.message.clone();

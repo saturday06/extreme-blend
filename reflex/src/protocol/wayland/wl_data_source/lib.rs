@@ -56,90 +56,36 @@ pub fn dispatch_request(
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
-                    let tx = context.tx.clone();
-                    return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{} opcode={} args={:?} not found",
-                        context.sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| context.into()));
+                    return context
+                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
                 };
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
-                    let tx = context.tx.clone();
-                    return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{} opcode={} args={:?} not found",
-                        context.sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| context.into()));
+                    return context
+                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
                 }
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
-                    let tx = context.tx.clone();
-                    return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_data_source@{} opcode={} args={:?} not found",
-                        context.sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| context.into()));
+                    return context
+                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
                 };
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_data_source@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlDataSource::offer(context, mime_type);
         }
         1 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_data_source@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlDataSource::destroy(context);
         }
@@ -147,43 +93,13 @@ pub fn dispatch_request(
             let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_data_source@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_data_source@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlDataSource::set_actions(context, dnd_actions);
         }

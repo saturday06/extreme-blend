@@ -98,18 +98,17 @@ fn main() {
                                 f
                             } else {
                                 let tx = session.tx.clone();
+                                let error = wl_display::events::Error {
+                                    sender_object_id: 1,
+                                    object_id: 1,
+                                    code: wl_display::enums::Error::InvalidObject as u32,
+                                    message: format!(
+                                        "object_id={} opcode={} args={:?} not found",
+                                        req.sender_object_id, req.opcode, req.args
+                                    ),
+                                };
                                 let f: Box<Future<Item = Session, Error = ()> + Send> = Box::new(
-                                    tx.send(Box::new(wl_display::events::Error {
-                                        sender_object_id: 1,
-                                        object_id: 1,
-                                        code: wl_display::enums::Error::InvalidObject as u32,
-                                        message: format!(
-                                            "object_id={} opcode={} args={:?} not found",
-                                            req.sender_object_id, req.opcode, req.args
-                                        ),
-                                    }))
-                                    .map(|_| session)
-                                    .map_err(|_| ()),
+                                    tx.send(Box::new(error)).map(|_| session).map_err(|_| ()),
                                 );
                                 f
                             }

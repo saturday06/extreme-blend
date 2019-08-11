@@ -57,12 +57,10 @@ impl Stream for RequestStream {
     type Error = ();
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        println!("[Stream] poll: pending_requests={}", self.pending_requests.len());
-
-        if let Some(r) = self.pending_requests.pop() {
-            println!("[Stream] return pending request");
-            return Ok(Async::Ready(Some(r)));
-        }
+        println!(
+            "[Stream] poll: pending_requests={}",
+            self.pending_requests.len()
+        );
 
         match self.tokio_registration.poll_read_ready() {
             Ok(Async::Ready(ready)) if ready.is_readable() => {
@@ -83,6 +81,14 @@ impl Stream for RequestStream {
             }
         }
 
+        if self.pending_requests.len() > 0 {
+            let rest = self.pending_requests.split_off(1);
+            let first = self.pending_requests.pop().expect("pending requests error");
+            self.pending_requests = rest;
+            println!("[Stream] return pending request {:?}", first);
+            return Ok(Async::Ready(Some(first)));
+        }
+
         let mut received_fds: Vec<RawFd> = Vec::new();
         let mut buf: Vec<u8> = Vec::new();
         buf.resize(16, 0);
@@ -96,14 +102,17 @@ impl Stream for RequestStream {
                 Ok(ok) => ok,
                 Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
                     println!("[Stream] EAGAIN not ready");
-                    return Ok(Async::NotReady)
-                },
+                    return Ok(Async::NotReady);
+                }
                 Err(err) => {
                     println!("[Stream] err1: {:?}", err);
                     return Err(());
                 }
             };
-            println!("[Stream] msg flag={:?} bytes={}", poll_msg.flags, poll_msg.bytes);
+            println!(
+                "[Stream] msg flag={:?} bytes={}",
+                poll_msg.flags, poll_msg.bytes
+            );
             if poll_msg.flags.intersects(MsgFlags::MSG_TRUNC) {
                 buf.resize(buf_len * 2, 0);
                 println!("[Stream] msg_trunc {} -> {}", buf_len, buf.len());
@@ -123,8 +132,8 @@ impl Stream for RequestStream {
                 Ok(ok) => ok,
                 Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
                     println!("[Stream] EAGAIN not ready");
-                    return Ok(Async::NotReady)
-                },
+                    return Ok(Async::NotReady);
+                }
                 Err(err) => {
                     println!("[Stream] err2: {:?}", err);
                     return Err(());
@@ -151,7 +160,11 @@ impl Stream for RequestStream {
         let header_size = 8;
         loop {
             if self.pending_bytes.len() < header_size {
-                println!("[Stream] break pending_bytes={} < header_size={}", self.pending_bytes.len(), header_size);
+                println!(
+                    "[Stream] break pending_bytes={} < header_size={}",
+                    self.pending_bytes.len(),
+                    header_size
+                );
                 break;
             }
 
@@ -161,7 +174,11 @@ impl Stream for RequestStream {
             let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
             let message_size = (message_size_and_opcode >> 16) as usize;
             if self.pending_bytes.len() < message_size {
-                println!("[Stream] break pending_bytes={} < message_size={}", self.pending_bytes.len(), message_size);
+                println!(
+                    "[Stream] break pending_bytes={} < message_size={}",
+                    self.pending_bytes.len(),
+                    message_size
+                );
                 break;
             }
 
@@ -191,10 +208,13 @@ impl Stream for RequestStream {
             println!("[Stream] pending request is empty");
             return Ok(Async::NotReady);
         }
-        let rest = self.pending_requests.split_off(1);
-        let first = self.pending_requests.pop().expect("pending requests error");
-        self.pending_requests = rest;
-        println!("[Stream] ok");
-        return Ok(Async::Ready(Some(first)));
+
+        {
+            let rest = self.pending_requests.split_off(1);
+            let first = self.pending_requests.pop().expect("pending requests error");
+            self.pending_requests = rest;
+            println!("[Stream] ok {:?}", first);
+            return Ok(Async::Ready(Some(first)));
+        }
     }
 }

@@ -51,23 +51,8 @@ pub fn dispatch_request(
     match opcode {
         0 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::destroy(context);
         }
@@ -75,85 +60,25 @@ pub fn dispatch_request(
             let buffer = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::attach(context, buffer, x, y);
         }
@@ -161,106 +86,31 @@ pub fn dispatch_request(
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::damage(context, x, y, width, height);
         }
@@ -268,43 +118,13 @@ pub fn dispatch_request(
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::frame(context, callback);
         }
@@ -312,43 +132,13 @@ pub fn dispatch_request(
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::set_opaque_region(context, region);
         }
@@ -356,65 +146,20 @@ pub fn dispatch_request(
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::set_input_region(context, region);
         }
         6 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::commit(context);
         }
@@ -422,43 +167,13 @@ pub fn dispatch_request(
             let transform = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::set_buffer_transform(context, transform);
         }
@@ -466,43 +181,13 @@ pub fn dispatch_request(
             let scale = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::set_buffer_scale(context, scale);
         }
@@ -510,106 +195,31 @@ pub fn dispatch_request(
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(
-                    tx.send(Box::new(
-                        crate::protocol::wayland::wl_display::events::Error {
-                            sender_object_id: 1,
-                            object_id: context.sender_object_id,
-                            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod
-                                as u32,
-                            message: format!(
-                                "wl_surface@{} opcode={} args={:?} not found",
-                                context.sender_object_id, opcode, args
-                            ),
-                        },
-                    ))
-                    .map_err(|_| ())
-                    .map(|_tx| context.into()),
-                );
+                return context
+                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             }
             return super::WlSurface::damage_buffer(context, x, y, width, height);
         }

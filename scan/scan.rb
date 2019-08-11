@@ -123,16 +123,9 @@ EOF
         #{request.index} => {
 #{request.args.map(&:deserialize).join("")}
             if Ok(cursor.position()) != args.len().try_into() {
-                let tx = context.tx.clone();
-                return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "#{@name}@{} opcode={} args={:?} not found",
-                        context.sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| context.into()));
+                return context.invalid_method(format!(
+                    "opcode={} args={:?} not found", opcode, args
+                ));
             }
             return super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join});
         },
@@ -249,16 +242,9 @@ class Arg
 
   def deserialize_return_error
     ret =<<EOF
-                let tx = context.tx.clone();
-                return Box::new(tx.send(Box::new(crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "#{@interface_name}@{} opcode={} args={:?} not found",
-                        context.sender_object_id, opcode, args
-                    ),
-                })).map_err(|_| ()).map(|_tx| context.into()));
+                return context.invalid_method(format!(
+                    "opcode={} args={:?} not found", opcode, args
+                ))
 EOF
     ret.rstrip
   end
@@ -359,7 +345,6 @@ class StringArg < Arg
 
   def serialize
     <<SERIALIZE
-
         NativeEndian::write_u32(&mut dst[#{@encode_offset}..], (self.#{name}.len() + 1) as u32);
         {
             let mut aligned = self.#{name}.clone();
@@ -551,8 +536,10 @@ class Event
   end
 
   def encode
-    result = "    fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {\n"    
-    result += "        let total_len = 8"
+    result =<<FN_ENCODE
+    fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
+        let total_len = 8
+FN_ENCODE
     @args.each do |arg|
       result += " + #{arg.encode_len}"
     end
@@ -611,12 +598,14 @@ open("../reflex/src/protocol.rs", "wb") do |f|
     FileUtils.mkdir_p("../reflex/src/protocol/#{protocol.name}")
     f.puts("pub mod #{protocol.name};")
   end
-  f.puts("")
-  f.puts("pub mod codec;")
-  f.puts("pub mod event;")
-  f.puts("pub mod request;")
-  f.puts("pub mod resource;")
-  f.puts("pub mod session;")
+  f.puts <<MOD
+pub mod event;
+pub mod event_sink;
+pub mod request;
+pub mod request_stream;
+pub mod resource;
+pub mod session;
+MOD
 end
 
 open("../reflex/src/protocol/resource.rs", "wb") do |f|
