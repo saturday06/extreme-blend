@@ -1,4 +1,5 @@
 use crate::protocol::event::Event;
+use crate::protocol::fd_drop::FdDrop;
 use bytes::BytesMut;
 use futures::sink::Sink;
 use futures::AsyncSink;
@@ -8,7 +9,6 @@ use nix::sys::socket::*;
 use std::os::unix::io::RawFd;
 use std::sync::Arc;
 use tokio::prelude::Async;
-use crate::protocol::fd_drop::FdDrop;
 
 pub struct EventSink {
     fd: RawFd,
@@ -17,7 +17,7 @@ pub struct EventSink {
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
     pending_events: Vec<Box<Event + Send>>,
-  //  _tokio_stream: Arc<UnixStream>,
+    //  _tokio_stream: Arc<UnixStream>,
     closed: bool,
 }
 

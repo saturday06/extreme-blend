@@ -50,12 +50,12 @@ pub fn dispatch_request(
     let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
+        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x as usize
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
+        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
     let mut name_buf = Vec::new();
@@ -65,17 +65,17 @@ pub fn dispatch_request(
     let _version = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
+        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
+        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     if Ok(cursor.position()) != args.len().try_into() {
-        return context.invalid_method(format!("opcode={} args={:?} not found",opcode, &args));
+        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
     }
 
     WlRegistry::bind(context, name, id)

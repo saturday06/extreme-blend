@@ -24,8 +24,8 @@ use std::sync::{Arc, RwLock};
 //use tokio::net::UnixListener;
 //use tokio::reactor::Handle;
 use crate::protocol::connection_stream::ConnectionStream;
-use tokio::runtime::Runtime;
 use crate::protocol::fd_drop::FdDrop;
+use tokio::runtime::Runtime;
 
 mod protocol;
 //mod uds;
@@ -53,8 +53,8 @@ fn main() {
         tokio_registration
             .register(&mio::unix::EventedFd(&fd))
             .expect("register request fd");
-        let reader0 = RequestStream::new(fd, fd_drop.clone(),tokio_registration.clone());
-        let writer0 = EventSink::new(fd,fd_drop.clone(), tokio_registration.clone());
+        let reader0 = RequestStream::new(fd, fd_drop.clone(), tokio_registration.clone());
+        let writer0 = EventSink::new(fd, fd_drop.clone(), tokio_registration.clone());
         let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(48000);
         let output_session = rx0
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))
@@ -116,7 +116,7 @@ fn main() {
                 )
                 .map(|_| ())
                 //.map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!")),
-                .then(|_| futures::future::ok(()))
+                .then(|_| futures::future::ok(())),
         );
 
         executor.spawn(input_session0);

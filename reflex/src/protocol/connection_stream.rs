@@ -1,8 +1,8 @@
 use futures::stream::Stream;
 use nix::sys::socket::*;
+use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::io::RawFd;
-use std::fs;
 use tokio::prelude::Async;
 
 pub struct ConnectionStream {

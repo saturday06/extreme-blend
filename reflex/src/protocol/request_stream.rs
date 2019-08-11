@@ -1,3 +1,4 @@
+use crate::protocol::fd_drop::FdDrop;
 use crate::protocol::request::Request;
 use byteorder::{NativeEndian, ReadBytesExt};
 use futures::stream::Stream;
@@ -6,7 +7,6 @@ use std::os::unix::io::RawFd;
 use std::sync::Arc;
 use tokio::prelude::Async;
 use tokio::reactor::Registration;
-use crate::protocol::fd_drop::FdDrop;
 
 pub struct RequestStream {
     fd: RawFd,
@@ -19,7 +19,11 @@ pub struct RequestStream {
 }
 
 impl RequestStream {
-    pub(crate) fn new(fd: RawFd,   fd_drop: Arc<FdDrop>, tokio_registration: Arc<Registration>) -> RequestStream {
+    pub(crate) fn new(
+        fd: RawFd,
+        fd_drop: Arc<FdDrop>,
+        tokio_registration: Arc<Registration>,
+    ) -> RequestStream {
         RequestStream {
             fd,
             _fd_drop: fd_drop,
@@ -79,7 +83,7 @@ impl Stream for RequestStream {
             unsafe {
                 let cmsg_space = std::cmp::max(
                     libc::CMSG_SPACE(std::mem::size_of::<std::os::raw::c_int>() as u32 * fd_len),
-                    std::mem::size_of::<libc::cmsghdr>() as u32
+                    std::mem::size_of::<libc::cmsghdr>() as u32,
                 );
                 {
                     let mut msg_control: Vec<u8> = Vec::new();
@@ -162,13 +166,23 @@ impl Stream for RequestStream {
                         println!("[Stream] cmsg");
                         let cmsg_level = (*cmsg_hdr).cmsg_level;
                         let cmsg_type = (*cmsg_hdr).cmsg_type;
-                        if cmsg_level == libc::SOL_SOCKET &&cmsg_type == libc::SCM_RIGHTS {
+                        if cmsg_level == libc::SOL_SOCKET && cmsg_type == libc::SCM_RIGHTS {
                             println!("[Stream] SCM_RIGHTS cmsg_len={}", (*cmsg_hdr).cmsg_len);
-                            let received_fds_ptr = libc::CMSG_DATA(cmsg_hdr) as *mut std::os::raw::c_int;
+                            let received_fds_ptr =
+                                libc::CMSG_DATA(cmsg_hdr) as *mut std::os::raw::c_int;
                             let mut received_fds_len = 1;
-                            while libc::CMSG_LEN(std::mem::size_of::<std::os::raw::c_int>() as u32 * received_fds_len) <= (*cmsg_hdr).cmsg_len as u32 {
-                                println!("[Stream] SCM_RIGHTS  vs {}",
-                                libc::CMSG_LEN(std::mem::size_of::<std::os::raw::c_int>() as u32 * received_fds_len));
+                            while libc::CMSG_LEN(
+                                std::mem::size_of::<std::os::raw::c_int>() as u32
+                                    * received_fds_len,
+                            ) <= (*cmsg_hdr).cmsg_len as u32
+                            {
+                                println!(
+                                    "[Stream] SCM_RIGHTS  vs {}",
+                                    libc::CMSG_LEN(
+                                        std::mem::size_of::<std::os::raw::c_int>() as u32
+                                            * received_fds_len
+                                    )
+                                );
                                 received_fds_len += 1;
                             }
                             received_fds_len -= 1;
@@ -177,7 +191,10 @@ impl Stream for RequestStream {
                                 received_fds.push(*received_fds_ptr.offset(offset as isize));
                             }
                         } else {
-                            println!("[Stream] UNHANDLED CMSG: level={} type={}", cmsg_level, cmsg_type);
+                            println!(
+                                "[Stream] UNHANDLED CMSG: level={} type={}",
+                                cmsg_level, cmsg_type
+                            );
                         }
                         cmsg_hdr = libc::CMSG_NXTHDR(&msg_hdr, cmsg_hdr);
                     }

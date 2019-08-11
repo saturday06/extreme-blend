@@ -6,12 +6,14 @@ pub struct FdDrop {
 
 impl FdDrop {
     pub(crate) fn new(fd: RawFd) -> FdDrop {
-        FdDrop {fd}
+        FdDrop { fd }
     }
 }
 
 impl Drop for FdDrop {
     fn drop(&mut self) {
-        unsafe {libc::close(self.fd);}
+        unsafe {
+            libc::close(self.fd);
+        }
     }
 }
