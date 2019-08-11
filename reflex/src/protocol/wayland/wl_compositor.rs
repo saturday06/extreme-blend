@@ -25,6 +25,7 @@
 
 #[allow(unused_imports)]
 use crate::protocol::session::{Context, Session};
+use crate::protocol::wayland;
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]

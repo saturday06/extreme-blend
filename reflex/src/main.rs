@@ -1,5 +1,5 @@
-use crate::protocol::request_stream::RequestStream;
 use crate::protocol::event_sink::EventSink;
+use crate::protocol::request_stream::RequestStream;
 use futures::future::Future;
 use futures::sink::Sink;
 use futures::stream::Stream;
@@ -16,7 +16,8 @@ use protocol::wayland::wl_registry::WlRegistry;
 use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
-//use std::os::unix::io::AsRawFd;
+use std::os::unix::io::AsRawFd;
+use std::os::unix::io::RawFd;
 //use std::os::unix::io::FromRawFd;
 use std::sync::{Arc, RwLock};
 //use tokio::codec::Decoder;
@@ -25,7 +26,7 @@ use tokio::net::UnixListener;
 use tokio::runtime::Runtime;
 
 mod protocol;
-mod uds;
+//mod uds;
 
 fn main() {
     let runtime = Runtime::new().unwrap();
@@ -45,9 +46,14 @@ fn main() {
         .unwrap()
         .incoming()
         .for_each(move |stream| {
+            let fd = stream.as_raw_fd();
+            let tokio_registration = Arc::new(tokio::reactor::Registration::new());
+            tokio_registration
+                .register(&mio::unix::EventedFd(&fd))
+                .expect("register request fd");
             let arc_stream = Arc::new(stream);
-            let reader0 = RequestStream::new(arc_stream.clone());
-            let writer0 = EventSink::new(arc_stream.clone());
+            let reader0 = RequestStream::new(arc_stream.clone(), fd, tokio_registration.clone());
+            let writer0 = EventSink::new(arc_stream.clone(), fd, tokio_registration.clone());
             let (tx0, rx0) = tokio::sync::mpsc::channel::<Box<Event + Send>>(48000);
             let output_session = rx0
                 .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Oops!"))

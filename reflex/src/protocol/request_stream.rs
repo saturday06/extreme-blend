@@ -20,28 +20,27 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::io::RawFd;
 //use std::path::Path;
 //use std::time::Duration;
+use nix::unistd::dup;
+use std::sync::Arc;
 use tokio::net::UnixStream;
 use tokio::prelude::Async;
-use std::sync::Arc;
-use nix::unistd::dup;
+use tokio::reactor::Registration;
 
 pub struct RequestStream {
     fd: RawFd,
     _tokio_stream: Arc<UnixStream>,
-    tokio_registration: tokio::reactor::Registration,
+    tokio_registration: Arc<tokio::reactor::Registration>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
     pending_requests: Vec<Request>,
 }
 
 impl RequestStream {
-    pub(crate) fn new(tokio_stream: Arc<UnixStream>) -> RequestStream {
-        let tokio_registration = tokio::reactor::Registration::new();
-        let fd2 = tokio_stream.as_raw_fd();
-        let fd = dup(fd2).expect("dup2");
-        tokio_registration
-            .register(&mio::unix::EventedFd(&fd))
-            .expect("register request fd");
+    pub(crate) fn new(
+        tokio_stream: Arc<UnixStream>,
+        fd: RawFd,
+        tokio_registration: Arc<Registration>,
+    ) -> RequestStream {
         RequestStream {
             fd,
             _tokio_stream: tokio_stream,
@@ -58,24 +57,28 @@ impl Stream for RequestStream {
     type Error = ();
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
+        println!("[Stream] poll: pending_requests={}", self.pending_requests.len());
+
         if let Some(r) = self.pending_requests.pop() {
+            println!("[Stream] return pending request");
             return Ok(Async::Ready(Some(r)));
         }
+
         match self.tokio_registration.poll_read_ready() {
             Ok(Async::Ready(ready)) if ready.is_readable() => {
-                println!("read ready");
+                println!("[Stream] read ready");
                 ()
             }
             Ok(Async::Ready(_)) => {
-                println!("read ready 2");
-                return Ok(Async::NotReady);
+                println!("[Stream] read ready ERROR");
+                //return Ok(Async::NotReady);
             }
             Ok(Async::NotReady) => {
-                println!("read not ready");
-                return Ok(Async::NotReady);
+                println!("[Stream] read not ready");
+                //return Ok(Async::NotReady);
             }
             Err(e) => {
-                println!("err {:?}", e);
+                println!("[Stream] err {:?}", e);
                 return Err(());
             }
         }
@@ -84,40 +87,46 @@ impl Stream for RequestStream {
         let mut buf: Vec<u8> = Vec::new();
         buf.resize(16, 0);
         loop {
-            println!("----- loop -----");
+            println!("[Stream] ----- read loop -----");
             let buf_len = buf.len();
             let iov = [IoVec::from_mut_slice(&mut buf[..])];
             let mut cmsgspace = cmsg_space!([RawFd; 8]);
 
             let poll_msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::MSG_PEEK) {
                 Ok(ok) => ok,
-                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => return Ok(Async::NotReady),
+                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
+                    println!("[Stream] EAGAIN not ready");
+                    return Ok(Async::NotReady)
+                },
                 Err(err) => {
-                    println!("err1: {:?}", err);
+                    println!("[Stream] err1: {:?}", err);
                     return Err(());
                 }
             };
-            println!("msg flag={:?} bytes={}", poll_msg.flags, poll_msg.bytes);
+            println!("[Stream] msg flag={:?} bytes={}", poll_msg.flags, poll_msg.bytes);
             if poll_msg.flags.intersects(MsgFlags::MSG_TRUNC) {
-                println!("msg_trunc");
                 buf.resize(buf_len * 2, 0);
+                println!("[Stream] msg_trunc {} -> {}", buf_len, buf.len());
                 continue;
             }
             if poll_msg.bytes == buf_len {
-                println!("msg_trunc 2");
                 buf.resize(buf_len * 2, 0);
+                println!("[Stream] msg_trunc WORKAROUND {} -> {}", buf_len, buf.len());
                 continue;
             }
             if poll_msg.flags.intersects(MsgFlags::MSG_CTRUNC) {
-                println!("msg_ctrunc");
+                println!("[Stream] ctrunc ERROR");
                 return Err(());
             }
 
             let msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::empty()) {
                 Ok(ok) => ok,
-                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => return Ok(Async::NotReady),
+                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
+                    println!("[Stream] EAGAIN not ready");
+                    return Ok(Async::NotReady)
+                },
                 Err(err) => {
-                    println!("err2: {:?}", err);
+                    println!("[Stream] err2: {:?}", err);
                     return Err(());
                 }
             };
@@ -135,13 +144,14 @@ impl Stream for RequestStream {
             break;
         }
 
-        println!("data={:?} fds={:?}", buf, received_fds);
+        println!("[Stream] data={:?} fds={:?}", buf, received_fds);
         self.pending_bytes.extend(buf);
         self.pending_fds.extend(received_fds);
 
         let header_size = 8;
         loop {
             if self.pending_bytes.len() < header_size {
+                println!("[Stream] break pending_bytes={} < header_size={}", self.pending_bytes.len(), header_size);
                 break;
             }
 
@@ -151,6 +161,7 @@ impl Stream for RequestStream {
             let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
             let message_size = (message_size_and_opcode >> 16) as usize;
             if self.pending_bytes.len() < message_size {
+                println!("[Stream] break pending_bytes={} < message_size={}", self.pending_bytes.len(), message_size);
                 break;
             }
 
@@ -162,7 +173,7 @@ impl Stream for RequestStream {
             args.resize(message_size - header_size, 0);
             cursor.read_exact(&mut args).unwrap();
             println!(
-                "decode: id={} opcode={} args={:?}",
+                "[Stream] decode: id={} opcode={} args={:?}",
                 sender_object_id, opcode, &args
             );
             let fds = self.pending_fds.clone();
@@ -176,12 +187,14 @@ impl Stream for RequestStream {
             });
         }
 
-        if self.pending_requests.len() == 0 {
-            return Ok(Async::NotReady);
-        } else    if let Some(r) = self.pending_requests.split_off(1).pop() {
-            return Ok(Async::Ready(Some(r)));
-        } else {
+        if self.pending_requests.is_empty() {
+            println!("[Stream] pending request is empty");
             return Ok(Async::NotReady);
         }
+        let rest = self.pending_requests.split_off(1);
+        let first = self.pending_requests.pop().expect("pending requests error");
+        self.pending_requests = rest;
+        println!("[Stream] ok");
+        return Ok(Async::Ready(Some(first)));
     }
 }
