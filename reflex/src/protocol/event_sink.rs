@@ -5,6 +5,8 @@ use futures::future::Future;
 use futures::future::{err, ok};
 use futures::sink::Sink;
 use futures::AsyncSink;
+use nix::fcntl::fcntl;
+use nix::fcntl::FcntlArg::F_GETFD;
 use nix::sys::socket::*;
 use nix::sys::uio::IoVec;
 use nix::unistd::{close, dup, pipe};
@@ -21,7 +23,6 @@ use tokio::prelude::{Async, Poll};
 
 pub struct EventSink {
     fd: RawFd,
-    _tokio_stream: Arc<UnixStream>,
     tokio_registration: Arc<tokio::reactor::Registration>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
@@ -31,13 +32,11 @@ pub struct EventSink {
 
 impl EventSink {
     pub(crate) fn new(
-        tokio_stream: Arc<UnixStream>,
         fd: RawFd,
         tokio_registration: Arc<tokio::reactor::Registration>,
     ) -> EventSink {
         EventSink {
             fd,
-            _tokio_stream: tokio_stream,
             tokio_registration,
             pending_bytes: Vec::new(),
             pending_fds: Vec::new(),
@@ -110,6 +109,8 @@ impl Sink for EventSink {
 
             self.pending_bytes.extend(bytes);
             println!("[Sink] write {:?}", &self.pending_bytes);
+            let flags = fcntl(self.fd, F_GETFD);
+            println!("[Sink] flags={:?}", flags);
             let sent_bytes = match send(self.fd, &self.pending_bytes[..], MsgFlags::empty()) {
                 Ok(sent_bytes) => sent_bytes,
                 Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => return Ok(Async::NotReady),

@@ -20,6 +20,8 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::io::RawFd;
 //use std::path::Path;
 //use std::time::Duration;
+use nix::fcntl::fcntl;
+use nix::fcntl::FcntlArg::F_GETFD;
 use nix::unistd::dup;
 use std::sync::Arc;
 use tokio::net::UnixStream;
@@ -28,7 +30,6 @@ use tokio::reactor::Registration;
 
 pub struct RequestStream {
     fd: RawFd,
-    _tokio_stream: Arc<UnixStream>,
     tokio_registration: Arc<tokio::reactor::Registration>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
@@ -36,14 +37,9 @@ pub struct RequestStream {
 }
 
 impl RequestStream {
-    pub(crate) fn new(
-        tokio_stream: Arc<UnixStream>,
-        fd: RawFd,
-        tokio_registration: Arc<Registration>,
-    ) -> RequestStream {
+    pub(crate) fn new(fd: RawFd, tokio_registration: Arc<Registration>) -> RequestStream {
         RequestStream {
             fd,
-            _tokio_stream: tokio_stream,
             tokio_registration,
             pending_bytes: Vec::new(),
             pending_fds: Vec::new(),
@@ -98,6 +94,8 @@ impl Stream for RequestStream {
             let iov = [IoVec::from_mut_slice(&mut buf[..])];
             let mut cmsgspace = cmsg_space!([RawFd; 8]);
 
+            let flags = fcntl(self.fd, F_GETFD);
+            println!("flags={:?}", flags);
             let poll_msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::MSG_PEEK) {
                 Ok(ok) => ok,
                 Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
@@ -128,6 +126,8 @@ impl Stream for RequestStream {
                 return Err(());
             }
 
+            let flags = fcntl(self.fd, F_GETFD);
+            println!("[Stream] flags={:?}", flags);
             let msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::empty()) {
                 Ok(ok) => ok,
                 Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {

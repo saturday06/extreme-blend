@@ -22,13 +22,13 @@ use std::os::unix::io::RawFd;
 //use std::path::Path;
 //use std::time::Duration;
 use nix::unistd::dup;
+use std::fs;
+use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::UnixStream;
 use tokio::prelude::Async;
 use tokio::reactor::Registration;
-use std::path::Path;
-use std::time::Duration;
-use std::fs;
 
 pub struct ConnectionStream {
     fd: RawFd,
@@ -47,7 +47,8 @@ impl ConnectionStream {
             SockType::Stream,
             SockFlag::SOCK_NONBLOCK,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         bind(fd, &sock_addr).expect("bind");
         listen(fd, 1024).expect("listen");
@@ -70,11 +71,10 @@ impl ConnectionStream {
 
 impl Stream for ConnectionStream {
     type Item = RawFd;
-    type Error = ();
+    type Error = std::io::Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        println!(
-            "[Connection] poll");
+        println!("[Connection] poll");
 
         match self.tokio_registration.poll_read_ready() {
             Ok(Async::Ready(ready)) if ready.is_readable() => {
@@ -89,9 +89,9 @@ impl Stream for ConnectionStream {
                 println!("[Connection] read not ready");
                 //return Ok(Async::NotReady);
             }
-            Err(e) => {
-                println!("[Connection] err {:?}", e);
-                return Err(());
+            Err(err) => {
+                println!("[Connection] err {:?}", err);
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, err));
             }
         }
 
@@ -106,7 +106,7 @@ impl Stream for ConnectionStream {
             }
             Err(err) => {
                 println!("[Connection] err2: {:?}", err);
-                return Err(());
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, err));
             }
         };
     }

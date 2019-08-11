@@ -599,6 +599,7 @@ open("../reflex/src/protocol.rs", "wb") do |f|
     f.puts("pub mod #{protocol.name};")
   end
   f.puts <<MOD
+pub mod connection_stream;
 pub mod event;
 pub mod event_sink;
 pub mod request;
