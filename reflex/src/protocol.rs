@@ -1,3 +1,4 @@
+pub mod connection_stream;
 pub mod event;
 pub mod event_sink;
 pub mod request;

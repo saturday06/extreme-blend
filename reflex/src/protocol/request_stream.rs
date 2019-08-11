@@ -62,6 +62,14 @@ impl Stream for RequestStream {
             self.pending_requests.len()
         );
 
+        if self.pending_requests.len() > 0 {
+            let rest = self.pending_requests.split_off(1);
+            let first = self.pending_requests.pop().expect("pending requests error");
+            self.pending_requests = rest;
+            println!("[Stream] return pending request {:?}", first);
+            return Ok(Async::Ready(Some(first)));
+        }
+
         match self.tokio_registration.poll_read_ready() {
             Ok(Async::Ready(ready)) if ready.is_readable() => {
                 println!("[Stream] read ready");
@@ -79,14 +87,6 @@ impl Stream for RequestStream {
                 println!("[Stream] err {:?}", e);
                 return Err(());
             }
-        }
-
-        if self.pending_requests.len() > 0 {
-            let rest = self.pending_requests.split_off(1);
-            let first = self.pending_requests.pop().expect("pending requests error");
-            self.pending_requests = rest;
-            println!("[Stream] return pending request {:?}", first);
-            return Ok(Async::Ready(Some(first)));
         }
 
         let mut received_fds: Vec<RawFd> = Vec::new();
