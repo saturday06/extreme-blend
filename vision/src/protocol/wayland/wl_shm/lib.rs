@@ -44,7 +44,7 @@ pub const VERSION: u32 = 1;
 #[allow(unused_variables)]
 #[allow(dead_code)]
 pub fn dispatch_request(
-    mut context: crate::protocol::session::Context<
+    context: crate::protocol::session::Context<
         Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>>,
     >,
     opcode: u16,
@@ -62,17 +62,13 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            if context.fds.len() == 0 {
+            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
                 return context.invalid_method_dispatch(format!(
                     "opcode={} args={:?} not found",
                     opcode, args
                 ));
-            }
-            let fd = {
-                let rest = context.fds.split_off(1);
-                let first = context.fds.pop().expect("fds");
-                context.fds = rest;
-                first
             };
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
@@ -93,19 +89,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         _ => {}

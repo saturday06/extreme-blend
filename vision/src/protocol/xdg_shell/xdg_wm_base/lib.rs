@@ -65,19 +65,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         1 => {
@@ -100,19 +88,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         2 => {
@@ -146,19 +122,7 @@ pub fn dispatch_request(
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
-                    > {
-                        match next_action {
-                            NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
-                        }
-                    },
+                    > { Box::new(futures::future::ok(session)) },
                 ),
             );
         }
@@ -182,19 +146,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         _ => {}

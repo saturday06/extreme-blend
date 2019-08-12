@@ -5,6 +5,7 @@ def generate_vision(base_dir, protocols)
       f.puts("pub mod #{protocol.name};")
     end
     f.puts <<MOD
+pub mod codec;
 pub mod event;
 pub mod request;
 pub mod resource;
@@ -123,8 +124,8 @@ pub const VERSION: u32 = #{interface.version};
 #[allow(unused_variables)]
 #[allow(dead_code)]
 CODE
-        f.puts("pub fn dispatch_request(#{interface.dispatch_context_mut}context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
-        f.puts(interface.decode)
+        f.puts("pub fn dispatch_request(context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+        f.puts(interface.decode_vision)
         f.puts("}")
         f.puts(<<INTO)
 

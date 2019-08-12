@@ -9,9 +9,7 @@ use crate::protocol::wayland::wl_data_device_manager::WlDataDeviceManager;
 use futures::future::Future;
 use futures::sink::Sink;
 use std::collections::HashMap;
-use std::os::unix::io::RawFd;
 use std::sync::{Arc, RwLock};
-use tokio::net::UnixStream;
 use tokio::sync::mpsc::Sender;
 
 pub enum NextAction {
@@ -30,8 +28,6 @@ pub struct Session {
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
     pub tx: Sender<Box<Event + Send>>,
     pub callback_data: u32,
-    pub fds: Vec<RawFd>,
-    pub unix_stream: UnixStream,
 }
 
 pub struct Context<T>
@@ -50,8 +46,6 @@ where
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
     pub tx: Sender<Box<Event + Send>>,
     pub callback_data: u32,
-    pub fds: Vec<RawFd>,
-    pub unix_stream: UnixStream,
 }
 
 impl<T> Context<T>
@@ -69,10 +63,8 @@ where
             xdg_wm_base: session.xdg_wm_base,
             tx: session.tx,
             callback_data: session.callback_data,
-            fds: session.fds,
             sender_object_id,
             sender_object,
-            unix_stream: session.unix_stream,
         }
     }
 
@@ -136,8 +128,6 @@ where
             xdg_wm_base: self.xdg_wm_base,
             tx: self.tx,
             callback_data: self.callback_data,
-            fds: self.fds,
-            unix_stream: self.unix_stream,
         }
     }
 }

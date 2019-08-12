@@ -42,7 +42,7 @@ pub const VERSION: u32 = 3;
 #[allow(unused_variables)]
 #[allow(dead_code)]
 pub fn dispatch_request(
-    mut context: crate::protocol::session::Context<
+    context: crate::protocol::session::Context<
         crate::protocol::wayland::wl_data_offer::WlDataOffer,
     >,
     opcode: u16,
@@ -103,19 +103,7 @@ pub fn dispatch_request(
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
-                    > {
-                        match next_action {
-                            NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
-                        }
-                    },
+                    > { Box::new(futures::future::ok(session)) },
                 ),
             );
         }
@@ -149,17 +137,13 @@ pub fn dispatch_request(
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            if context.fds.len() == 0 {
+            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
                 return context.invalid_method_dispatch(format!(
                     "opcode={} args={:?} not found",
                     opcode, args
                 ));
-            }
-            let fd = {
-                let rest = context.fds.split_off(1);
-                let first = context.fds.pop().expect("fds");
-                context.fds = rest;
-                first
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
@@ -175,19 +159,7 @@ pub fn dispatch_request(
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
-                    > {
-                        match next_action {
-                            NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
-                        }
-                    },
+                    > { Box::new(futures::future::ok(session)) },
                 ),
             );
         }
@@ -202,19 +174,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         3 => {
@@ -228,19 +188,7 @@ pub fn dispatch_request(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
+                > { Box::new(futures::future::ok(session)) },
             ));
         }
         4 => {
@@ -274,19 +222,7 @@ pub fn dispatch_request(
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
-                    > {
-                        match next_action {
-                            NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
-                        }
-                    },
+                    > { Box::new(futures::future::ok(session)) },
                 ),
             );
         }

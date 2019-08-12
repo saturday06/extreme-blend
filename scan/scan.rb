@@ -183,6 +183,7 @@ class Interface
 
     unless @requests
       result += error
+      return result
     end
 
     result +=<<-EOF

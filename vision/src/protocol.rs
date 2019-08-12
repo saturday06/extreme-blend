@@ -1,3 +1,4 @@
+pub mod codec;
 pub mod event;
 pub mod request;
 pub mod resource;
