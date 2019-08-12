@@ -44,7 +44,10 @@ pub use lib::*;
 // underlying mapped memory. Reusing the mapped memory avoids the
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
-pub struct WlShmPool {}
+pub struct WlShmPool {
+    pub fd: i32,   // fd: file descriptor for the pool
+    pub size: i32, // int: pool size, in bytes
+}
 
 impl WlShmPool {
     // create a buffer from the pool
@@ -61,15 +64,26 @@ impl WlShmPool {
     // so it is valid to destroy the pool immediately after creating
     // a buffer from it.
     pub fn create_buffer(
-        context: Context<WlShmPool>,
-        _id: u32,     // new_id: buffer to create
-        _offset: i32, // int: buffer byte offset within the pool
-        _width: i32,  // int: buffer width, in pixels
-        _height: i32, // int: buffer height, in pixels
-        _stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
-        _format: u32, // uint: buffer pixel format
+        mut context: Context<WlShmPool>,
+        id: u32,     // new_id: buffer to create
+        offset: i32, // int: buffer byte offset within the pool
+        width: i32,  // int: buffer width, in pixels
+        height: i32, // int: buffer height, in pixels
+        stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
+        format: u32, // uint: buffer pixel format
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method("wl_shm_pool::create_buffer is not implemented yet".to_string())
+        context.resources.insert(
+            id,
+            crate::protocol::wayland::wl_buffer::WlBuffer {
+                offset,
+                width,
+                height,
+                stride,
+                format,
+            }
+            .into(),
+        );
+        context.ok()
     }
 
     // destroy the pool

@@ -42,7 +42,7 @@ pub const VERSION: u32 = 3;
 #[allow(unused_variables)]
 #[allow(dead_code)]
 pub fn dispatch_request(
-    context: crate::protocol::session::Context<
+    mut context: crate::protocol::session::Context<
         crate::protocol::wayland::wl_data_offer::WlDataOffer,
     >,
     opcode: u16,
@@ -112,11 +112,15 @@ pub fn dispatch_request(
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
+            if context.fds.len() == 0 {
                 return context
                     .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+            }
+            let fd = {
+                let rest = context.fds.split_off(1);
+                let first = context.fds.pop().expect("fds");
+                context.fds = rest;
+                first
             };
 
             if Ok(cursor.position()) != args.len().try_into() {

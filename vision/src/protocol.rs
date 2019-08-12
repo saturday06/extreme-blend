@@ -1,6 +1,10 @@
 pub mod wayland;
-pub mod wayland_event;
-pub mod wayland_request;
-pub mod wl_resource;
 pub mod xdg_shell;
-pub mod wayland_codec;
+pub mod connection_stream;
+pub mod event;
+pub mod event_sink;
+pub mod fd_drop;
+pub mod request;
+pub mod request_stream;
+pub mod resource;
+pub mod session;

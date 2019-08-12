@@ -43,7 +43,13 @@ pub use lib::*;
 // similar. It has a width and a height and can be attached to a
 // wl_surface, but the mechanism by which a client provides and
 // updates the contents is defined by the buffer factory interface.
-pub struct WlBuffer {}
+pub struct WlBuffer {
+    pub offset: i32, // int: buffer byte offset within the pool
+    pub width: i32,  // int: buffer width, in pixels
+    pub height: i32, // int: buffer height, in pixels
+    pub stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
+    pub format: u32, // uint: buffer pixel format
+}
 
 impl WlBuffer {
     // destroy a buffer

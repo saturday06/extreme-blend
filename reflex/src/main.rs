@@ -73,6 +73,7 @@ fn main() {
             resources: HashMap::new(),
             tx: tx0,
             callback_data: 0,
+            fds: Vec::new(),
         };
         session0
             .resources
@@ -84,6 +85,7 @@ fn main() {
                     |mut session: Session,
                      req: Request|
                      -> Box<Future<Item = Session, Error = ()> + Send> {
+                        session.fds.extend(req.fds);
                         let opt_res = session.resources.remove(&req.sender_object_id);
                         if let Some(res) = opt_res {
                             let f: Box<Future<Item = Session, Error = ()> + Send> = Box::new(

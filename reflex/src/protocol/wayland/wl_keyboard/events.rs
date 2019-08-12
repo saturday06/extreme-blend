@@ -116,7 +116,7 @@ pub struct Keymap {
 
 impl super::super::super::event::Event for Keymap {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8 + 4 + 4 + 4;
+        let total_len = 8 + 4 + 0 + 4;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
@@ -128,8 +128,8 @@ impl super::super::super::event::Event for Keymap {
         NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
 
         NativeEndian::write_u32(&mut dst[i + 8..], self.format);
-        NativeEndian::write_i32(&mut dst[i + 8 + 4..], self.fd);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.size);
+        println!("UNIMPLEMENTED!!!!!");
+        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 0..], self.size);
         Ok(())
     }
 }

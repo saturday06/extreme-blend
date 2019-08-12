@@ -44,7 +44,7 @@ pub const VERSION: u32 = 1;
 #[allow(unused_variables)]
 #[allow(dead_code)]
 pub fn dispatch_request(
-    context: crate::protocol::session::Context<
+    mut context: crate::protocol::session::Context<
         Arc<RwLock<crate::protocol::wayland::wl_shm::WlShm>>,
     >,
     opcode: u16,
@@ -60,11 +60,15 @@ pub fn dispatch_request(
                 return context
                     .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
             };
-            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
+            if context.fds.len() == 0 {
                 return context
                     .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+            }
+            let fd = {
+                let rest = context.fds.split_off(1);
+                let first = context.fds.pop().expect("fds");
+                context.fds = rest;
+                first
             };
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x

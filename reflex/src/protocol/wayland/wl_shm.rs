@@ -59,11 +59,15 @@ impl WlShm {
     // objects.  The server will mmap size bytes of the passed file
     // descriptor, to use as backing memory for the pool.
     pub fn create_pool(
-        context: Context<Arc<RwLock<WlShm>>>,
-        _id: u32,   // new_id: pool to create
-        _fd: i32,   // fd: file descriptor for the pool
-        _size: i32, // int: pool size, in bytes
+        mut context: Context<Arc<RwLock<WlShm>>>,
+        id: u32,   // new_id: pool to create
+        fd: i32,   // fd: file descriptor for the pool
+        size: i32, // int: pool size, in bytes
     ) -> Box<Future<Item = Session, Error = ()> + Send> {
-        context.invalid_method("wl_shm::create_pool is not implemented yet".to_string())
+        context.resources.insert(
+            id,
+            crate::protocol::wayland::wl_shm_pool::WlShmPool { fd, size }.into(),
+        );
+        context.ok()
     }
 }

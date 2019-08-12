@@ -197,7 +197,7 @@ pub struct Send {
 
 impl super::super::super::event::Event for Send {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8 + (4 + (self.mime_type.len() + 1 + 3) / 4 * 4) + 4;
+        let total_len = 8 + (4 + (self.mime_type.len() + 1 + 3) / 4 * 4) + 0;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
@@ -218,10 +218,7 @@ impl super::super::super::event::Event for Send {
             dst[(i + 8 + 4)..(i + 8 + 4 + aligned.len())].copy_from_slice(aligned.as_bytes());
         }
 
-        NativeEndian::write_i32(
-            &mut dst[i + 8 + (4 + (self.mime_type.len() + 1 + 3) / 4 * 4)..],
-            self.fd,
-        );
+        println!("UNIMPLEMENTED!!!!!");
         Ok(())
     }
 }
