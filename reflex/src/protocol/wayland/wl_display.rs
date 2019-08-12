@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]

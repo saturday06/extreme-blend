@@ -24,6 +24,8 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
+use crate::protocol::session::NextAction;
+#[allow(unused_imports)]
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)]
 use futures::future::Future;
@@ -57,29 +59,71 @@ pub fn dispatch_request(
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlDisplay::sync(context, callback);
+            return Box::new(super::WlDisplay::sync(context, callback).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         1 => {
             let registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlDisplay::get_registry(context, registry);
+            return Box::new(super::WlDisplay::get_registry(context, registry).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         _ => {}
     };

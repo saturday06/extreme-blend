@@ -24,6 +24,8 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
+use crate::protocol::session::NextAction;
+#[allow(unused_imports)]
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)]
 use futures::future::Future;
@@ -57,12 +59,16 @@ pub fn dispatch_request(
             let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             if context.fds.len() == 0 {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
             let fd = {
                 let rest = context.fds.split_off(1);
@@ -73,15 +79,36 @@ pub fn dispatch_request(
             let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlShm::create_pool(context, id, fd, size);
+            return Box::new(super::WlShm::create_pool(context, id, fd, size).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         _ => {}
     };

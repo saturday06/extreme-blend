@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -53,14 +53,16 @@ impl WlRegion {
         _y: i32,      // int: region-local y coordinate
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::add is not implemented yet".to_string())
     }
 
     // destroy region
     //
     // Destroy the region.  This will invalidate the object ID.
-    pub fn destroy(context: Context<WlRegion>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<WlRegion>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::destroy is not implemented yet".to_string())
     }
 
@@ -73,7 +75,7 @@ impl WlRegion {
         _y: i32,      // int: region-local y coordinate
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::subtract is not implemented yet".to_string())
     }
 }

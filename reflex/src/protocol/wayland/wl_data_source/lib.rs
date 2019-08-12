@@ -24,6 +24,8 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
+use crate::protocol::session::NextAction;
+#[allow(unused_imports)]
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)]
 use futures::future::Future;
@@ -56,52 +58,121 @@ pub fn dispatch_request(
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
-                    return context
-                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
                 };
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
                 if let Err(_) = cursor.read_exact(&mut buf) {
-                    return context
-                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
                 }
                 let s = if let Ok(x) = String::from_utf8(buf) {
                     x
                 } else {
-                    return context
-                        .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
                 };
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlDataSource::offer(context, mime_type);
+            return Box::new(super::WlDataSource::offer(context, mime_type).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         1 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlDataSource::destroy(context);
+            return Box::new(super::WlDataSource::destroy(context).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         2 => {
             let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlDataSource::set_actions(context, dnd_actions);
+            return Box::new(
+                super::WlDataSource::set_actions(context, dnd_actions).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         _ => {}
     };

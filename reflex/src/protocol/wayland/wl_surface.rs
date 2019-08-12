@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -127,7 +127,7 @@ impl WlSurface {
         _buffer: u32, // object: buffer of surface contents
         _x: i32,      // int: surface-local x coordinate
         _y: i32,      // int: surface-local y coordinate
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::attach is not implemented yet".to_string())
     }
 
@@ -184,7 +184,7 @@ impl WlSurface {
         _y: i32,      // int: surface-local y coordinate
         _width: i32,  // int: width of damage rectangle
         _height: i32, // int: height of damage rectangle
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::damage is not implemented yet".to_string())
     }
 
@@ -228,14 +228,16 @@ impl WlSurface {
         _y: i32,      // int: buffer-local y coordinate
         _width: i32,  // int: width of damage rectangle
         _height: i32, // int: height of damage rectangle
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::damage_buffer is not implemented yet".to_string())
     }
 
     // delete surface
     //
     // Deletes the surface and invalidates its object ID.
-    pub fn destroy(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<WlSurface>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::destroy is not implemented yet".to_string())
     }
 
@@ -276,7 +278,7 @@ impl WlSurface {
     pub fn frame(
         context: Context<WlSurface>,
         _callback: u32, // new_id: callback object for the frame request
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::frame is not implemented yet".to_string())
     }
 
@@ -308,7 +310,7 @@ impl WlSurface {
     pub fn set_buffer_scale(
         context: Context<WlSurface>,
         _scale: i32, // int: positive scale for interpreting buffer contents
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::set_buffer_scale is not implemented yet".to_string())
     }
 
@@ -346,7 +348,7 @@ impl WlSurface {
     pub fn set_buffer_transform(
         context: Context<WlSurface>,
         _transform: i32, // int: transform for interpreting buffer contents
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context
             .invalid_method("wl_surface::set_buffer_transform is not implemented yet".to_string())
     }
@@ -378,7 +380,7 @@ impl WlSurface {
     pub fn set_input_region(
         context: Context<WlSurface>,
         _region: u32, // object: input region of the surface
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::set_input_region is not implemented yet".to_string())
     }
 
@@ -411,7 +413,7 @@ impl WlSurface {
     pub fn set_opaque_region(
         context: Context<WlSurface>,
         _region: u32, // object: opaque region of the surface
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_surface::set_opaque_region is not implemented yet".to_string())
     }
 }

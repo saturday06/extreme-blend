@@ -24,6 +24,8 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
+use crate::protocol::session::NextAction;
+#[allow(unused_imports)]
 use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 #[allow(unused_imports)]
 use futures::future::Future;
@@ -51,177 +53,419 @@ pub fn dispatch_request(
     match opcode {
         0 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::destroy(context);
+            return Box::new(super::WlSurface::destroy(context).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         1 => {
             let buffer = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::attach(context, buffer, x, y);
+            return Box::new(super::WlSurface::attach(context, buffer, x, y).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         2 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::damage(context, x, y, width, height);
+            return Box::new(
+                super::WlSurface::damage(context, x, y, width, height).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         3 => {
             let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::frame(context, callback);
+            return Box::new(super::WlSurface::frame(context, callback).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         4 => {
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::set_opaque_region(context, region);
+            return Box::new(
+                super::WlSurface::set_opaque_region(context, region).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         5 => {
             let region = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::set_input_region(context, region);
+            return Box::new(
+                super::WlSurface::set_input_region(context, region).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         6 => {
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::commit(context);
+            return Box::new(super::WlSurface::commit(context).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         7 => {
             let transform = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::set_buffer_transform(context, transform);
+            return Box::new(
+                super::WlSurface::set_buffer_transform(context, transform).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         8 => {
             let scale = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::set_buffer_scale(context, scale);
+            return Box::new(super::WlSurface::set_buffer_scale(context, scale).and_then(
+                |(session, next_action)| -> Box<
+                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                        + Send,
+                > {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(
+                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                        ),
+                        NextAction::RelayWait => Box::new(
+                            futures::future::ok(())
+                                .and_then(|_| futures::future::ok(()))
+                                .and_then(|_| futures::future::ok(session)),
+                        ),
+                    }
+                },
+            ));
         }
         9 => {
             let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
             let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
-                return context
-                    .invalid_method(format!("opcode={} args={:?} not found", opcode, args));
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
             }
-            return super::WlSurface::damage_buffer(context, x, y, width, height);
+            return Box::new(
+                super::WlSurface::damage_buffer(context, x, y, width, height).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => Box::new(
+                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
+                            ),
+                            NextAction::RelayWait => Box::new(
+                                futures::future::ok(())
+                                    .and_then(|_| futures::future::ok(()))
+                                    .and_then(|_| futures::future::ok(session)),
+                            ),
+                        }
+                    },
+                ),
+            );
         }
         _ => {}
     };

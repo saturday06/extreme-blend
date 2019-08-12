@@ -24,8 +24,8 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
 use crate::protocol::wayland;
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -50,7 +50,7 @@ impl WlCompositor {
     pub fn create_region(
         context: Context<Arc<RwLock<WlCompositor>>>,
         _id: u32, // new_id: the new region
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_compositor::create_region is not implemented yet".to_string())
     }
 

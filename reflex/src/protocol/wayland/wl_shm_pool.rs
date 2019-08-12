@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -93,7 +93,9 @@ impl WlShmPool {
     // The mmapped memory will be released when all
     // buffers that have been created from this pool
     // are gone.
-    pub fn destroy(context: Context<WlShmPool>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<WlShmPool>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_shm_pool::destroy is not implemented yet".to_string())
     }
 
@@ -106,7 +108,7 @@ impl WlShmPool {
     pub fn resize(
         context: Context<WlShmPool>,
         _size: i32, // int: new size of the pool, in bytes
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_shm_pool::resize is not implemented yet".to_string())
     }
 }

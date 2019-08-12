@@ -25,7 +25,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -80,7 +80,9 @@ impl XdgPopup {
     //
     // If this xdg_popup is not the "topmost" popup, a protocol error
     // will be sent.
-    pub fn destroy(context: Context<XdgPopup>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<XdgPopup>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_popup::destroy is not implemented yet".to_string())
     }
 
@@ -131,7 +133,7 @@ impl XdgPopup {
         context: Context<XdgPopup>,
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_popup::grab is not implemented yet".to_string())
     }
 }

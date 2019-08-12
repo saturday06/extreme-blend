@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -52,7 +52,7 @@ impl WlDataDevice {
     // This request destroys the data device.
     pub fn release(
         context: Context<WlDataDevice>,
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_device::release is not implemented yet".to_string())
     }
 
@@ -66,7 +66,7 @@ impl WlDataDevice {
         context: Context<WlDataDevice>,
         _source: u32, // object: data source for the selection
         _serial: u32, // uint: serial number of the event that triggered this request
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_device::set_selection is not implemented yet".to_string())
     }
 
@@ -105,7 +105,7 @@ impl WlDataDevice {
         _origin: u32, // object: surface where the drag originates
         _icon: u32,   // object: drag-and-drop icon surface
         _serial: u32, // uint: serial number of the implicit grab on the origin
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_device::start_drag is not implemented yet".to_string())
     }
 }

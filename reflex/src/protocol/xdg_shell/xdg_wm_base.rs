@@ -25,7 +25,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -56,7 +56,7 @@ impl XdgWmBase {
     pub fn create_positioner(
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _id: u32, // new_id:
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::create_positioner is not implemented yet".to_string())
     }
 
@@ -69,7 +69,7 @@ impl XdgWmBase {
     // and will result in a protocol error.
     pub fn destroy(
         context: Context<Arc<RwLock<XdgWmBase>>>,
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::destroy is not implemented yet".to_string())
     }
 
@@ -109,7 +109,7 @@ impl XdgWmBase {
     pub fn pong(
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _serial: u32, // uint: serial of the ping event
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::pong is not implemented yet".to_string())
     }
 }

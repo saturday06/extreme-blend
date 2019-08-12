@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -45,7 +45,9 @@ pub struct WlKeyboard {}
 
 impl WlKeyboard {
     // release the keyboard object
-    pub fn release(context: Context<WlKeyboard>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn release(
+        context: Context<WlKeyboard>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_keyboard::release is not implemented yet".to_string())
     }
 }

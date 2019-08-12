@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -58,7 +58,7 @@ impl WlSeat {
     pub fn get_keyboard(
         context: Context<WlSeat>,
         _id: u32, // new_id: seat keyboard
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_seat::get_keyboard is not implemented yet".to_string())
     }
 
@@ -74,7 +74,7 @@ impl WlSeat {
     pub fn get_pointer(
         context: Context<WlSeat>,
         _id: u32, // new_id: seat pointer
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_seat::get_pointer is not implemented yet".to_string())
     }
 
@@ -90,7 +90,7 @@ impl WlSeat {
     pub fn get_touch(
         context: Context<WlSeat>,
         _id: u32, // new_id: seat touch interface
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_seat::get_touch is not implemented yet".to_string())
     }
 
@@ -98,7 +98,9 @@ impl WlSeat {
     //
     // Using this request a client can tell the server that it is not going to
     // use the seat object anymore.
-    pub fn release(context: Context<WlSeat>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn release(
+        context: Context<WlSeat>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_seat::release is not implemented yet".to_string())
     }
 }

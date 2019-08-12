@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -57,7 +57,9 @@ impl WlPointer {
     //
     // This request destroys the pointer proxy object, so clients must not call
     // wl_pointer_destroy() after using this request.
-    pub fn release(context: Context<WlPointer>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn release(
+        context: Context<WlPointer>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_pointer::release is not implemented yet".to_string())
     }
 
@@ -100,7 +102,7 @@ impl WlPointer {
         _surface: u32,   // object: pointer surface
         _hotspot_x: i32, // int: surface-local x coordinate
         _hotspot_y: i32, // int: surface-local y coordinate
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_pointer::set_cursor is not implemented yet".to_string())
     }
 }

@@ -13,6 +13,12 @@ use std::os::unix::io::RawFd;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
 
+pub enum NextAction {
+    Nop,
+    Relay,
+    RelayWait,
+}
+
 pub struct Session {
     pub resources: HashMap<u32, Resource>,
     pub wl_display: Arc<RwLock<WlDisplay>>,
@@ -66,23 +72,45 @@ where
         }
     }
 
-    pub fn ok(self) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
-        Box::new(futures::future::ok(self.into()))
+    pub fn ok(
+        self,
+    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+        Box::new(futures::future::ok((self.into(), NextAction::Relay)))
+    }
+
+    fn create_invalid_method_error(
+        &self,
+        message: String,
+    ) -> crate::protocol::wayland::wl_display::events::Error {
+        crate::protocol::wayland::wl_display::events::Error {
+            sender_object_id: 1,
+            object_id: self.sender_object_id.clone(),
+            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+            message,
+        }
     }
 
     pub fn invalid_method(
         self,
         message: String,
+    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+        let tx = self.tx.clone();
+        let error = self.create_invalid_method_error(message);
+        let session: Session = self.into();
+        return Box::new(
+            tx.send(Box::new(error))
+                .map_err(|_| ())
+                .map(|_| (session, NextAction::Nop)),
+        );
+    }
+
+    pub fn invalid_method_dispatch(
+        self,
+        message: String,
     ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
         let tx = self.tx.clone();
-        let sender_object_id = self.sender_object_id;
+        let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
-        let error = crate::protocol::wayland::wl_display::events::Error {
-            sender_object_id: 1,
-            object_id: sender_object_id,
-            code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-            message,
-        };
         return Box::new(tx.send(Box::new(error)).map_err(|_| ()).map(|_| session));
     }
 }

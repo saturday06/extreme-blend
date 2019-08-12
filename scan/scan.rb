@@ -138,11 +138,19 @@ EOF
         #{request.index} => {
 #{request.args.map(&:deserialize).join("")}
             if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method(format!(
+                return context.invalid_method_dispatch(format!(
                     "opcode={} args={:?} not found", opcode, args
                 ));
             }
-            return super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join});
+            return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join})
+                .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+                    match next_action {
+                        NextAction::Nop => Box::new(futures::future::ok(session)),
+                        NextAction::Relay => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session))),
+                        NextAction::RelayWait => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(())).and_then(|_| futures::future::ok(session))),
+                    }
+                })
+            );
         },
 DESERIALIZE
       end
@@ -257,7 +265,7 @@ class Arg
 
   def deserialize_return_error
     ret =<<EOF
-                return context.invalid_method(format!(
+                return context.invalid_method_dispatch(format!(
                     "opcode={} args={:?} not found", opcode, args
                 ))
 EOF
@@ -730,6 +738,7 @@ protocols.each do |protocol|
 #[allow(unused_imports)] use std::convert::TryInto;
 #[allow(unused_imports)] use std::io::{Cursor, Read};
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
+#[allow(unused_imports)] use crate::protocol::session::NextAction;
 
 USE
 
@@ -765,7 +774,7 @@ INTO
       f.puts(render_comment(protocol.copyright.text))
       f.puts("")
       f.puts(<<USE)
-#[allow(unused_imports)] use crate::protocol::session::{Context, Session};
+#[allow(unused_imports)] use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)] use futures::future::{err, ok, Future};
 #[allow(unused_imports)] use futures::sink::Sink;
 #[allow(unused_imports)] use std::sync::{Arc, RwLock};
@@ -795,7 +804,7 @@ USE
             f.print("        _#{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
           end
           f.puts(<<FUNC_BODY)
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("#{interface.name}::#{request.name} is not implemented yet".to_string())
     }
 FUNC_BODY

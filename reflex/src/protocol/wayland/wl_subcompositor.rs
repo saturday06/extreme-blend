@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -67,7 +67,7 @@ impl WlSubcompositor {
     // objects, wl_subsurface objects included.
     pub fn destroy(
         context: Context<WlSubcompositor>,
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subcompositor::destroy is not implemented yet".to_string())
     }
 
@@ -93,7 +93,7 @@ impl WlSubcompositor {
         _id: u32,      // new_id: the new sub-surface object ID
         _surface: u32, // object: the surface to be turned into a sub-surface
         _parent: u32,  // object: the parent surface
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context
             .invalid_method("wl_subcompositor::get_subsurface is not implemented yet".to_string())
     }

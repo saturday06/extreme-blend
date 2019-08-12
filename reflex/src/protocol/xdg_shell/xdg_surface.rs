@@ -25,7 +25,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #[allow(unused_imports)]
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]
@@ -108,7 +108,7 @@ impl XdgSurface {
     pub fn ack_configure(
         context: Context<XdgSurface>,
         _serial: u32, // uint: the serial from the configure event
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::ack_configure is not implemented yet".to_string())
     }
 
@@ -116,7 +116,9 @@ impl XdgSurface {
     //
     // Destroy the xdg_surface object. An xdg_surface must only be destroyed
     // after its role object has been destroyed.
-    pub fn destroy(context: Context<XdgSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<XdgSurface>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::destroy is not implemented yet".to_string())
     }
 
@@ -135,7 +137,7 @@ impl XdgSurface {
         _id: u32,         // new_id:
         _parent: u32,     // object:
         _positioner: u32, // object:
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::get_popup is not implemented yet".to_string())
     }
 
@@ -198,7 +200,7 @@ impl XdgSurface {
         _y: i32,      // int:
         _width: i32,  // int:
         _height: i32, // int:
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context
             .invalid_method("xdg_surface::set_window_geometry is not implemented yet".to_string())
     }
