@@ -151,7 +151,7 @@ impl XdgSurface {
     pub fn get_toplevel(
         mut context: Context<XdgSurface>,
         id: u32, // new_id:
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("XdgSurface::get_toplevel(id={})", id);
         context.resources.insert(
             id,
@@ -160,7 +160,7 @@ impl XdgSurface {
             }
             .into(),
         );
-        Box::new(ok(context.into()))
+        context.ok()
     }
 
     // set the new window geometry

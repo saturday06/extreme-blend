@@ -90,7 +90,7 @@ impl XdgWmBase {
         mut context: Context<Arc<RwLock<XdgWmBase>>>,
         id: u32,      // new_id:
         surface: u32, // object:
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("XdgWmBase::get_xdg_surface(id={}, surface={})", id, surface);
         context.resources.insert(
             id,
@@ -99,7 +99,7 @@ impl XdgWmBase {
             }
             .into(),
         );
-        Box::new(ok(context.into()))
+        context.ok()
     }
 
     // respond to a ping event

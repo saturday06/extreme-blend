@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::os::unix::io::RawFd;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
+use tokio::net::UnixStream;
 
 pub enum NextAction {
     Nop,
@@ -30,6 +31,7 @@ pub struct Session {
     pub tx: Sender<Box<Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
+    pub unix_stream: UnixStream,
 }
 
 pub struct Context<T>
@@ -49,6 +51,7 @@ where
     pub tx: Sender<Box<Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
+    pub unix_stream: UnixStream,
 }
 
 impl<T> Context<T>
@@ -69,6 +72,7 @@ where
             fds: session.fds,
             sender_object_id,
             sender_object,
+            unix_stream: session.unix_stream,
         }
     }
 
@@ -133,6 +137,7 @@ where
             tx: self.tx,
             callback_data: self.callback_data,
             fds: self.fds,
+            unix_stream: self.unix_stream,
         }
     }
 }

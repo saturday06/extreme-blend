@@ -23,7 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use crate::protocol::session::{Context, Session};
+use crate::protocol::session::{Context, Session, NextAction};
 use byteorder::{NativeEndian, ReadBytesExt};
 use futures::future::{ok, Future};
 use futures::sink::Sink;
@@ -50,12 +50,12 @@ pub fn dispatch_request(
     let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
+        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x as usize
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
+        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
     let mut name_buf = Vec::new();
@@ -65,20 +65,26 @@ pub fn dispatch_request(
     let _version = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
+        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
+        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     if Ok(cursor.position()) != args.len().try_into() {
-        return context.invalid_method(format!("opcode={} args={:?} not found", opcode, &args));
+        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     }
 
-    WlRegistry::bind(context, name, id)
+    Box::new(WlRegistry::bind(context, name, id).and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+        match next_action {
+            NextAction::Nop => Box::new(futures::future::ok(session)),
+            NextAction::Relay => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session))),
+            NextAction::RelayWait => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(())).and_then(|_| futures::future::ok(session))),
+        }
+    }))
 }
 
 // global registry object
@@ -114,7 +120,7 @@ impl WlRegistry {
         mut context: Context<Arc<RwLock<WlRegistry>>>,
         name: u32, // uint: unique numeric name of the object
         id: u32,   // new_id: bounded object
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlRegistry::bind(name: {}, id: {})", name, id);
         let tx = context.tx.clone();
 
@@ -123,31 +129,31 @@ impl WlRegistry {
                 context
                     .resources
                     .insert(id, context.wl_registry.clone().into());
-                return Box::new(ok(context.into()));
+                return context.ok();
             }
             crate::protocol::wayland::wl_display::GLOBAL_SINGLETON_NAME => {
                 context
                     .resources
                     .insert(id, context.wl_display.clone().into());
-                return Box::new(ok(context.into()));
+                return context.ok();
             }
             crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME => {
                 context
                     .resources
                     .insert(id, context.wl_compositor.clone().into());
-                return Box::new(ok(context.into()));
+                return context.ok();
             }
             crate::protocol::wayland::wl_data_device_manager::GLOBAL_SINGLETON_NAME => {
                 context
                     .resources
                     .insert(id, context.wl_data_device_manager.clone().into());
-                return Box::new(ok(context.into()));
+                return context.ok();
             }
             crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME => {
                 context
                     .resources
                     .insert(id, context.xdg_wm_base.clone().into());
-                return Box::new(ok(context.into()));
+                return context.ok();
             }
             crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME => {
                 context.resources.insert(id, context.wl_shm.clone().into());
@@ -168,7 +174,7 @@ impl WlRegistry {
                             }))
                         })
                         .map_err(|_| ())
-                        .map(|_| context.into()),
+                        .and_then(|_| context.ok()),
                 );
             }
             _ => {}
@@ -187,7 +193,7 @@ impl WlRegistry {
                 },
             ))
             .map_err(|_| ())
-            .map(|_tx| context.into()),
+            .and_then(|_| context.ok()),
         )
     }
 }

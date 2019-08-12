@@ -150,7 +150,7 @@ impl WlSurface {
     // to affect double-buffered state.
     //
     // Other interfaces may add further double-buffered surface state.
-    pub fn commit(context: Context<WlSurface>) -> Box<Future<Item = Session, Error = ()> + Send> {
+    pub fn commit(context: Context<WlSurface>) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlSurface::commit");
         context.ok()
     }

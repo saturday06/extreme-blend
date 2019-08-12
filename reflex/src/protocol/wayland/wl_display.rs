@@ -58,7 +58,7 @@ impl WlDisplay {
     pub fn get_registry(
         mut context: Context<Arc<RwLock<WlDisplay>>>,
         registry: u32, // new_id: global registry object
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlDisplay::get_registry({})", registry);
         context
             .resources
@@ -97,7 +97,7 @@ impl WlDisplay {
                     ))
                 })
                 .map_err(|_| ())
-                .map(|_| context.into()),
+                .and_then(|_| context.ok()),
         )
     }
 
@@ -117,7 +117,7 @@ impl WlDisplay {
     pub fn sync(
         mut context: Context<Arc<RwLock<WlDisplay>>>,
         callback: u32, // new_id: callback object for the sync request
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlDisplay::sync({})", callback);
         context.callback_data += 1;
         let tx = context.tx.clone();
@@ -129,7 +129,7 @@ impl WlDisplay {
                 },
             ))
             .map_err(|_| ())
-            .map(|_| context.into()),
+            .and_then(|_| context.ok()),
         )
     }
 }
