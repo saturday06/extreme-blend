@@ -67,142 +67,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::XdgToplevel::set_parent(context, parent).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
-        2 => {
-            let title = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::XdgToplevel::set_title(context, title).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
-        3 => {
-            let app_id = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-                    return context.invalid_method_dispatch(format!(
-                        "opcode={} args={:?} not found",
-                        opcode, args
-                    ));
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::XdgToplevel::set_app_id(context, app_id).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
-        4 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -218,7 +83,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgToplevel::show_window_menu(context, seat, serial, x, y).and_then(
+                super::XdgToplevel::set_parent(context, arg_parent).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -228,22 +93,35 @@ pub fn dispatch_request(
                 ),
             );
         }
-        5 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
+        2 => {
+            let arg_title = {
+                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                    x
+                } else {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                };
+                let padded_buf_len = (buf_len + 3) / 4 * 4;
+                let mut buf = Vec::new();
+                buf.resize(buf_len as usize, 0);
+                if let Err(_) = cursor.read_exact(&mut buf) {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                }
+                let s = if let Ok(x) = String::from_utf8(buf) {
+                    x
+                } else {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                };
+                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                s
             };
 
             if Ok(cursor.position()) != args.len().try_into() {
@@ -252,15 +130,63 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgToplevel::move_fn(context, seat, serial).and_then(
+            return Box::new(super::XdgToplevel::set_title(context, arg_title).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
-        6 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        3 => {
+            let arg_app_id = {
+                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                    x
+                } else {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                };
+                let padded_buf_len = (buf_len + 3) / 4 * 4;
+                let mut buf = Vec::new();
+                buf.resize(buf_len as usize, 0);
+                if let Err(_) = cursor.read_exact(&mut buf) {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                }
+                let s = if let Ok(x) = String::from_utf8(buf) {
+                    x
+                } else {
+                    return context.invalid_method_dispatch(format!(
+                        "opcode={} args={:?} not found",
+                        opcode, args
+                    ));
+                };
+                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                s
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(
+                super::XdgToplevel::set_app_id(context, arg_app_id).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
+        }
+        4 => {
+            let arg_seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -268,7 +194,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -276,7 +202,15 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -292,7 +226,86 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgToplevel::resize(context, seat, serial, edges).and_then(
+                super::XdgToplevel::show_window_menu(context, arg_seat, arg_serial, arg_x, arg_y)
+                    .and_then(
+                        |(session, next_action)| -> Box<
+                            futures::future::Future<
+                                    Item = crate::protocol::session::Session,
+                                    Error = (),
+                                > + Send,
+                        > { Box::new(futures::future::ok(session)) },
+                    ),
+            );
+        }
+        5 => {
+            let arg_seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(
+                super::XdgToplevel::move_fn(context, arg_seat, arg_serial).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
+        }
+        6 => {
+            let arg_seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_edges = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(
+                super::XdgToplevel::resize(context, arg_seat, arg_serial, arg_edges).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -303,7 +316,7 @@ pub fn dispatch_request(
             );
         }
         7 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -311,7 +324,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -327,7 +340,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgToplevel::set_max_size(context, width, height).and_then(
+                super::XdgToplevel::set_max_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -338,7 +351,7 @@ pub fn dispatch_request(
             );
         }
         8 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -346,7 +359,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -362,7 +375,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgToplevel::set_min_size(context, width, height).and_then(
+                super::XdgToplevel::set_min_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -401,7 +414,7 @@ pub fn dispatch_request(
             ));
         }
         11 => {
-            let output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_output = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -417,7 +430,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgToplevel::set_fullscreen(context, output).and_then(
+                super::XdgToplevel::set_fullscreen(context, arg_output).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,

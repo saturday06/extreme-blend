@@ -67,7 +67,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -75,7 +75,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -91,7 +91,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgPositioner::set_size(context, width, height).and_then(
+                super::XdgPositioner::set_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -102,7 +102,7 @@ pub fn dispatch_request(
             );
         }
         2 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -110,7 +110,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -118,7 +118,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -126,7 +126,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -142,7 +142,35 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgPositioner::set_anchor_rect(context, x, y, width, height).and_then(
+                super::XdgPositioner::set_anchor_rect(context, arg_x, arg_y, arg_width, arg_height)
+                    .and_then(
+                        |(session, next_action)| -> Box<
+                            futures::future::Future<
+                                    Item = crate::protocol::session::Session,
+                                    Error = (),
+                                > + Send,
+                        > { Box::new(futures::future::ok(session)) },
+                    ),
+            );
+        }
+        3 => {
+            let arg_anchor = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(
+                super::XdgPositioner::set_anchor(context, arg_anchor).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -152,31 +180,8 @@ pub fn dispatch_request(
                 ),
             );
         }
-        3 => {
-            let anchor = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::XdgPositioner::set_anchor(context, anchor).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
         4 => {
-            let gravity = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_gravity = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -192,7 +197,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgPositioner::set_gravity(context, gravity).and_then(
+                super::XdgPositioner::set_gravity(context, arg_gravity).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -203,7 +208,7 @@ pub fn dispatch_request(
             );
         }
         5 => {
-            let constraint_adjustment = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_constraint_adjustment = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -219,7 +224,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgPositioner::set_constraint_adjustment(context, constraint_adjustment)
+                super::XdgPositioner::set_constraint_adjustment(context, arg_constraint_adjustment)
                     .and_then(
                         |(session, next_action)| -> Box<
                             futures::future::Future<
@@ -231,7 +236,7 @@ pub fn dispatch_request(
             );
         }
         6 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -239,7 +244,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -254,12 +259,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgPositioner::set_offset(context, x, y).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::XdgPositioner::set_offset(context, arg_x, arg_y).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };

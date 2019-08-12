@@ -54,7 +54,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -69,15 +69,19 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlCompositor::create_surface(context, id).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlCompositor::create_surface(context, arg_id).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -92,12 +96,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlCompositor::create_region(context, id).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlCompositor::create_region(context, arg_id).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };

@@ -47,13 +47,19 @@ impl super::super::super::event::Event for DataOffer {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 0) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.id);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.id);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -85,12 +91,17 @@ impl super::super::super::event::Event for Drop {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 4) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 4) as u32,
+        );
 
+        encode_offset += 8;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -118,17 +129,27 @@ impl super::super::super::event::Event for Enter {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 1) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.serial);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.surface);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.x);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4 + 4..], self.y);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4 + 4 + 4..], self.id);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.serial);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.surface);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.x);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.y);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.id);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -150,12 +171,17 @@ impl super::super::super::event::Event for Leave {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 2) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 2) as u32,
+        );
 
+        encode_offset += 8;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -181,15 +207,23 @@ impl super::super::super::event::Event for Motion {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 3) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 3) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.time);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.x);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], self.y);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.time);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.x);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.y);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -220,13 +254,19 @@ impl super::super::super::event::Event for Selection {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 5) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 5) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.id);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.id);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }

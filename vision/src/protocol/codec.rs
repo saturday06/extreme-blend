@@ -26,6 +26,7 @@ impl tokio::codec::Decoder for Codec {
     type Error = std::io::Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Request>, Self::Error> {
+        // println!("decode: {:?}", &src);
         let header_size = 8;
         if src.is_empty() || src.len() < header_size {
             return Ok(None);

@@ -69,38 +69,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::XdgWmBase::create_positioner(context, id).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
-        2 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -116,7 +85,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgWmBase::get_xdg_surface(context, id, surface).and_then(
+                super::XdgWmBase::create_positioner(context, arg_id).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -126,8 +95,16 @@ pub fn dispatch_request(
                 ),
             );
         }
-        3 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        2 => {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -142,7 +119,34 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgWmBase::pong(context, serial).and_then(
+            return Box::new(
+                super::XdgWmBase::get_xdg_surface(context, arg_id, arg_surface).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
+        }
+        3 => {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(super::XdgWmBase::pong(context, arg_serial).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,

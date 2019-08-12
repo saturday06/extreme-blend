@@ -50,11 +50,12 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -62,7 +63,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -70,7 +71,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -78,7 +79,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -93,8 +94,38 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8 + 4 + 4 + 4 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_source);
+                encode_offset += 4;
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_origin);
+                encode_offset += 4;
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_icon);
+                encode_offset += 4;
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_serial);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(
-                super::WlDataDevice::start_drag(context, source, origin, icon, serial).and_then(
+                super::WlDataDevice::start_drag(
+                    context, arg_source, arg_origin, arg_icon, arg_serial,
+                )
+                .and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -103,21 +134,15 @@ pub fn dispatch_request(
                     > {
                         match next_action {
                             NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
                         }
                     },
                 ),
             );
         }
         1 => {
-            let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -125,7 +150,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -140,8 +165,31 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8 + 4 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_source);
+                encode_offset += 4;
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_serial);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(
-                super::WlDataDevice::set_selection(context, source, serial).and_then(
+                super::WlDataDevice::set_selection(context, arg_source, arg_serial).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -150,14 +198,8 @@ pub fn dispatch_request(
                     > {
                         match next_action {
                             NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
                         }
                     },
                 ),
@@ -170,6 +212,25 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(super::WlDataDevice::release(context).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -177,14 +238,8 @@ pub fn dispatch_request(
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));

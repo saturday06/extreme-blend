@@ -140,6 +140,7 @@ class Interface
     end
 
     result +=<<-EOF
+        let sender_object_id = context.sender_object_id;
         #[allow(unused_mut)] let mut cursor = Cursor::new(&args);
         match opcode {
     EOF
@@ -153,12 +154,13 @@ class Interface
                       "opcode={} args={:?} not found", opcode, args
                   ));
               }
-              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join})
+              let relay_buf = #{request.encode_vision};
+              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", arg_" + arg.name }.join})
                   .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       match next_action {
                           NextAction::Nop => Box::new(futures::future::ok(session)),
-                          NextAction::Relay => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session))),
-                          NextAction::RelayWait => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(())).and_then(|_| futures::future::ok(session))),
+                          NextAction::Relay => session.relay(relay_buf),
+                          NextAction::RelayWait => session.relay_wait(relay_buf),
                       }
                   })
               );
@@ -200,7 +202,7 @@ class Interface
                       "opcode={} args={:?} not found", opcode, args
                   ));
               }
-              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", " + arg.name }.join})
+              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", arg_" + arg.name }.join})
                   .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       Box::new(futures::future::ok(session))
                   })
@@ -226,20 +228,56 @@ class Request
     @rust_name = @name
     @rust_name += "_fn" if @rust_name == "move"
     @args = []
-    encode_offset = "i + 8"
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
       when "description"
         raise "Oops! multiple description" if @description
         @description = Description.new(child)
       when "arg"
-        arg = Arg.create(child, encode_offset, interface_name)
+        arg = Arg.create(child, interface_name)
         @args << arg
-        encode_offset += " + " + arg.encode_len
       else
         raise "unhandled element: #{child}"
       end
     end
+  end
+
+  def encode_vision
+    result =<<FN_ENCODE
+    {
+        let total_len = 8
+FN_ENCODE
+    @args.each do |arg|
+      result += " + #{arg.serialize_vision_len}"
+    end
+    result += ";\n"
+    result += <<HEADER
+        if total_len > 0xffff {
+            println!("Oops! total_len={}", total_len);
+            return Box::new(futures::future::err(()));
+        }
+
+        let mut dst: Vec<u8> = Vec::new();
+        dst.resize(total_len, 0);
+
+        NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+        NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+        #[allow(unused_mut)] let mut encode_offset = 8;
+
+HEADER
+    @args.each do |arg|
+      result += <<-ARG
+          #{arg.serialize_vision}
+          encode_offset += #{arg.serialize_vision_len};
+      ARG
+    end
+    result += <<-FOOTER
+            let _ = encode_offset;
+            dst
+        }
+    FOOTER
+    result
   end
 end
 
@@ -288,29 +326,29 @@ class Enum
 end
 
 class Arg
-  attr_reader :name, :summary, :encode_len, :type, :rust_type, :dynamic_len, :encode_offset, :interface_name
+  attr_reader :name, :summary, :serialize_len, :type, :rust_type, :dynamic_len, :interface_name
 
-  def self.create(elem, encode_offset, interface_name)
+  def self.create(elem, interface_name)
     name = elem.attributes["name"]
     summary = elem.attributes["summary"]
     type = elem.attributes["type"]
     case type
     when "uint"
-      UintArg.new(name, summary, type, encode_offset, interface_name)
+      UintArg.new(name, summary, type, interface_name)
     when "int"
-      IntArg.new(name, summary, type, encode_offset, interface_name)
+      IntArg.new(name, summary, type, interface_name)
     when "object"
-      ObjectArg.new(name, summary, type, encode_offset, interface_name)
+      ObjectArg.new(name, summary, type, interface_name)
     when "string"
-      StringArg.new(name, summary, type, encode_offset, interface_name)
+      StringArg.new(name, summary, type, interface_name)
     when "fd"
-      FdArg.new(name, summary, type, encode_offset, interface_name)
+      FdArg.new(name, summary, type, interface_name)
     when "new_id"
-      NewIdArg.new(name, summary, type, encode_offset, interface_name)
+      NewIdArg.new(name, summary, type, interface_name)
     when "fixed"
-      FixedArg.new(name, summary, type, encode_offset, interface_name)
+      FixedArg.new(name, summary, type, interface_name)
     when "array"
-      ArrayArg.new(name, summary, type, encode_offset, interface_name)
+      ArrayArg.new(name, summary, type, interface_name)
     else
       raise "unhandled type: #{@type}"
     end
@@ -327,27 +365,34 @@ class Arg
   def deserialize_vision
     deserialize
   end
+
+  def serialize_vision_len
+    serialize_len
+  end
+
+  def serialize_vision
+    serialize("arg_")
+  end
 end
 
 class UintArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "4"
-    @encode_offset = encode_offset
+    @serialize_len = "4"
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
     @interface_name = interface_name
   end
 
-  def serialize
-    "NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize(prefix = "self.")
+    "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
 #{deserialize_return_error}
@@ -357,24 +402,23 @@ DESERIAliZE
 end
 
 class IntArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "4"
-    @encode_offset = encode_offset
+    @serialize_len = "4"
     @dynamic_len = false
     @type = type
     @rust_type = "i32"
     @interface_name = interface_name
   end
 
-  def serialize
-    "NativeEndian::write_i32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize(prefix = "self.")
+    "NativeEndian::write_i32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_#{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
 #{deserialize_return_error}
@@ -384,24 +428,23 @@ DESERIAliZE
 end
 
 class ObjectArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "4"
-    @encode_offset = encode_offset
+    @serialize_len = "4"
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
     @interface_name = interface_name
   end
 
-  def serialize
-    "NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize(prefix = "self.")
+    "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
 #{deserialize_return_error}
@@ -411,27 +454,29 @@ DESERIAliZE
 end
 
 class StringArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  attr_reader :serialize_vision_len
+
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "(4 + (self.#{name}.len() + 1 + 3) / 4 * 4)"
-    @encode_offset = encode_offset
+    @serialize_len =        "{4 + (self.#{name}.len() + 1 + 3) / 4 * 4}"
+    @serialize_vision_len = "{4 + ( arg_#{name}.len() + 1 + 3) / 4 * 4}"
     @dynamic_len = true
     @type = type
     @rust_type = "String"
     @interface_name = interface_name
   end
 
-  def serialize
+  def serialize(prefix = "self.")
     <<SERIALIZE
-        NativeEndian::write_u32(&mut dst[#{@encode_offset}..], (self.#{name}.len() + 1) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], (#{prefix}#{name}.len() + 1) as u32);
         {
-            let mut aligned = self.#{name}.clone();
+            let mut aligned = #{prefix}#{name}.clone();
             aligned.push(0u8.into());
             while aligned.len() % 4 != 0 {
                 aligned.push(0u8.into());
             }
-            dst[(#{@encode_offset} + 4)..(#{@encode_offset} + 4 + aligned.len())]
+            dst[(encode_offset + 4)..(encode_offset + 4 + aligned.len())]
                 .copy_from_slice(aligned.as_bytes());
         }
 SERIALIZE
@@ -439,7 +484,7 @@ SERIALIZE
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = {
+            let arg_#{name} = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -464,19 +509,26 @@ DESERIAliZE
 end
 
 class FdArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "0"
-    @encode_offset = encode_offset
+    @serialize_len = "0"
     @dynamic_len = false
     @type = type
     @rust_type = "i32"
     @interface_name = interface_name
   end
 
-  def serialize
-    # "NativeEndian::write_i32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize_vision_len
+    "4"
+  end
+
+  def serialize_vision
+    "NativeEndian::write_i32(&mut dst[encode_offset..], arg_#{name});"
+  end
+
+  def serialize(prefix = "self.")
+    # "NativeEndian::write_i32(&mut dst[encode_offset..], self.#{name});"
     "// unimplemented!();"
     "println!(\"UNIMPLEMENTED!!!!!\");"
   end
@@ -486,7 +538,7 @@ class FdArg < Arg
       if context.fds.len() == 0 {
           #{deserialize_return_error}
       }
-      let #{name} = {
+      let arg_#{name} = {
           let rest = context.fds.split_off(1);
           let first = context.fds.pop().expect("fds");
           context.fds = rest;
@@ -497,7 +549,7 @@ class FdArg < Arg
 
   def deserialize_vision
     <<-DESERIAliZE
-      let #{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+      let arg_#{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
           x 
       } else {
           #{deserialize_return_error}
@@ -507,24 +559,23 @@ class FdArg < Arg
 end
 
 class NewIdArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "4"
-    @encode_offset = encode_offset
+    @serialize_len = "4"
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
     @interface_name = interface_name
   end
 
-  def serialize
-    "NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize(prefix = "self.")
+    "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<-DESERIAliZE
-      let #{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+      let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
           x 
       } else {
           #{deserialize_return_error}
@@ -534,24 +585,23 @@ class NewIdArg < Arg
 end
 
 class FixedArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "4"
-    @encode_offset = encode_offset
+    @serialize_len = "4"
     @dynamic_len = false
     @type = type
     @rust_type = "u32"
     @interface_name = interface_name
   end
 
-  def serialize
-    "NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name});"
+  def serialize(prefix = "self.")
+    "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x 
             } else {
 #{deserialize_return_error}
@@ -561,34 +611,36 @@ DESERIAliZE
 end
 
 class ArrayArg < Arg
-  def initialize(name, summary, type, encode_offset, interface_name)
+  attr_reader :serialize_vision_len
+
+  def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @encode_len = "(4 + (self.#{name}.len() + 1 + 3) / 4 * 4)"
-    @encode_offset = encode_offset
+    @serialize_len =        "{4 + (self.#{name}.len() + 1 + 3) / 4 * 4}"
+    @serialize_vision_len = "{4 + ( arg_#{name}.len() + 1 + 3) / 4 * 4}"
     @dynamic_len = true
     @type = type
     @rust_type = "Vec<u8>"
     @interface_name = interface_name
   end
 
-  def serialize
+  def serialize(prefix = "self.")
     <<SERIALIZE
 
-        NativeEndian::write_u32(&mut dst[#{@encode_offset}..], self.#{name}.len() as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name}.len() as u32);
         {
-            let mut aligned_#{name} = self.#{name}.clone();
+            let mut aligned_#{name} = #{prefix}#{name}.clone();
             while aligned_#{name}.len() % 4 != 0 {
                 aligned_#{name}.push(0u8);
-        }
-            dst[(#{@encode_offset} + 4)..(#{@encode_offset} + 4 + aligned_#{name}.len())].copy_from_slice(&aligned_#{name}[..]);
+            }
+            dst[(encode_offset + 4)..(encode_offset + 4 + aligned_#{name}.len())].copy_from_slice(&aligned_#{name}[..]);
         }
 SERIALIZE
   end
 
   def deserialize
     <<DESERIAliZE
-            let #{name} = {
+            let arg_#{name} = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -614,16 +666,14 @@ class Event
     @name = elem.attributes["name"].strip
     @index = index
     @args = []
-    encode_offset = "i + 8"
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
       when "description"
         raise "Oops! multiple description" if @description
         @description = Description.new(child)
       when "arg"
-        arg = Arg.create(child, encode_offset, @name)
+        arg = Arg.create(child, @name)
         @args << arg
-        encode_offset += " + " + arg.encode_len
       else
         raise "unhandled element: #{child}"
       end
@@ -636,7 +686,7 @@ class Event
         let total_len = 8
 FN_ENCODE
     @args.each do |arg|
-      result += " + #{arg.encode_len}"
+      result += " + #{arg.serialize_len}"
     end
     result += ";\n"
     result += <<HEADER
@@ -644,18 +694,26 @@ FN_ENCODE
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | #{@index}) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(&mut dst[encode_offset + 4..], ((total_len << 16) | #{@index}) as u32);
 
+        encode_offset += 8;
 HEADER
     @args.each do |arg|
-      result += "        #{arg.serialize}\n"
+      result +=<<-ARG
+          #{arg.serialize}
+          encode_offset += #{arg.serialize_len};
+      ARG
     end
-    result += "        Ok(())\n"
-    result += "    }\n"
+    result +=<<-FOOTER
+          let _ = encode_offset;
+          Ok(())
+      }
+    FOOTER
+    result
   end
 end
 

@@ -52,7 +52,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -60,7 +60,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_origin = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -68,7 +68,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_icon = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -76,7 +76,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -92,7 +92,10 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataDevice::start_drag(context, source, origin, icon, serial).and_then(
+                super::WlDataDevice::start_drag(
+                    context, arg_source, arg_origin, arg_icon, arg_serial,
+                )
+                .and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -103,7 +106,7 @@ pub fn dispatch_request(
             );
         }
         1 => {
-            let source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_source = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -111,7 +114,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -127,7 +130,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataDevice::set_selection(context, source, serial).and_then(
+                super::WlDataDevice::set_selection(context, arg_source, arg_serial).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,

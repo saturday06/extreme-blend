@@ -90,13 +90,13 @@ pub fn dispatch_request(
             match next_action {
                 NextAction::Nop => Box::new(futures::future::ok(session)),
                 NextAction::Relay => {
-                    Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session)))
+                    let buf = Vec::new();
+                    session.relay(buf)
                 }
-                NextAction::RelayWait => Box::new(
-                    futures::future::ok(())
-                        .and_then(|_| futures::future::ok(()))
-                        .and_then(|_| futures::future::ok(session)),
-                ),
+                NextAction::RelayWait => {
+                    let buf = Vec::new();
+                    session.relay_wait(buf)
+                }
             }
         },
     ))

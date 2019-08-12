@@ -42,33 +42,38 @@ pub struct Global {
 
 impl super::super::super::event::Event for Global {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8 + 4 + (4 + (self.interface.len() + 1 + 3) / 4 * 4) + 4;
+        let total_len = 8 + 4 + { 4 + (self.interface.len() + 1 + 3) / 4 * 4 } + 4;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 0) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.name);
-        NativeEndian::write_u32(&mut dst[i + 8 + 4..], (self.interface.len() + 1) as u32);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.name);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], (self.interface.len() + 1) as u32);
         {
             let mut aligned = self.interface.clone();
             aligned.push(0u8.into());
             while aligned.len() % 4 != 0 {
                 aligned.push(0u8.into());
             }
-            dst[(i + 8 + 4 + 4)..(i + 8 + 4 + 4 + aligned.len())]
+            dst[(encode_offset + 4)..(encode_offset + 4 + aligned.len())]
                 .copy_from_slice(aligned.as_bytes());
         }
 
-        NativeEndian::write_u32(
-            &mut dst[i + 8 + 4 + (4 + (self.interface.len() + 1 + 3) / 4 * 4)..],
-            self.version,
-        );
+        encode_offset += { 4 + (self.interface.len() + 1 + 3) / 4 * 4 };
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.version);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }
@@ -98,13 +103,19 @@ impl super::super::super::event::Event for GlobalRemove {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 1) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 1) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.name);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.name);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }

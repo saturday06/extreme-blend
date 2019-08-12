@@ -50,6 +50,7 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -60,6 +61,25 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(super::WlSubsurface::destroy(context).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -67,20 +87,14 @@ pub fn dispatch_request(
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));
         }
         1 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -88,7 +102,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -103,27 +117,48 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::set_position(context, x, y).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
-            ));
+            let relay_buf = {
+                let total_len = 8 + 4 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_i32(&mut dst[encode_offset..], arg_x);
+                encode_offset += 4;
+                NativeEndian::write_i32(&mut dst[encode_offset..], arg_y);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
+            return Box::new(
+                super::WlSubsurface::set_position(context, arg_x, arg_y).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
+                        }
+                    },
+                ),
+            );
         }
         2 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -138,27 +173,46 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::place_above(context, sibling).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
-            ));
+            let relay_buf = {
+                let total_len = 8 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_sibling);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
+            return Box::new(
+                super::WlSubsurface::place_above(context, arg_sibling).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
+                        }
+                    },
+                ),
+            );
         }
         3 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -173,24 +227,43 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::place_below(context, sibling).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
-            ));
+            let relay_buf = {
+                let total_len = 8 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_sibling);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
+            return Box::new(
+                super::WlSubsurface::place_below(context, arg_sibling).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
+                        }
+                    },
+                ),
+            );
         }
         4 => {
             if Ok(cursor.position()) != args.len().try_into() {
@@ -199,6 +272,25 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(super::WlSubsurface::set_sync(context).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -206,14 +298,8 @@ pub fn dispatch_request(
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));
@@ -225,6 +311,25 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(super::WlSubsurface::set_desync(context).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -232,14 +337,8 @@ pub fn dispatch_request(
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));

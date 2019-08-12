@@ -50,7 +50,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -65,7 +65,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSeat::get_pointer(context, id).and_then(
+            return Box::new(super::WlSeat::get_pointer(context, arg_id).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
@@ -73,7 +73,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -88,7 +88,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSeat::get_keyboard(context, id).and_then(
+            return Box::new(super::WlSeat::get_keyboard(context, arg_id).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
@@ -96,7 +96,7 @@ pub fn dispatch_request(
             ));
         }
         2 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -111,7 +111,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSeat::get_touch(context, id).and_then(
+            return Box::new(super::WlSeat::get_touch(context, arg_id).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,

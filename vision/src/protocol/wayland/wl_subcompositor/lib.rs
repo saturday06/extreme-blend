@@ -66,7 +66,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -74,7 +74,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -82,7 +82,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -98,14 +98,15 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlSubcompositor::get_subsurface(context, id, surface, parent).and_then(
-                    |(session, next_action)| -> Box<
-                        futures::future::Future<
-                                Item = crate::protocol::session::Session,
-                                Error = (),
-                            > + Send,
-                    > { Box::new(futures::future::ok(session)) },
-                ),
+                super::WlSubcompositor::get_subsurface(context, arg_id, arg_surface, arg_parent)
+                    .and_then(
+                        |(session, next_action)| -> Box<
+                            futures::future::Future<
+                                    Item = crate::protocol::session::Session,
+                                    Error = (),
+                                > + Send,
+                        > { Box::new(futures::future::ok(session)) },
+                    ),
             );
         }
         _ => {}

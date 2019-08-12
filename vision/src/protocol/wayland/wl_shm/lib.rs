@@ -54,7 +54,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -62,7 +62,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -70,7 +70,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -85,12 +85,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlShm::create_pool(context, id, fd, size).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlShm::create_pool(context, arg_id, arg_fd, arg_size).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };

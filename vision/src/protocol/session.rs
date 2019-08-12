@@ -71,6 +71,7 @@ where
     pub fn ok(
         self,
     ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+        println!("ok");
         Box::new(futures::future::ok((self.into(), NextAction::Relay)))
     }
 
@@ -90,6 +91,7 @@ where
         self,
         message: String,
     ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+        println!("invalid method {}", &message);
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
@@ -104,6 +106,7 @@ where
         self,
         message: String,
     ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+        println!("invalid method {}", &message);
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();

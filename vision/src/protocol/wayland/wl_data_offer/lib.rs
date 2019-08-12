@@ -52,7 +52,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -60,7 +60,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let mime_type = {
+            let arg_mime_type = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -97,7 +97,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataOffer::accept(context, serial, mime_type).and_then(
+                super::WlDataOffer::accept(context, arg_serial, arg_mime_type).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -108,7 +108,7 @@ pub fn dispatch_request(
             );
         }
         1 => {
-            let mime_type = {
+            let arg_mime_type = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -137,7 +137,7 @@ pub fn dispatch_request(
                 cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
                 s
             };
-            let fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_fd = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -153,7 +153,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataOffer::receive(context, mime_type, fd).and_then(
+                super::WlDataOffer::receive(context, arg_mime_type, arg_fd).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -192,7 +192,7 @@ pub fn dispatch_request(
             ));
         }
         4 => {
-            let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -200,7 +200,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let preferred_action = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_preferred_action = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -216,14 +216,15 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataOffer::set_actions(context, dnd_actions, preferred_action).and_then(
-                    |(session, next_action)| -> Box<
-                        futures::future::Future<
-                                Item = crate::protocol::session::Session,
-                                Error = (),
-                            > + Send,
-                    > { Box::new(futures::future::ok(session)) },
-                ),
+                super::WlDataOffer::set_actions(context, arg_dnd_actions, arg_preferred_action)
+                    .and_then(
+                        |(session, next_action)| -> Box<
+                            futures::future::Future<
+                                    Item = crate::protocol::session::Session,
+                                    Error = (),
+                                > + Send,
+                        > { Box::new(futures::future::ok(session)) },
+                    ),
             );
         }
         _ => {}

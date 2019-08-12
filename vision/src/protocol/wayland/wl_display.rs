@@ -75,6 +75,7 @@ impl WlDisplay {
                             version: crate::protocol::wayland::wl_compositor::VERSION,
                         },
                     ))
+                    .map_err(|err| println!("err={:?}", err))
                 })
                 .and_then(move |tx| {
                     tx.send(Box::new(
@@ -85,6 +86,7 @@ impl WlDisplay {
                             version: crate::protocol::wayland::wl_shm::VERSION,
                         },
                     ))
+                    .map_err(|err| println!("err={:?}", err))
                 })
                 .and_then(move |tx| {
                     tx.send(Box::new(
@@ -95,8 +97,8 @@ impl WlDisplay {
                             version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
                         },
                     ))
+                    .map_err(|err| println!("err={:?}", err))
                 })
-                .map_err(|_| ())
                 .and_then(|_| context.ok()),
         )
     }

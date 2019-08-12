@@ -52,11 +52,12 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -70,13 +71,13 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            let fd = {
+            let arg_fd = {
                 let rest = context.fds.split_off(1);
                 let first = context.fds.pop().expect("fds");
                 context.fds = rest;
                 first
             };
-            let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -91,24 +92,47 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlShm::create_pool(context, id, fd, size).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > {
-                    match next_action {
-                        NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
-                    }
-                },
-            ));
+            let relay_buf = {
+                let total_len = 8 + 4 + 4 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_id);
+                encode_offset += 4;
+                NativeEndian::write_i32(&mut dst[encode_offset..], arg_fd);
+                encode_offset += 4;
+                NativeEndian::write_i32(&mut dst[encode_offset..], arg_size);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
+            return Box::new(
+                super::WlShm::create_pool(context, arg_id, arg_fd, arg_size).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > {
+                        match next_action {
+                            NextAction::Nop => Box::new(futures::future::ok(session)),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
+                        }
+                    },
+                ),
+            );
         }
         _ => {}
     };

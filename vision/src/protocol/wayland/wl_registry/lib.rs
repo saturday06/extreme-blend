@@ -54,7 +54,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -62,7 +62,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -77,7 +77,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlRegistry::bind(context, name, id).and_then(
+            return Box::new(super::WlRegistry::bind(context, arg_name, arg_id).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,

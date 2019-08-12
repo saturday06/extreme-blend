@@ -64,7 +64,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -72,7 +72,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -80,7 +80,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -88,54 +88,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-
-            if Ok(cursor.position()) != args.len().try_into() {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            }
-            return Box::new(super::WlRegion::add(context, x, y, width, height).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
-        }
-        2 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-                return context.invalid_method_dispatch(format!(
-                    "opcode={} args={:?} not found",
-                    opcode, args
-                ));
-            };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -151,7 +104,58 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlRegion::subtract(context, x, y, width, height).and_then(
+                super::WlRegion::add(context, arg_x, arg_y, arg_width, arg_height).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
+        }
+        2 => {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                x
+            } else {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            };
+
+            if Ok(cursor.position()) != args.len().try_into() {
+                return context.invalid_method_dispatch(format!(
+                    "opcode={} args={:?} not found",
+                    opcode, args
+                ));
+            }
+            return Box::new(
+                super::WlRegion::subtract(context, arg_x, arg_y, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,

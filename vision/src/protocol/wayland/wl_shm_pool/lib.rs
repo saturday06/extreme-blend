@@ -50,7 +50,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -58,7 +58,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let offset = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_offset = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -66,7 +66,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -74,7 +74,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -82,7 +82,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let stride = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_stride = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -90,7 +90,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let format = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_format = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -106,15 +106,17 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlShmPool::create_buffer(context, id, offset, width, height, stride, format)
-                    .and_then(
-                        |(session, next_action)| -> Box<
-                            futures::future::Future<
-                                    Item = crate::protocol::session::Session,
-                                    Error = (),
-                                > + Send,
-                        > { Box::new(futures::future::ok(session)) },
-                    ),
+                super::WlShmPool::create_buffer(
+                    context, arg_id, arg_offset, arg_width, arg_height, arg_stride, arg_format,
+                )
+                .and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
             );
         }
         1 => {
@@ -132,7 +134,7 @@ pub fn dispatch_request(
             ));
         }
         2 => {
-            let size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_size = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -147,7 +149,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlShmPool::resize(context, size).and_then(
+            return Box::new(super::WlShmPool::resize(context, arg_size).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,

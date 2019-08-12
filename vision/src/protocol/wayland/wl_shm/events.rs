@@ -43,13 +43,19 @@ impl super::super::super::event::Event for Format {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
 
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
+        let mut encode_offset = dst.len();
+        dst.resize(encode_offset + total_len, 0);
 
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[encode_offset + 4..],
+            ((total_len << 16) | 0) as u32,
+        );
 
-        NativeEndian::write_u32(&mut dst[i + 8..], self.format);
+        encode_offset += 8;
+        NativeEndian::write_u32(&mut dst[encode_offset..], self.format);
+        encode_offset += 4;
+        let _ = encode_offset;
         Ok(())
     }
 }

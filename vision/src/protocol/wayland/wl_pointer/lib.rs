@@ -50,7 +50,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -58,7 +58,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_surface = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -66,7 +66,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let hotspot_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_hotspot_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -74,7 +74,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let hotspot_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_hotspot_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -90,15 +90,21 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlPointer::set_cursor(context, serial, surface, hotspot_x, hotspot_y)
-                    .and_then(
-                        |(session, next_action)| -> Box<
-                            futures::future::Future<
-                                    Item = crate::protocol::session::Session,
-                                    Error = (),
-                                > + Send,
-                        > { Box::new(futures::future::ok(session)) },
-                    ),
+                super::WlPointer::set_cursor(
+                    context,
+                    arg_serial,
+                    arg_surface,
+                    arg_hotspot_x,
+                    arg_hotspot_y,
+                )
+                .and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
             );
         }
         1 => {

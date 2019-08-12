@@ -66,7 +66,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -74,7 +74,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -89,15 +89,19 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::set_position(context, x, y).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlSubsurface::set_position(context, arg_x, arg_y).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         2 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -112,15 +116,19 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::place_above(context, sibling).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlSubsurface::place_above(context, arg_sibling).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         3 => {
-            let sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_sibling = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -135,12 +143,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlSubsurface::place_below(context, sibling).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlSubsurface::place_below(context, arg_sibling).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         4 => {
             if Ok(cursor.position()) != args.len().try_into() {

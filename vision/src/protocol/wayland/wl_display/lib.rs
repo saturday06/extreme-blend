@@ -54,7 +54,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_callback = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -69,7 +69,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlDisplay::sync(context, callback).and_then(
+            return Box::new(super::WlDisplay::sync(context, arg_callback).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
@@ -77,7 +77,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_registry = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -92,12 +92,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlDisplay::get_registry(context, registry).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::WlDisplay::get_registry(context, arg_registry).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };

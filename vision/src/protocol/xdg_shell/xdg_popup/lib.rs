@@ -65,7 +65,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_seat = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -73,7 +73,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -88,12 +88,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgPopup::grab(context, seat, serial).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::XdgPopup::grab(context, arg_seat, arg_serial).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };

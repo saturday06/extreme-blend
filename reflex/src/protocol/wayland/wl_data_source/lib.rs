@@ -50,11 +50,12 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let mime_type = {
+            let arg_mime_type = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -90,21 +91,49 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlDataSource::offer(context, mime_type).and_then(
+            let relay_buf = {
+                let total_len = 8 + { 4 + (arg_mime_type.len() + 1 + 3) / 4 * 4 };
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(
+                    &mut dst[encode_offset..],
+                    (arg_mime_type.len() + 1) as u32,
+                );
+                {
+                    let mut aligned = arg_mime_type.clone();
+                    aligned.push(0u8.into());
+                    while aligned.len() % 4 != 0 {
+                        aligned.push(0u8.into());
+                    }
+                    dst[(encode_offset + 4)..(encode_offset + 4 + aligned.len())]
+                        .copy_from_slice(aligned.as_bytes());
+                }
+
+                encode_offset += { 4 + (arg_mime_type.len() + 1 + 3) / 4 * 4 };
+                let _ = encode_offset;
+                dst
+            };
+            return Box::new(super::WlDataSource::offer(context, arg_mime_type).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));
@@ -116,6 +145,25 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(super::WlDataSource::destroy(context).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -123,20 +171,14 @@ pub fn dispatch_request(
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
-                        NextAction::Relay => Box::new(
-                            futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                        ),
-                        NextAction::RelayWait => Box::new(
-                            futures::future::ok(())
-                                .and_then(|_| futures::future::ok(()))
-                                .and_then(|_| futures::future::ok(session)),
-                        ),
+                        NextAction::Relay => session.relay(relay_buf),
+                        NextAction::RelayWait => session.relay_wait(relay_buf),
                     }
                 },
             ));
         }
         2 => {
-            let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -151,8 +193,29 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
+            let relay_buf = {
+                let total_len = 8 + 4;
+                if total_len > 0xffff {
+                    println!("Oops! total_len={}", total_len);
+                    return Box::new(futures::future::err(()));
+                }
+
+                let mut dst: Vec<u8> = Vec::new();
+                dst.resize(total_len, 0);
+
+                NativeEndian::write_u32(&mut dst[0..], sender_object_id);
+                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+
+                #[allow(unused_mut)]
+                let mut encode_offset = 8;
+
+                NativeEndian::write_u32(&mut dst[encode_offset..], arg_dnd_actions);
+                encode_offset += 4;
+                let _ = encode_offset;
+                dst
+            };
             return Box::new(
-                super::WlDataSource::set_actions(context, dnd_actions).and_then(
+                super::WlDataSource::set_actions(context, arg_dnd_actions).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -161,14 +224,8 @@ pub fn dispatch_request(
                     > {
                         match next_action {
                             NextAction::Nop => Box::new(futures::future::ok(session)),
-                            NextAction::Relay => Box::new(
-                                futures::future::ok(()).and_then(|_| futures::future::ok(session)),
-                            ),
-                            NextAction::RelayWait => Box::new(
-                                futures::future::ok(())
-                                    .and_then(|_| futures::future::ok(()))
-                                    .and_then(|_| futures::future::ok(session)),
-                            ),
+                            NextAction::Relay => session.relay(relay_buf),
+                            NextAction::RelayWait => session.relay_wait(relay_buf),
                         }
                     },
                 ),

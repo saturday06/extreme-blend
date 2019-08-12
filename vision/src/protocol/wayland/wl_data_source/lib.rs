@@ -52,7 +52,7 @@ pub fn dispatch_request(
     let mut cursor = Cursor::new(&args);
     match opcode {
         0 => {
-            let mime_type = {
+            let arg_mime_type = {
                 let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                     x
                 } else {
@@ -88,7 +88,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::WlDataSource::offer(context, mime_type).and_then(
+            return Box::new(super::WlDataSource::offer(context, arg_mime_type).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
@@ -110,7 +110,7 @@ pub fn dispatch_request(
             ));
         }
         2 => {
-            let dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_dnd_actions = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -126,7 +126,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::WlDataSource::set_actions(context, dnd_actions).and_then(
+                super::WlDataSource::set_actions(context, arg_dnd_actions).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,

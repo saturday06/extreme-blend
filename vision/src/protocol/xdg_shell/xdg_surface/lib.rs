@@ -65,7 +65,7 @@ pub fn dispatch_request(
             ));
         }
         1 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -80,7 +80,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgSurface::get_toplevel(context, id).and_then(
+            return Box::new(super::XdgSurface::get_toplevel(context, arg_id).and_then(
                 |(session, next_action)| -> Box<
                     futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
                         + Send,
@@ -88,7 +88,7 @@ pub fn dispatch_request(
             ));
         }
         2 => {
-            let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -96,7 +96,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_parent = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -104,7 +104,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let positioner = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_positioner = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -120,7 +120,7 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgSurface::get_popup(context, id, parent, positioner).and_then(
+                super::XdgSurface::get_popup(context, arg_id, arg_parent, arg_positioner).and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -131,7 +131,7 @@ pub fn dispatch_request(
             );
         }
         3 => {
-            let x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_x = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -139,7 +139,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_y = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -147,7 +147,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_width = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -155,7 +155,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            let height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+            let arg_height = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -171,7 +171,10 @@ pub fn dispatch_request(
                 ));
             }
             return Box::new(
-                super::XdgSurface::set_window_geometry(context, x, y, width, height).and_then(
+                super::XdgSurface::set_window_geometry(
+                    context, arg_x, arg_y, arg_width, arg_height,
+                )
+                .and_then(
                     |(session, next_action)| -> Box<
                         futures::future::Future<
                                 Item = crate::protocol::session::Session,
@@ -182,7 +185,7 @@ pub fn dispatch_request(
             );
         }
         4 => {
-            let serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+            let arg_serial = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
                 x
             } else {
                 return context.invalid_method_dispatch(format!(
@@ -197,12 +200,16 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             }
-            return Box::new(super::XdgSurface::ack_configure(context, serial).and_then(
-                |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
-                > { Box::new(futures::future::ok(session)) },
-            ));
+            return Box::new(
+                super::XdgSurface::ack_configure(context, arg_serial).and_then(
+                    |(session, next_action)| -> Box<
+                        futures::future::Future<
+                                Item = crate::protocol::session::Session,
+                                Error = (),
+                            > + Send,
+                    > { Box::new(futures::future::ok(session)) },
+                ),
+            );
         }
         _ => {}
     };
