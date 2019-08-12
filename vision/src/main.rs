@@ -19,7 +19,7 @@ use winapi::shared::minwindef::MAKEWORD;
 use winapi::shared::ws2def::{ADDRESS_FAMILY, AF_UNIX, SOCKADDR};
 use winapi::um::winsock2::*;
 
-//mod protocol;
+mod protocol;
 mod session_state;
 
 #[repr(C)]

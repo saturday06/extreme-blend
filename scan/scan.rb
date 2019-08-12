@@ -998,3 +998,5 @@ FUNC_BODY
   end
 end
 
+system("cd '#{base_dir}/reflex' && cargo fmt")
+#system("cd '#{base_dir}/vision' && cargo fmt")
