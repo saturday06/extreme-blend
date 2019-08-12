@@ -58,7 +58,9 @@ impl WlBuffer {
     // storage is defined by the buffer factory interface.
     //
     // For possible side-effects to a surface, see wl_surface.attach.
-    pub fn destroy(context: Context<WlBuffer>) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    pub fn destroy(
+        context: Context<WlBuffer>,
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_buffer::destroy is not implemented yet".to_string())
     }
 }

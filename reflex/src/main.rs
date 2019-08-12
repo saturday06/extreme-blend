@@ -1,4 +1,6 @@
+use crate::protocol::connection_stream::ConnectionStream;
 use crate::protocol::event_sink::EventSink;
+use crate::protocol::fd_drop::FdDrop;
 use crate::protocol::request_stream::RequestStream;
 use futures::future::Future;
 use futures::sink::Sink;
@@ -16,8 +18,6 @@ use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::protocol::connection_stream::ConnectionStream;
-use crate::protocol::fd_drop::FdDrop;
 use tokio::net::UnixStream;
 
 mod protocol;
@@ -94,7 +94,7 @@ fn main() {
                                         req.opcode,
                                         req.args,
                                     )
-                                        .map_err(|_| ()),
+                                    .map_err(|_| ()),
                                 );
                                 f
                             } else {
@@ -108,8 +108,9 @@ fn main() {
                                         req.sender_object_id, req.opcode, req.args
                                     ),
                                 };
-                                let f: Box<Future<Item = Session, Error = ()> + Send> =
-                                    Box::new(tx.send(Box::new(error)).map(|_| session).map_err(|_| ()));
+                                let f: Box<Future<Item = Session, Error = ()> + Send> = Box::new(
+                                    tx.send(Box::new(error)).map(|_| session).map_err(|_| ()),
+                                );
                                 f
                             }
                         },

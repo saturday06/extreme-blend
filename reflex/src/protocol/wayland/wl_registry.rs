@@ -23,7 +23,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use crate::protocol::session::{Context, Session, NextAction};
+use crate::protocol::session::{Context, NextAction, Session};
 use byteorder::{NativeEndian, ReadBytesExt};
 use futures::future::{ok, Future};
 use futures::sink::Sink;
@@ -50,12 +50,14 @@ pub fn dispatch_request(
     let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x as usize
     } else {
-        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
     let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
     let mut name_buf = Vec::new();
@@ -65,26 +67,39 @@ pub fn dispatch_request(
     let _version = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
         x
     } else {
-        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     };
 
     if Ok(cursor.position()) != args.len().try_into() {
-        return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     }
 
-    Box::new(WlRegistry::bind(context, name, id).and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-        match next_action {
-            NextAction::Nop => Box::new(futures::future::ok(session)),
-            NextAction::Relay => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session))),
-            NextAction::RelayWait => Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(())).and_then(|_| futures::future::ok(session))),
-        }
-    }))
+    Box::new(WlRegistry::bind(context, name, id).and_then(
+        |(session, next_action)| -> Box<
+            futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send,
+        > {
+            match next_action {
+                NextAction::Nop => Box::new(futures::future::ok(session)),
+                NextAction::Relay => {
+                    Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session)))
+                }
+                NextAction::RelayWait => Box::new(
+                    futures::future::ok(())
+                        .and_then(|_| futures::future::ok(()))
+                        .and_then(|_| futures::future::ok(session)),
+                ),
+            }
+        },
+    ))
 }
 
 // global registry object

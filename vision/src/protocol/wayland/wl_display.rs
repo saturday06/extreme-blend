@@ -1,187 +1,135 @@
-use crate::protocol::wayland_event::WaylandEvent;
-use crate::protocol::wayland_request::WaylandRequest;
-use crate::protocol::wl_registry::WlRegistryGlobal;
-use crate::protocol::wl_resource::WlResource;
-use crate::session_state::SessionState;
-use byteorder::NativeEndian;
-use bytes::BytesMut;
-use futures::future::Future;
-use std::io::Cursor;
+// Copyright © 2008-2011 Kristian Høgsberg
+// Copyright © 2010-2011 Intel Corporation
+// Copyright © 2012-2013 Collabora, Ltd.
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation files
+// (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software,
+// and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice (including the
+// next paragraph) shall be included in all copies or substantial
+// portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#[allow(unused_imports)]
+use crate::protocol::session::{Context, NextAction, Session};
+#[allow(unused_imports)]
+use futures::future::{err, ok, Future};
+#[allow(unused_imports)]
+use futures::sink::Sink;
+#[allow(unused_imports)]
 use std::sync::{Arc, RwLock};
 
-struct WlCallbackDone {
-    pub sender_object_id: u32,
-    pub callback_data: u32,
-}
+pub mod enums;
+pub mod events;
+mod lib;
+pub use lib::*;
 
-impl WaylandEvent for WlCallbackDone {
-    fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8 + 4;
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-        NativeEndian::write_u32(&mut dst[i + 8..], self.callback_data);
-
-        Ok(())
-    }
-}
-
-const WL_DISPLAY_ERROR_INVALID_OBJECT: u32 = 0;
-const WL_DISPLAY_ERROR_INVALID_METHOD: u32 = 1;
-const _WL_DISPLAY_ERROR_NO_MEMORY: u32 = 2;
-
-struct WlDisplayError {
-    object_id: u32,
-    code: u32,
-    message: String,
-}
-
-impl WaylandEvent for WlDisplayError {
-    fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
-        let mut message = self.message.clone();
-        message.push(0 as char);
-        while message.len() % 4 != 0 {
-            message.push(0 as char);
-        }
-
-        let total_len = 8 + 4 + 4 + 4 + message.len();
-        if total_len > 0xffff {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-        }
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
-        NativeEndian::write_u32(&mut dst[i..], 1);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-        NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
-        NativeEndian::write_u32(&mut dst[i + 12..], self.code); // invalid object
-        NativeEndian::write_u32(&mut dst[i + 16..], message.len() as u32);
-        dst[i + 20..].copy_from_slice(message.as_bytes());
-
-        Ok(())
-    }
-}
-
-pub struct WlDisplay {
-    next_callback_data: u32,
-}
+// core global object
+//
+// The core global object.  This is a special singleton object.  It
+// is used for internal Wayland protocol features.
+pub struct WlDisplay {}
 
 impl WlDisplay {
-    fn sync(
-        sender_object: Arc<RwLock<Self>>,
-        _session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        _sender_object_id: u32,
-        wl_callback_id: u32,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        println!("WlDisplay::sync({})", wl_callback_id);
-        let callback_data = {
-            let mut obj = sender_object.write().unwrap();
-            obj.next_callback_data += 1;
-            obj.next_callback_data
-        };
-        Box::new(
-            tx.send(Box::new(WlCallbackDone {
-                sender_object_id: wl_callback_id,
-                callback_data,
-            }))
-            .map_err(|_| ())
-            .map(|_tx| ()),
-        )
-    }
+    // get global registry object
+    //
+    // This request creates a registry object that allows the client
+    // to list and bind the global objects available from the
+    // compositor.
+    //
+    // It should be noted that the server side resources consumed in
+    // response to a get_registry request can only be released when the
+    // client disconnects, not when the client side proxy is destroyed.
+    // Therefore, clients should invoke get_registry as infrequently as
+    // possible to avoid wasting memory.
+    pub fn get_registry(
+        mut context: Context<Arc<RwLock<WlDisplay>>>,
+        registry: u32, // new_id: global registry object
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+        println!("WlDisplay::get_registry({})", registry);
+        context
+            .resources
+            .insert(registry, context.wl_registry.clone().into());
 
-    fn get_registry(
-        _sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx0: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        _sender_object_id: u32,
-        wl_registry_id: u32,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        println!("WlDisplay::get_registry({})", wl_registry_id);
-        let compositor_name: u32;
-        let shm_name: u32;
-        let xdg_wm_base_name: u32;
-        {
-            let mut lock = session_state.write().unwrap();
-            let registry = lock.wl_registry.clone();
-            compositor_name = lock.wl_compositor.read().unwrap().name.clone();
-            shm_name = lock.wl_shm.read().unwrap().name.clone();
-            xdg_wm_base_name = lock.xdg_wm_base.read().unwrap().name.clone();
-            lock.object_map
-                .insert(wl_registry_id, WlResource::WlRegistry(registry));
-        };
         Box::new(
-            futures::future::ok(tx0)
+            futures::future::ok(context.tx.clone())
                 .and_then(move |tx| {
-                    tx.send(Box::new(WlRegistryGlobal {
-                        sender_object_id: wl_registry_id,
-                        name: compositor_name,
-                        interface: "wl_compositor".to_owned(),
-                        version: 1,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME,
+                            interface: "wl_compositor".to_owned(),
+                            version: crate::protocol::wayland::wl_compositor::VERSION,
+                        },
+                    ))
                 })
                 .and_then(move |tx| {
-                    tx.send(Box::new(WlRegistryGlobal {
-                        sender_object_id: wl_registry_id,
-                        name: shm_name,
-                        interface: "wl_shm".to_owned(),
-                        version: 1,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME,
+                            interface: "wl_shm".to_owned(),
+                            version: crate::protocol::wayland::wl_shm::VERSION,
+                        },
+                    ))
                 })
                 .and_then(move |tx| {
-                    tx.send(Box::new(WlRegistryGlobal {
-                        sender_object_id: wl_registry_id,
-                        name: xdg_wm_base_name,
-                        interface: "xdg_wm_base".to_owned(),
-                        version: 2,
-                    }))
+                    tx.send(Box::new(
+                        crate::protocol::wayland::wl_registry::events::Global {
+                            sender_object_id: registry,
+                            name: crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME,
+                            interface: "xdg_wm_base".to_owned(),
+                            version: crate::protocol::xdg_shell::xdg_wm_base::VERSION,
+                        },
+                    ))
                 })
                 .map_err(|_| ())
-                .map(|_tx| ()),
+                .and_then(|_| context.ok()),
         )
     }
 
-    fn handle(
-        sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        opcode: u16,
-        args: Vec<u8>,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        let mut cursor = Cursor::new(&args);
-        match opcode {
-            0 if args.len() >= 4 => {
-                return Self::sync(
-                    sender_object,
-                    session_state,
-                    tx,
-                    sender_object_id,
-                    cursor.read_u32::<NativeEndian>().unwrap(),
-                );
-            }
-            1 if args.len() >= 4 => {
-                return Self::get_registry(
-                    sender_object,
-                    session_state,
-                    tx,
-                    sender_object_id,
-                    cursor.read_u32::<NativeEndian>().unwrap(),
-                );
-            }
-            _ => {}
-        }
+    // asynchronous roundtrip
+    //
+    // The sync request asks the server to emit the 'done' event
+    // on the returned wl_callback object.  Since requests are
+    // handled in-order and events are delivered in-order, this can
+    // be used as a barrier to ensure all previous requests and the
+    // resulting events have been handled.
+    //
+    // The object returned by this request will be destroyed by the
+    // compositor after the callback is fired and as such the client must not
+    // attempt to use it after that point.
+    //
+    // The callback_data passed in the callback is the event serial.
+    pub fn sync(
+        mut context: Context<Arc<RwLock<WlDisplay>>>,
+        callback: u32, // new_id: callback object for the sync request
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+        println!("WlDisplay::sync({})", callback);
+        context.callback_data += 1;
+        let tx = context.tx.clone();
         Box::new(
-            tx.send(Box::new(WlDisplayError {
-                object_id: sender_object_id,
-                code: WL_DISPLAY_ERROR_INVALID_METHOD,
-                message: format!(
-                    "WlDisplay@{} opcode={} args={:?} not found",
-                    1, opcode, args
-                ),
-            }))
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_callback::events::Done {
+                    sender_object_id: callback,
+                    callback_data: context.callback_data,
+                },
+            ))
             .map_err(|_| ())
-            .map(|_tx| ()),
+            .and_then(|_| context.ok()),
         )
     }
 }

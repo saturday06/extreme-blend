@@ -1,64 +1,69 @@
-use crate::protocol::wayland_event::WaylandEvent;
-use crate::protocol::wayland_request::WaylandRequest;
-use crate::protocol::wl_resource::WlResource;
-use crate::session_state::SessionState;
-use futures::future::Future;
-use std::sync::{Arc, RwLock};
-use bytes::BytesMut;
-use std::io::Cursor;
-use byteorder::NativeEndian;
+// Copyright © 2008-2011 Kristian Høgsberg
+// Copyright © 2010-2011 Intel Corporation
+// Copyright © 2012-2013 Collabora, Ltd.
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation files
+// (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software,
+// and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice (including the
+// next paragraph) shall be included in all copies or substantial
+// portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-pub struct WlCompositor {
-    name: u32,
-}
+use crate::protocol::session::{Context, NextAction, Session};
+#[allow(unused_imports)]
+use crate::protocol::wayland;
+#[allow(unused_imports)]
+use futures::future::{err, ok, Future};
+#[allow(unused_imports)]
+use futures::sink::Sink;
+#[allow(unused_imports)]
+use std::sync::{Arc, RwLock};
+
+mod lib;
+pub use lib::*;
+
+// the compositor singleton
+//
+// A compositor.  This object is a singleton global.  The
+// compositor is in charge of combining the contents of multiple
+// surfaces into one displayable output.
+pub struct WlCompositor {}
 
 impl WlCompositor {
-    fn create_surface(
-        _sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        _tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        _sender_object_id: u32,
-        wl_surface_id: u32,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        session_state.write().unwrap().object_map.insert(
-            wl_surface_id,
-            WlResource::WlSurface(Arc::new(RwLock::new(WlSurface {}))),
-        );
-        Box::new(futures::future::ok(()))
+    // create new region
+    //
+    // Ask the compositor to create a new region.
+    pub fn create_region(
+        context: Context<Arc<RwLock<WlCompositor>>>,
+        _id: u32, // new_id: the new region
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+        context.invalid_method("wl_compositor::create_region is not implemented yet".to_string())
     }
 
-    fn handle(
-        sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        opcode: u16,
-        args: Vec<u8>,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        let mut cursor = Cursor::new(&args);
-        match opcode {
-            0 if args.len() == 4 => {
-                return Self::create_surface(
-                    sender_object,
-                    session_state,
-                    tx,
-                    sender_object_id,
-                    cursor.read_u32::<NativeEndian>().unwrap(),
-                );
-            }
-            _ => {}
-        }
-        Box::new(
-            tx.send(Box::new(WlDisplayError {
-                object_id: sender_object_id,
-                code: WL_DISPLAY_ERROR_INVALID_METHOD,
-                message: format!(
-                    "WlCompositor@{} opcode={} args={:?} not found",
-                    sender_object_id, opcode, args
-                ),
-            }))
-            .map_err(|_| ())
-            .map(|_tx| ()),
-        )
+    // create new surface
+    //
+    // Ask the compositor to create a new surface.
+    pub fn create_surface(
+        mut context: Context<Arc<RwLock<WlCompositor>>>,
+        id: u32, // new_id: the new surface
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+        context
+            .resources
+            .insert(id, wayland::wl_surface::WlSurface {}.into());
+        return context.ok();
     }
 }

@@ -23,9 +23,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use crate::protocol::wayland;
-use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
 use futures::future::{err, ok, Future};
 #[allow(unused_imports)]

@@ -100,7 +100,7 @@ pub fn dispatch_request(
         }
         _ => {}
     };
-    Box::new(futures::future::ok(context.into()))
+    return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, args));
 }
 
 impl Into<crate::protocol::resource::Resource>

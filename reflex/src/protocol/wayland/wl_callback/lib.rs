@@ -48,7 +48,7 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    Box::new(futures::future::ok(context.into()))
+    return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, args));
 }
 
 impl Into<crate::protocol::resource::Resource>

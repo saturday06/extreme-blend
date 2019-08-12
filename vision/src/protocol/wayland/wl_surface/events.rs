@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -30,7 +30,7 @@ use byteorder::{ByteOrder, NativeEndian};
 // This is emitted whenever a surface's creation, movement, or resizing
 // results in some part of it being within the scanout region of an
 // output.
-// 
+//
 // Note that a surface may be overlapping with zero or more outputs.
 #[allow(dead_code)]
 pub struct Enter {
@@ -40,8 +40,7 @@ pub struct Enter {
 
 impl super::super::super::event::Event for Enter {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8
- + 4;
+        let total_len = 8 + 4;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
@@ -70,8 +69,7 @@ pub struct Leave {
 
 impl super::super::super::event::Event for Leave {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8
- + 4;
+        let total_len = 8 + 4;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }

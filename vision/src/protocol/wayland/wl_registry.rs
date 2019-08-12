@@ -1,193 +1,214 @@
-use crate::protocol::wayland_event::WaylandEvent;
-use crate::protocol::wayland_request::WaylandRequest;
-use crate::protocol::wayland::wl_shm::WlShmFormat;
-use crate::protocol::wl_resource::WlResource;
-use crate::session_state::SessionState;
-use byteorder::NativeEndian;
-use bytes::BytesMut;
-use futures::future::Future;
-use std::io::Cursor;
+// Copyright © 2008-2011 Kristian Høgsberg
+// Copyright © 2010-2011 Intel Corporation
+// Copyright © 2012-2013 Collabora, Ltd.
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation files
+// (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software,
+// and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice (including the
+// next paragraph) shall be included in all copies or substantial
+// portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+use crate::protocol::session::{Context, NextAction, Session};
+use byteorder::{NativeEndian, ReadBytesExt};
+use futures::future::{ok, Future};
+use futures::sink::Sink;
+use std::convert::TryInto;
+use std::io::{Cursor, Read};
 use std::sync::{Arc, RwLock};
 
-pub struct WlRegistryGlobal {
-    pub sender_object_id: u32,
-    pub name: u32,
-    pub interface: String,
-    pub version: u32,
-}
+pub mod events;
+mod lib;
+pub use lib::{GLOBAL_SINGLETON_NAME, VERSION};
 
-impl WaylandEvent for WlRegistryGlobal {
-    fn encode(&self, dst: &mut BytesMut) -> Result<(), std::io::Error> {
-        let mut aligned_interface = self.interface.clone();
-        aligned_interface.push(0 as char);
-        while aligned_interface.len() % 4 != 0 {
-            aligned_interface.push(0 as char);
-        }
-
-        let total_len = 8 + 4 + 4 + aligned_interface.len() + 4;
-        if total_len > 0xffff {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-        }
-
-        let i = dst.len();
-        dst.resize(i + total_len, 0);
-        NativeEndian::write_u32(&mut dst[i..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[i + 4..], ((total_len << 16) | 0) as u32);
-        NativeEndian::write_u32(&mut dst[i + 8..], self.name);
-        NativeEndian::write_u32(&mut dst[i + 12..], aligned_interface.len() as u32);
-        dst[i + 16..(i + 16 + aligned_interface.len())]
-            .copy_from_slice(aligned_interface.as_bytes());
-        NativeEndian::write_u32(&mut dst[i + 16 + aligned_interface.len()..], self.version);
-
-        Ok(())
+pub fn dispatch_request(
+    context: crate::protocol::session::Context<
+        Arc<RwLock<crate::protocol::wayland::wl_registry::WlRegistry>>,
+    >,
+    opcode: u16,
+    args: Vec<u8>,
+) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+    if opcode != 0 && args.len() <= 8 {
+        return lib::dispatch_request(context, opcode, args);
     }
+
+    let mut cursor = Cursor::new(&args);
+    let name = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        x
+    } else {
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+    };
+    let name_buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        x as usize
+    } else {
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+    };
+    let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
+    let mut name_buf = Vec::new();
+    name_buf.resize(name_buf_len, 0);
+    cursor.read_exact(&mut name_buf).unwrap();
+    cursor.set_position(cursor.position() + (name_buf_len_with_pad - name_buf_len) as u64);
+    let _version = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        x
+    } else {
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+    };
+
+    let id = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+        x
+    } else {
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+    };
+
+    if Ok(cursor.position()) != args.len().try_into() {
+        return context
+            .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
+    }
+
+    Box::new(WlRegistry::bind(context, name, id).and_then(
+        |(session, next_action)| -> Box<
+            futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send,
+        > {
+            match next_action {
+                NextAction::Nop => Box::new(futures::future::ok(session)),
+                NextAction::Relay => {
+                    Box::new(futures::future::ok(()).and_then(|_| futures::future::ok(session)))
+                }
+                NextAction::RelayWait => Box::new(
+                    futures::future::ok(())
+                        .and_then(|_| futures::future::ok(()))
+                        .and_then(|_| futures::future::ok(session)),
+                ),
+            }
+        },
+    ))
 }
 
+// global registry object
+//
+// The singleton global registry object.  The server has a number of
+// global objects that are available to all clients.  These objects
+// typically represent an actual object in the server (for example,
+// an input device) or they are singleton objects that provide
+// extension functionality.
+//
+// When a client creates a registry object, the registry object
+// will emit a global event for each global currently in the
+// registry.  Globals come and go as a result of device or
+// monitor hotplugs, reconfiguration or other events, and the
+// registry will send out global and global_remove events to
+// keep the client up to date with the changes.  To mark the end
+// of the initial burst of events, the client can use the
+// wl_display.sync request immediately after calling
+// wl_display.get_registry.
+//
+// A client can bind to a global object by using the bind
+// request.  This creates a client-side handle that lets the object
+// emit events to the client and lets the client invoke requests on
+// the object.
 pub struct WlRegistry {}
 
 impl WlRegistry {
-    fn bind2(
-        sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        name: u32,
-        _name_buf: Vec<u8>,
-        _version: u32,
-        id: u32,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        Self::bind(sender_object, session_state, tx, sender_object_id, name, id)
-    }
-
-    fn bind(
-        _sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        name: u32,
-        id: u32,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
+    // bind an object to the display
+    //
+    // Binds a new, client-created object to the server using the
+    // specified name as the identifier.
+    pub fn bind(
+        mut context: Context<Arc<RwLock<WlRegistry>>>,
+        name: u32, // uint: unique numeric name of the object
+        id: u32,   // new_id: bounded object
+    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlRegistry::bind(name: {}, id: {})", name, id);
-        if name
-            == session_state
-                .read()
-                .unwrap()
-                .wl_compositor
-                .read()
-                .unwrap()
-                .name
-        {
-            let mut lock = session_state.write().unwrap();
-            let wl_compositor = lock.wl_compositor.clone();
-            lock.object_map
-                .insert(id, WlResource::WlCompositor(wl_compositor));
-            return Box::new(futures::future::ok(()));
-        } else if name == session_state.read().unwrap().wl_shm.read().unwrap().name {
-            let mut lock = session_state.write().unwrap();
-            let wl_shm = lock.wl_shm.clone();
-            lock.object_map.insert(id, WlResource::WlShm(wl_shm));
-            return Box::new(
-                tx.send(Box::new(WlShmFormat {
-                    sender_object_id: id,
-                    format: 0, // argb8888
-                }))
-                .and_then(move |tx1| {
-                    tx1.send(Box::new(WlShmFormat {
-                        sender_object_id: id,
-                        format: 1, // xrgb8888
-                    }))
-                })
-                .map_err(|_| ())
-                .map(|_tx| ()),
-            );
-        } else if name
-            == session_state
-                .read()
-                .unwrap()
-                .xdg_wm_base
-                .read()
-                .unwrap()
-                .name
-        {
-            let mut lock = session_state.write().unwrap();
-            let xdg_wm_base = lock.xdg_wm_base.clone();
-            lock.object_map
-                .insert(id, WlResource::XdgWmBase(xdg_wm_base));
-            return Box::new(futures::future::ok(()));
+        let tx = context.tx.clone();
+
+        match name {
+            crate::protocol::wayland::wl_registry::GLOBAL_SINGLETON_NAME => {
+                context
+                    .resources
+                    .insert(id, context.wl_registry.clone().into());
+                return context.ok();
+            }
+            crate::protocol::wayland::wl_display::GLOBAL_SINGLETON_NAME => {
+                context
+                    .resources
+                    .insert(id, context.wl_display.clone().into());
+                return context.ok();
+            }
+            crate::protocol::wayland::wl_compositor::GLOBAL_SINGLETON_NAME => {
+                context
+                    .resources
+                    .insert(id, context.wl_compositor.clone().into());
+                return context.ok();
+            }
+            crate::protocol::wayland::wl_data_device_manager::GLOBAL_SINGLETON_NAME => {
+                context
+                    .resources
+                    .insert(id, context.wl_data_device_manager.clone().into());
+                return context.ok();
+            }
+            crate::protocol::xdg_shell::xdg_wm_base::GLOBAL_SINGLETON_NAME => {
+                context
+                    .resources
+                    .insert(id, context.xdg_wm_base.clone().into());
+                return context.ok();
+            }
+            crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME => {
+                context.resources.insert(id, context.wl_shm.clone().into());
+                return Box::new(
+                    ok(tx)
+                        .and_then(move |tx1| {
+                            tx1.send(Box::new(crate::protocol::wayland::wl_shm::events::Format {
+                                sender_object_id: id,
+                                format: crate::protocol::wayland::wl_shm::enums::Format::Argb8888
+                                    as u32,
+                            }))
+                        })
+                        .and_then(move |tx1| {
+                            tx1.send(Box::new(crate::protocol::wayland::wl_shm::events::Format {
+                                sender_object_id: id,
+                                format: crate::protocol::wayland::wl_shm::enums::Format::Xrgb8888
+                                    as u32,
+                            }))
+                        })
+                        .map_err(|_| ())
+                        .and_then(|_| context.ok()),
+                );
+            }
+            _ => {}
         }
 
         Box::new(
-            tx.send(Box::new(WlDisplayError {
-                object_id: sender_object_id,
-                code: WL_DISPLAY_ERROR_INVALID_METHOD,
-                message: format!(
-                    "WlRegistry@{}.bind(name={}, id={}) not found",
-                    sender_object_id, name, id
-                ),
-            }))
+            tx.send(Box::new(
+                crate::protocol::wayland::wl_display::events::Error {
+                    sender_object_id: 1,
+                    object_id: context.sender_object_id,
+                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
+                    message: format!(
+                        "wl_registry@{} name={} id={} not found",
+                        context.sender_object_id, name, id
+                    ),
+                },
+            ))
             .map_err(|_| ())
-            .map(|_tx| ()),
-        )
-    }
-
-    fn handle(
-        sender_object: Arc<RwLock<Self>>,
-        session_state: Arc<RwLock<SessionState>>,
-        tx: tokio::sync::mpsc::Sender<Box<WaylandEvent + Send>>,
-        sender_object_id: u32,
-        opcode: u16,
-        args: Vec<u8>,
-    ) -> Box<Future<Item = (), Error = ()> + Send> {
-        let mut cursor = Cursor::new(&args);
-        match opcode {
-            0 if args.len() == 8 => {
-                return Self::bind(
-                    sender_object,
-                    session_state,
-                    tx,
-                    sender_object_id,
-                    cursor.read_u32::<NativeEndian>().unwrap(),
-                    cursor.read_u32::<NativeEndian>().unwrap(),
-                );
-            }
-            0 if args.len() > 8 => {
-                let name = cursor.read_u32::<NativeEndian>().unwrap();
-                let name_buf_len = cursor.read_u32::<NativeEndian>().unwrap() as usize;
-                let name_buf_len_with_pad = (name_buf_len + 3) / 4 * 4;
-                let mut name_buf = Vec::new();
-                name_buf.resize(name_buf_len, 0);
-                cursor.read_exact(&mut name_buf).unwrap();
-                cursor.set_position(
-                    cursor.position() + (name_buf_len_with_pad - name_buf_len) as u64,
-                );
-                let version = cursor.read_u32::<NativeEndian>().unwrap();
-                let id = cursor.read_u32::<NativeEndian>().unwrap();
-                if args.len() == 4 + 4 + name_buf_len_with_pad + 4 + 4 {
-                    return Self::bind2(
-                        sender_object,
-                        session_state,
-                        tx,
-                        sender_object_id,
-                        name,
-                        name_buf,
-                        version,
-                        id,
-                    );
-                }
-            }
-            _ => (),
-        }
-        Box::new(
-            tx.send(Box::new(WlDisplayError {
-                object_id: sender_object_id,
-                code: WL_DISPLAY_ERROR_INVALID_METHOD,
-                message: format!(
-                    "WlRegistry@{} opcode={} args={:?} not found",
-                    sender_object_id, opcode, args
-                ),
-            }))
-            .map_err(|_| ())
-            .map(|_tx| ()),
+            .and_then(|_| context.ok()),
         )
     }
 }

@@ -20,7 +20,6 @@ use winapi::shared::ws2def::{ADDRESS_FAMILY, AF_UNIX, SOCKADDR};
 use winapi::um::winsock2::*;
 
 mod protocol;
-mod session_state;
 
 #[repr(C)]
 struct SOCKADDR_UN {

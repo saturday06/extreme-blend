@@ -1,7 +1,7 @@
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
 // Copyright © 2012-2013 Collabora, Ltd.
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation files
 // (the "Software"), to deal in the Software without restriction,
@@ -9,11 +9,11 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice (including the
 // next paragraph) shall be included in all copies or substantial
 // portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -40,8 +40,7 @@ pub struct DeleteId {
 
 impl super::super::super::event::Event for DeleteId {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8
- + 4;
+        let total_len = 8 + 4;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
@@ -69,15 +68,14 @@ impl super::super::super::event::Event for DeleteId {
 #[allow(dead_code)]
 pub struct Error {
     pub sender_object_id: u32,
-    pub object_id: u32, // object: object where the error occurred
-    pub code: u32, // uint: error code
+    pub object_id: u32,  // object: object where the error occurred
+    pub code: u32,       // uint: error code
     pub message: String, // string: error description
 }
 
 impl super::super::super::event::Event for Error {
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
-        let total_len = 8
- + 4 + 4 + (4 + (self.message.len() + 1 + 3) / 4 * 4);
+        let total_len = 8 + 4 + 4 + (4 + (self.message.len() + 1 + 3) / 4 * 4);
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
         }
@@ -90,7 +88,7 @@ impl super::super::super::event::Event for Error {
 
         NativeEndian::write_u32(&mut dst[i + 8..], self.object_id);
         NativeEndian::write_u32(&mut dst[i + 8 + 4..], self.code);
-                NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], (self.message.len() + 1) as u32);
+        NativeEndian::write_u32(&mut dst[i + 8 + 4 + 4..], (self.message.len() + 1) as u32);
         {
             let mut aligned = self.message.clone();
             aligned.push(0u8.into());
