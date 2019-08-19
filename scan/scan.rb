@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-require "rexml/document"
-require "fileutils"
+require 'rexml/document'
+require 'fileutils'
 require 'pathname'
 require_relative 'reflex'
 require_relative 'vision'
@@ -12,12 +13,12 @@ def render_comment(text, indent = 0)
   lines.pop while lines.last.strip.empty?
   remove_indent_chars =
     lines
-      .select { |line| !line.strip.empty? }
-      .map { |line| line.rstrip.gsub(/^(\s*).*$/, "\\1").size }.min
-  
-  comment = ""
+    .reject { |line| line.strip.empty? }
+    .map { |line| line.rstrip.gsub(/^(\s*).*$/, '\\1').size }.min
+
+  comment = ''
   lines.each do |line|
-    comment += "    " * indent + "// " + line.slice(remove_indent_chars..)&.rstrip.to_s + "\n"
+    comment += '    ' * indent + '// ' + line.slice(remove_indent_chars..)&.rstrip.to_s + "\n"
   end
   comment
 end
@@ -30,18 +31,19 @@ class Protocol
   attr_reader :name, :copyright, :interfaces
 
   def initialize(elem)
-    @name = elem.attributes["name"].strip
+    @name = elem.attributes['name'].strip
     elem.select { |child| child.node_type == :element }.each do |child|
       case child.name
-      when "copyright"
-        raise "Oops! multiple copyright" if @copyright
+      when 'copyright'
+        raise 'Oops! multiple copyright' if @copyright
+
         @copyright = Copyright.new(child)
-      when "interface"
+      when 'interface'
         interface = Interface.new(child, @name)
         next if [
-            ["wayland", "wl_shell"],
-            ["wayland", "wl_shell_surface"],
-          ].find { |protocol_name, interface_name| protocol_name == @name && interface_name == interface.name }
+          %w[wayland wl_shell],
+          %w[wayland wl_shell_surface]
+        ].find { |protocol_name, interface_name| protocol_name == @name && interface_name == interface.name }
 
         @interfaces ||= []
         @interfaces << interface
@@ -65,17 +67,17 @@ class Interface
   attr_reader :name, :description, :requests, :events, :enums, :version, :receiver_type, :protocol_name, :global_singleton, :short_receiver_type, :global_singleton_name_int
 
   def initialize(elem, protocol_name)
-    @name = elem.attributes["name"].strip
+    @name = elem.attributes['name'].strip
     @protocol_name = protocol_name
-    @version = elem.attributes["version"].strip
+    @version = elem.attributes['version'].strip
     @global_singleton = false
     [
-      ["wayland", "wl_display", 1],
-      ["wayland", "wl_compositor", 2],
-      ["wayland", "wl_shm", 3],
-      ["wayland", "wl_registry", 4],
-      ["wayland", "wl_data_device_manager", 5],
-      ["xdg_shell", "xdg_wm_base", 6],
+      ['wayland', 'wl_display', 1],
+      ['wayland', 'wl_compositor', 2],
+      ['wayland', 'wl_shm', 3],
+      ['wayland', 'wl_registry', 4],
+      ['wayland', 'wl_data_device_manager', 5],
+      ['xdg_shell', 'xdg_wm_base', 6]
     ].each do |protocol_name, name, name_int|
       if protocol_name == @protocol_name && name == @name
         @global_singleton = true
@@ -92,18 +94,19 @@ class Interface
     end
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
-      when "description"
-        raise "Oops! multiple description" if @description
+      when 'description'
+        raise 'Oops! multiple description' if @description
+
         @description = Description.new(child)
-      when "request"
+      when 'request'
         @requests ||= []
         @requests << Request.new(child, @requests.size, @name)
         @requests.sort_by!(&:name)
-      when "event"
+      when 'event'
         @events ||= []
         @events << Event.new(child, @events.size)
         @events.sort_by!(&:name)
-      when "enum"
+      when 'enum'
         @enums ||= []
         @enums << Enum.new(child)
         @enums.sort_by!(&:name)
@@ -120,15 +123,15 @@ class Interface
       end
     end
     if fd_arg
-      "mut "
+      'mut '
     else
-      ""
+      ''
     end
   end
 
   def decode
-    result = ""
-    error =<<-ERROR
+    result = ''
+    error = <<-ERROR
         return context.invalid_method_dispatch(format!(
             "opcode={} args={:?} not found", opcode, args
         ));
@@ -139,23 +142,23 @@ class Interface
       return result
     end
 
-    result +=<<-EOF
+    result += <<-EOF
         let sender_object_id = context.sender_object_id;
         #[allow(unused_mut)] let mut cursor = Cursor::new(&args);
         match opcode {
     EOF
 
     @requests.sort_by(&:index).each do |request|
-      result +=<<-DESERIALIZE
+      result += <<-DESERIALIZE
           #{request.index} => {
-              #{request.args.map(&:deserialize).join("")}
+              #{request.args.map(&:deserialize).join('')}
               if Ok(cursor.position()) != args.len().try_into() {
                   return context.invalid_method_dispatch(format!(
                       "opcode={} args={:?} not found", opcode, args
                   ));
               }
               let relay_buf = #{request.encode_vision};
-              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", arg_" + arg.name }.join})
+              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ', arg_' + arg.name }.join})
                   .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       match next_action {
                           NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -167,7 +170,7 @@ class Interface
           },
       DESERIALIZE
     end
-    result +=<<-EOF
+    result += <<-EOF
           _ => {},
         };
     EOF
@@ -176,8 +179,8 @@ class Interface
   end
 
   def decode_vision
-    result = ""
-    error =<<-ERROR
+    result = ''
+    error = <<-ERROR
         return context.invalid_method_dispatch(format!(
             "opcode={} args={:?} not found", opcode, args
         ));
@@ -188,21 +191,21 @@ class Interface
       return result
     end
 
-    result +=<<-EOF
+    result += <<-EOF
         #[allow(unused_mut)] let mut cursor = Cursor::new(&args);
         match opcode {
     EOF
 
     @requests.sort_by(&:index).each do |request|
-      result +=<<-DESERIALIZE
+      result += <<-DESERIALIZE
           #{request.index} => {
-              #{request.args.map(&:deserialize_vision).join("")}
+              #{request.args.map(&:deserialize_vision).join('')}
               if Ok(cursor.position()) != args.len().try_into() {
                   return context.invalid_method_dispatch(format!(
                       "opcode={} args={:?} not found", opcode, args
                   ));
               }
-              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ", arg_" + arg.name }.join})
+              return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ', arg_' + arg.name }.join})
                   .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       Box::new(futures::future::ok(session))
                   })
@@ -210,7 +213,7 @@ class Interface
           },
       DESERIALIZE
     end
-    result +=<<-EOF
+    result += <<-EOF
           _ => {},
         };
     EOF
@@ -223,17 +226,18 @@ class Request
   attr_reader :name, :description, :args, :rust_name, :index
 
   def initialize(elem, index, interface_name)
-    @name = elem.attributes["name"].strip
+    @name = elem.attributes['name'].strip
     @index = index
     @rust_name = @name
-    @rust_name += "_fn" if @rust_name == "move"
+    @rust_name += '_fn' if @rust_name == 'move'
     @args = []
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
-      when "description"
-        raise "Oops! multiple description" if @description
+      when 'description'
+        raise 'Oops! multiple description' if @description
+
         @description = Description.new(child)
-      when "arg"
+      when 'arg'
         arg = Arg.create(child, interface_name)
         @args << arg
       else
@@ -243,7 +247,7 @@ class Request
   end
 
   def encode_vision
-    result =<<FN_ENCODE
+    result = <<FN_ENCODE
     {
         let total_len = 8
 FN_ENCODE
@@ -286,9 +290,9 @@ class Entry
   attr_writer :name
 
   def initialize(elem)
-    @name = elem.attributes["name"].strip
-    @summary = elem.attributes["summary"]&.strip
-    @value = elem.attributes["value"]
+    @name = elem.attributes['name'].strip
+    @summary = elem.attributes['summary']&.strip
+    @value = elem.attributes['value']
   end
 end
 
@@ -296,21 +300,22 @@ class Enum
   attr_reader :name, :description, :entries
 
   def initialize(elem)
-    @name = elem.attributes["name"].strip
+    @name = elem.attributes['name'].strip
     @entries = []
     append_enum_prefix = false
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
-      when "description"
-        raise "Oops! multiple description" if @description
+      when 'description'
+        raise 'Oops! multiple description' if @description
+
         @description = Description.new(child)
-      when "entry"
+      when 'entry'
         entry = Entry.new(child)
         @entries << entry
         if entry.name =~ /^[0-9]/
           append_enum_prefix = true
         elsif entry.name !~ /^[a-z]/
-          raise "invalid entry: " + entry.inspect
+          raise 'invalid entry: ' + entry.inspect
         end
       else
         raise "unhandled element: #{child}"
@@ -318,7 +323,7 @@ class Enum
     end
     if append_enum_prefix
       @entries = @entries.map do |entry|
-        entry.name = @name + "_" + entry.name
+        entry.name = @name + '_' + entry.name
         entry
       end
     end
@@ -329,25 +334,25 @@ class Arg
   attr_reader :name, :summary, :serialize_len, :type, :rust_type, :dynamic_len, :interface_name
 
   def self.create(elem, interface_name)
-    name = elem.attributes["name"]
-    summary = elem.attributes["summary"]
-    type = elem.attributes["type"]
+    name = elem.attributes['name']
+    summary = elem.attributes['summary']
+    type = elem.attributes['type']
     case type
-    when "uint"
+    when 'uint'
       UintArg.new(name, summary, type, interface_name)
-    when "int"
+    when 'int'
       IntArg.new(name, summary, type, interface_name)
-    when "object"
+    when 'object'
       ObjectArg.new(name, summary, type, interface_name)
-    when "string"
+    when 'string'
       StringArg.new(name, summary, type, interface_name)
-    when "fd"
+    when 'fd'
       FdArg.new(name, summary, type, interface_name)
-    when "new_id"
+    when 'new_id'
       NewIdArg.new(name, summary, type, interface_name)
-    when "fixed"
+    when 'fixed'
       FixedArg.new(name, summary, type, interface_name)
-    when "array"
+    when 'array'
       ArrayArg.new(name, summary, type, interface_name)
     else
       raise "unhandled type: #{@type}"
@@ -371,7 +376,7 @@ class Arg
   end
 
   def serialize_vision
-    serialize("arg_")
+    serialize('arg_')
   end
 end
 
@@ -379,25 +384,25 @@ class UintArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "4"
+    @serialize_len = '4'
     @dynamic_len = false
     @type = type
-    @rust_type = "u32"
+    @rust_type = 'u32'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-#{deserialize_return_error}
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                      x
+                  } else {
+      #{deserialize_return_error}
+                  };
+    DESERIAliZE
   end
 end
 
@@ -405,25 +410,25 @@ class IntArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "4"
+    @serialize_len = '4'
     @dynamic_len = false
     @type = type
-    @rust_type = "i32"
+    @rust_type = 'i32'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     "NativeEndian::write_i32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-                x
-            } else {
-#{deserialize_return_error}
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
+                      x
+                  } else {
+      #{deserialize_return_error}
+                  };
+    DESERIAliZE
   end
 end
 
@@ -431,25 +436,25 @@ class ObjectArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "4"
+    @serialize_len = '4'
     @dynamic_len = false
     @type = type
-    @rust_type = "u32"
+    @rust_type = 'u32'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-#{deserialize_return_error}
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                      x
+                  } else {
+      #{deserialize_return_error}
+                  };
+    DESERIAliZE
   end
 end
 
@@ -463,11 +468,11 @@ class StringArg < Arg
     @serialize_vision_len = "{4 + ( arg_#{name}.len() + 1 + 3) / 4 * 4}"
     @dynamic_len = true
     @type = type
-    @rust_type = "String"
+    @rust_type = 'String'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     <<SERIALIZE
         NativeEndian::write_u32(&mut dst[encode_offset..], (#{prefix}#{name}.len() + 1) as u32);
         {
@@ -483,28 +488,28 @@ SERIALIZE
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-#{deserialize_return_error}
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-#{deserialize_return_error}
-                }
-                let s = if let Ok(x) = String::from_utf8(buf) {
-                    x
-                } else {
-#{deserialize_return_error}
-                };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                s
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = {
+                      let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                          x
+                      } else {
+      #{deserialize_return_error}
+                      };
+                      let padded_buf_len = (buf_len + 3) / 4 * 4;
+                      let mut buf = Vec::new();
+                      buf.resize(buf_len as usize, 0);
+                      if let Err(_) = cursor.read_exact(&mut buf) {
+      #{deserialize_return_error}
+                      }
+                      let s = if let Ok(x) = String::from_utf8(buf) {
+                          x
+                      } else {
+      #{deserialize_return_error}
+                      };
+                      cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                      s
+                  };
+    DESERIAliZE
   end
 end
 
@@ -512,25 +517,25 @@ class FdArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "0"
+    @serialize_len = '0'
     @dynamic_len = false
     @type = type
-    @rust_type = "i32"
+    @rust_type = 'i32'
     @interface_name = interface_name
   end
 
   def serialize_vision_len
-    "4"
+    '4'
   end
 
   def serialize_vision
     "NativeEndian::write_i32(&mut dst[encode_offset..], arg_#{name});"
   end
 
-  def serialize(prefix = "self.")
+  def serialize(_prefix = 'self.')
     # "NativeEndian::write_i32(&mut dst[encode_offset..], self.#{name});"
-    "// unimplemented!();"
-    "println!(\"UNIMPLEMENTED!!!!!\");"
+    '// unimplemented!();'
+    'println!("UNIMPLEMENTED!!!!!");'
   end
 
   def deserialize
@@ -550,7 +555,7 @@ class FdArg < Arg
   def deserialize_vision
     <<-DESERIAliZE
       let arg_#{name} = if let Ok(x) = cursor.read_i32::<NativeEndian>() {
-          x 
+          x
       } else {
           #{deserialize_return_error}
       };
@@ -562,21 +567,21 @@ class NewIdArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "4"
+    @serialize_len = '4'
     @dynamic_len = false
     @type = type
-    @rust_type = "u32"
+    @rust_type = 'u32'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
     <<-DESERIAliZE
       let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-          x 
+          x
       } else {
           #{deserialize_return_error}
       };
@@ -588,25 +593,25 @@ class FixedArg < Arg
   def initialize(name, summary, type, interface_name)
     @name = name
     @summary = summary
-    @serialize_len = "4"
+    @serialize_len = '4'
     @dynamic_len = false
     @type = type
-    @rust_type = "u32"
+    @rust_type = 'u32'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     "NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name});"
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                x 
-            } else {
-#{deserialize_return_error}
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                      x
+                  } else {
+      #{deserialize_return_error}
+                  };
+    DESERIAliZE
   end
 end
 
@@ -620,11 +625,11 @@ class ArrayArg < Arg
     @serialize_vision_len = "{4 + ( arg_#{name}.len() + 1 + 3) / 4 * 4}"
     @dynamic_len = true
     @type = type
-    @rust_type = "Vec<u8>"
+    @rust_type = 'Vec<u8>'
     @interface_name = interface_name
   end
 
-  def serialize(prefix = "self.")
+  def serialize(prefix = 'self.')
     <<SERIALIZE
 
         NativeEndian::write_u32(&mut dst[encode_offset..], #{prefix}#{name}.len() as u32);
@@ -639,23 +644,23 @@ SERIALIZE
   end
 
   def deserialize
-    <<DESERIAliZE
-            let arg_#{name} = {
-                let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
-                    x
-                } else {
-#{deserialize_return_error}
-                };
-                let padded_buf_len = (buf_len + 3) / 4 * 4;
-                let mut buf = Vec::new();
-                buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
-#{deserialize_return_error}
-                }
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
-                buf
-            };
-DESERIAliZE
+    <<~DESERIAliZE
+                  let arg_#{name} = {
+                      let buf_len = if let Ok(x) = cursor.read_u32::<NativeEndian>() {
+                          x
+                      } else {
+      #{deserialize_return_error}
+                      };
+                      let padded_buf_len = (buf_len + 3) / 4 * 4;
+                      let mut buf = Vec::new();
+                      buf.resize(buf_len as usize, 0);
+                      if let Err(_) = cursor.read_exact(&mut buf) {
+      #{deserialize_return_error}
+                      }
+                      cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                      buf
+                  };
+    DESERIAliZE
   end
 end
 
@@ -663,15 +668,16 @@ class Event
   attr_reader :name, :description, :args, :index
 
   def initialize(elem, index)
-    @name = elem.attributes["name"].strip
+    @name = elem.attributes['name'].strip
     @index = index
     @args = []
     elem.select { |elem| elem.node_type == :element }.each do |child|
       case child.name
-      when "description"
-        raise "Oops! multiple description" if @description
+      when 'description'
+        raise 'Oops! multiple description' if @description
+
         @description = Description.new(child)
-      when "arg"
+      when 'arg'
         arg = Arg.create(child, @name)
         @args << arg
       else
@@ -681,7 +687,7 @@ class Event
   end
 
   def encode
-    result =<<FN_ENCODE
+    result = <<FN_ENCODE
     fn encode(&self, dst: &mut bytes::BytesMut) -> Result<(), std::io::Error> {
         let total_len = 8
 FN_ENCODE
@@ -703,12 +709,12 @@ FN_ENCODE
         encode_offset += 8;
 HEADER
     @args.each do |arg|
-      result +=<<-ARG
+      result += <<-ARG
           #{arg.serialize}
           encode_offset += #{arg.serialize_len};
       ARG
     end
-    result +=<<-FOOTER
+    result += <<-FOOTER
           let _ = encode_offset;
           Ok(())
       }
@@ -721,14 +727,14 @@ class Description
   attr_reader :text, :summary
 
   def initialize(elem)
-    @summary = elem.attributes["summary"]
+    @summary = elem.attributes['summary']
     @text = elem.text
   end
 
   def comment(indent = 0)
-    r = "    " * indent + "// #{@summary}\n"
+    r = '    ' * indent + "// #{@summary}\n"
     if @text
-      r += "    " * indent + "//\n"
+      r += '    ' * indent + "//\n"
       r += render_comment(@text, indent)
     end
     r
@@ -736,12 +742,12 @@ class Description
 end
 
 protocols = [
-  "/usr/share/wayland/wayland.xml",
-  "/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml",
+  '/usr/share/wayland/wayland.xml',
+  '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml'
 ].map do |path|
   Protocol.new(
     REXML::Document.new(File.read(path)).elements.find do |elem|
-      elem.node_type == :element && elem.name == "protocol"
+      elem.node_type == :element && elem.name == 'protocol'
     end
   )
 end.sort_by(&:name)
