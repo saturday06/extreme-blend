@@ -153,7 +153,7 @@ impl Session {
                 .map_err(|err| panic!("relay err: {:?}", err))
                 .and_then(|(u, _): (UnixStream, Vec<u8>)| {
                     futures::future::ok(Session::from_relay_session(relay_session, u))
-                })
+                }),
         )
         //Box::new(futures::future::ok(self))
     }
@@ -168,7 +168,7 @@ impl Session {
                 .map_err(|err| panic!("relay_wait err: {:?}", err))
                 .and_then(|(u, _): (UnixStream, Vec<u8>)| {
                     futures::future::ok(Session::from_relay_session(relay_session, u))
-                })
+                }),
         )
         //Box::new(futures::future::ok(self))
     }

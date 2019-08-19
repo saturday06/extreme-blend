@@ -97,7 +97,7 @@ fn main() {
                         } else {
                             let tx = session.tx.clone();
                             let error = wl_display::events::Error {
-                                sender_object_id: 1,   
+                                sender_object_id: 1,
                                 object_id: 1,
                                 code: wl_display::enums::Error::InvalidObject as u32,
                                 message: format!(
