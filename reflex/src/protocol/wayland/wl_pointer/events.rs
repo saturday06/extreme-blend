@@ -62,9 +62,10 @@ impl super::super::super::event::Event for Axis {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 4;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 4) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -125,9 +126,10 @@ impl super::super::super::event::Event for AxisDiscrete {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 8;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 8) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -184,9 +186,10 @@ impl super::super::super::event::Event for AxisSource {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 6;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 6) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -231,9 +234,10 @@ impl super::super::super::event::Event for AxisStop {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 7;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 7) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -282,9 +286,10 @@ impl super::super::super::event::Event for Button {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 3;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 3) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -329,9 +334,10 @@ impl super::super::super::event::Event for Enter {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 0;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 0) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -400,9 +406,10 @@ impl super::super::super::event::Event for Frame {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 5;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 5) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -436,9 +443,10 @@ impl super::super::super::event::Event for Leave {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 1;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 1) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;
@@ -475,9 +483,10 @@ impl super::super::super::event::Event for Motion {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 2;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 2) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;

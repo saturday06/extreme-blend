@@ -106,7 +106,7 @@ pub fn dispatch_request(
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
+                if cursor.read_exact(&mut buf).is_err() {
                     return context.invalid_method_dispatch(format!(
                         "opcode={} args={:?} not found",
                         opcode, args
@@ -120,7 +120,7 @@ pub fn dispatch_request(
                         opcode, args
                     ));
                 };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                cursor.set_position(cursor.position() + u64::from(padded_buf_len - buf_len));
                 s
             };
 
@@ -150,7 +150,7 @@ pub fn dispatch_request(
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
+                if cursor.read_exact(&mut buf).is_err() {
                     return context.invalid_method_dispatch(format!(
                         "opcode={} args={:?} not found",
                         opcode, args
@@ -164,7 +164,7 @@ pub fn dispatch_request(
                         opcode, args
                     ));
                 };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                cursor.set_position(cursor.position() + u64::from(padded_buf_len - buf_len));
                 s
             };
 

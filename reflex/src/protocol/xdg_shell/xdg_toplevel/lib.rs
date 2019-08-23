@@ -73,7 +73,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -121,7 +124,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -161,7 +167,7 @@ pub fn dispatch_request(
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
+                if cursor.read_exact(&mut buf).is_err() {
                     return context.invalid_method_dispatch(format!(
                         "opcode={} args={:?} not found",
                         opcode, args
@@ -175,7 +181,7 @@ pub fn dispatch_request(
                         opcode, args
                     ));
                 };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                cursor.set_position(cursor.position() + u64::from(padded_buf_len - buf_len));
                 s
             };
 
@@ -196,7 +202,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -242,7 +251,7 @@ pub fn dispatch_request(
                 let padded_buf_len = (buf_len + 3) / 4 * 4;
                 let mut buf = Vec::new();
                 buf.resize(buf_len as usize, 0);
-                if let Err(_) = cursor.read_exact(&mut buf) {
+                if cursor.read_exact(&mut buf).is_err() {
                     return context.invalid_method_dispatch(format!(
                         "opcode={} args={:?} not found",
                         opcode, args
@@ -256,7 +265,7 @@ pub fn dispatch_request(
                         opcode, args
                     ));
                 };
-                cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                cursor.set_position(cursor.position() + u64::from(padded_buf_len - buf_len));
                 s
             };
 
@@ -277,7 +286,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -365,7 +377,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -434,7 +449,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -506,7 +524,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -572,7 +593,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -636,7 +660,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -683,7 +710,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -722,7 +752,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -770,7 +803,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -815,7 +851,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;
@@ -854,7 +893,10 @@ pub fn dispatch_request(
                 dst.resize(total_len, 0);
 
                 NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-                NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+                NativeEndian::write_u32(
+                    &mut dst[4..],
+                    (total_len << 16) as u32 | u32::from(opcode),
+                );
 
                 #[allow(unused_mut)]
                 let mut encode_offset = 8;

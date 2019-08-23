@@ -88,7 +88,7 @@ where
     ) -> crate::protocol::wayland::wl_display::events::Error {
         crate::protocol::wayland::wl_display::events::Error {
             sender_object_id: 1,
-            object_id: self.sender_object_id.clone(),
+            object_id: self.sender_object_id,
             code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
             message,
         }
@@ -101,11 +101,12 @@ where
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
-        return Box::new(
+
+        Box::new(
             tx.send(Box::new(error))
                 .map_err(|_| ())
                 .map(|_| (session, NextAction::Nop)),
-        );
+        )
     }
 
     pub fn invalid_method_dispatch(
@@ -115,7 +116,8 @@ where
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
-        return Box::new(tx.send(Box::new(error)).map_err(|_| ()).map(|_| session));
+
+        Box::new(tx.send(Box::new(error)).map_err(|_| ()).map(|_| session))
     }
 }
 

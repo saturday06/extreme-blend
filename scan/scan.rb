@@ -265,7 +265,7 @@ FN_ENCODE
         dst.resize(total_len, 0);
 
         NativeEndian::write_u32(&mut dst[0..], sender_object_id);
-        NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | opcode as u32);
+        NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | u32::from(opcode));
 
         #[allow(unused_mut)] let mut encode_offset = 8;
 
@@ -498,7 +498,7 @@ SERIALIZE
                       let padded_buf_len = (buf_len + 3) / 4 * 4;
                       let mut buf = Vec::new();
                       buf.resize(buf_len as usize, 0);
-                      if let Err(_) = cursor.read_exact(&mut buf) {
+                      if cursor.read_exact(&mut buf).is_err() {
       #{deserialize_return_error}
                       }
                       let s = if let Ok(x) = String::from_utf8(buf) {
@@ -506,7 +506,7 @@ SERIALIZE
                       } else {
       #{deserialize_return_error}
                       };
-                      cursor.set_position(cursor.position() + (padded_buf_len - buf_len) as u64);
+                      cursor.set_position(cursor.position() + u64::from(padded_buf_len - buf_len));
                       s
                   };
     DESERIAliZE
@@ -540,7 +540,7 @@ class FdArg < Arg
 
   def deserialize
     <<-DESERIAliZE
-      if context.fds.len() == 0 {
+      if context.fds.is_empty() {
           #{deserialize_return_error}
       }
       let arg_#{name} = {
@@ -704,7 +704,8 @@ FN_ENCODE
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
-        NativeEndian::write_u32(&mut dst[encode_offset + 4..], ((total_len << 16) | #{@index}) as u32);
+        let event_opcode = #{@index};
+        NativeEndian::write_u32(&mut dst[encode_offset + 4..], ((total_len << 16) | event_opcode) as u32);
 
         encode_offset += 8;
 HEADER

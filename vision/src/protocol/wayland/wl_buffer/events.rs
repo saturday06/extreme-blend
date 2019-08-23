@@ -55,9 +55,10 @@ impl super::super::super::event::Event for Release {
         dst.resize(encode_offset + total_len, 0);
 
         NativeEndian::write_u32(&mut dst[encode_offset..], self.sender_object_id);
+        let event_opcode = 0;
         NativeEndian::write_u32(
             &mut dst[encode_offset + 4..],
-            ((total_len << 16) | 0) as u32,
+            ((total_len << 16) | event_opcode) as u32,
         );
 
         encode_offset += 8;

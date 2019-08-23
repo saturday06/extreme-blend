@@ -46,7 +46,7 @@ impl Stream for RequestStream {
             self.pending_requests.len()
         );
 
-        if self.pending_requests.len() > 0 {
+        if !self.pending_requests.is_empty() {
             let rest = self.pending_requests.split_off(1);
             let first = self.pending_requests.pop().expect("pending requests error");
             self.pending_requests = rest;
@@ -57,7 +57,6 @@ impl Stream for RequestStream {
         match self.tokio_registration.poll_read_ready() {
             Ok(Async::Ready(ready)) if ready.is_readable() => {
                 println!("[Stream] read ready");
-                ()
             }
             Ok(Async::Ready(_)) => {
                 println!("[Stream] read ready ERROR");
@@ -117,7 +116,7 @@ impl Stream for RequestStream {
                         continue;
                     }
                     if (msg_hdr.msg_flags & libc::MSG_CTRUNC) != 0 {
-                        fd_len = fd_len * 2;
+                        fd_len *= 2;
                         continue;
                     }
                     if read as usize == buf_len {
@@ -162,7 +161,7 @@ impl Stream for RequestStream {
                     buf.resize(read as usize, 0);
 
                     let mut cmsg_hdr = libc::CMSG_FIRSTHDR(&msg_hdr);
-                    while cmsg_hdr != std::ptr::null_mut() {
+                    while !cmsg_hdr.is_null() {
                         println!("[Stream] cmsg");
                         let cmsg_level = (*cmsg_hdr).cmsg_level;
                         let cmsg_type = (*cmsg_hdr).cmsg_type;
@@ -296,7 +295,7 @@ impl Stream for RequestStream {
                 break;
             }
 
-            let opcode = (0x0000ffff & message_size_and_opcode) as u16;
+            let opcode = (0x0000_ffff & message_size_and_opcode) as u16;
             if message_size < header_size {
                 return Err(());
             }
