@@ -51,7 +51,7 @@ impl WlDataSource {
     // Destroy the data source.
     pub fn destroy(
         context: Context<WlDataSource>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_source::destroy is not implemented yet".to_string())
     }
 
@@ -63,7 +63,7 @@ impl WlDataSource {
     pub fn offer(
         context: Context<WlDataSource>,
         _mime_type: String, // string: mime type offered by the data source
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_source::offer is not implemented yet".to_string())
     }
 
@@ -85,7 +85,7 @@ impl WlDataSource {
     pub fn set_actions(
         context: Context<WlDataSource>,
         _dnd_actions: u32, // uint: actions supported by the data source
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_data_source::set_actions is not implemented yet".to_string())
     }
 }

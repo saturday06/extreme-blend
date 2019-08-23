@@ -47,7 +47,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -99,7 +99,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlDataOffer::accept(context, arg_serial, arg_mime_type).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -155,7 +155,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlDataOffer::receive(context, arg_mime_type, arg_fd).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -172,8 +172,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlDataOffer::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -186,8 +188,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlDataOffer::finish(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -219,7 +223,7 @@ pub fn dispatch_request(
                 super::WlDataOffer::set_actions(context, arg_dnd_actions, arg_preferred_action)
                     .and_then(
                         |(session, next_action)| -> Box<
-                            futures::future::Future<
+                            dyn futures::future::Future<
                                     Item = crate::protocol::session::Session,
                                     Error = (),
                                 > + Send,

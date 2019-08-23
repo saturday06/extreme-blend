@@ -60,7 +60,7 @@ impl WlBuffer {
     // For possible side-effects to a surface, see wl_surface.attach.
     pub fn destroy(
         context: Context<WlBuffer>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_buffer::destroy is not implemented yet".to_string())
     }
 }

@@ -28,7 +28,7 @@ pub struct Session {
     pub wl_registry: Arc<RwLock<WlRegistry>>,
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
-    pub tx: Sender<Box<Event + Send>>,
+    pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
     pub unix_stream: UnixStream,
@@ -48,7 +48,7 @@ where
     pub wl_registry: Arc<RwLock<WlRegistry>>,
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
-    pub tx: Sender<Box<Event + Send>>,
+    pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
     pub unix_stream: UnixStream,
@@ -78,7 +78,7 @@ where
 
     pub fn ok(
         self,
-    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
         Box::new(futures::future::ok((self.into(), NextAction::Relay)))
     }
 
@@ -97,7 +97,7 @@ where
     pub fn invalid_method(
         self,
         message: String,
-    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
@@ -112,7 +112,7 @@ where
     pub fn invalid_method_dispatch(
         self,
         message: String,
-    ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = Session, Error = ()> + Send> {
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
         let session: Session = self.into();
@@ -148,7 +148,7 @@ impl Session {
     pub fn relay(
         self,
         buf: Vec<u8>,
-    ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = Session, Error = ()> + Send> {
         let (relay_session, unix_stream) = self.into_relay_session();
         Box::new(
             tokio::io::write_all(unix_stream, buf)
@@ -163,7 +163,7 @@ impl Session {
     pub fn relay_wait(
         self,
         buf: Vec<u8>,
-    ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = Session, Error = ()> + Send> {
         let (relay_session, unix_stream) = self.into_relay_session();
         Box::new(
             tokio::io::write_all(unix_stream, buf)
@@ -217,7 +217,7 @@ struct RelaySession {
     pub wl_registry: Arc<RwLock<WlRegistry>>,
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
-    pub tx: Sender<Box<Event + Send>>,
+    pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
 }

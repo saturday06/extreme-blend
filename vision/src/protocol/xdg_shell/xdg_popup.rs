@@ -82,7 +82,7 @@ impl XdgPopup {
     // will be sent.
     pub fn destroy(
         context: Context<XdgPopup>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_popup::destroy is not implemented yet".to_string())
     }
 
@@ -133,7 +133,7 @@ impl XdgPopup {
         context: Context<XdgPopup>,
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_popup::grab is not implemented yet".to_string())
     }
 }

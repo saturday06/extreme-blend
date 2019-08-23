@@ -50,7 +50,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -63,8 +63,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgWmBase::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -87,7 +89,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgWmBase::create_positioner(context, arg_id).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -122,7 +124,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgWmBase::get_xdg_surface(context, arg_id, arg_surface).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -148,8 +150,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgWmBase::pong(context, arg_serial).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }

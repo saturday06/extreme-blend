@@ -16,7 +16,7 @@ pub struct EventSink {
     tokio_registration: Arc<tokio::reactor::Registration>,
     pending_bytes: Vec<u8>,
     pending_fds: Vec<RawFd>,
-    pending_events: Vec<Box<Event + Send>>,
+    pending_events: Vec<Box<dyn Event + Send>>,
     //  _tokio_stream: Arc<UnixStream>,
     closed: bool,
 }
@@ -42,7 +42,7 @@ impl EventSink {
 }
 
 impl Sink for EventSink {
-    type SinkItem = Box<Event + Send>;
+    type SinkItem = Box<dyn Event + Send>;
     type SinkError = std::io::Error;
 
     fn start_send(

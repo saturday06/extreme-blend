@@ -29,7 +29,7 @@ def generate_vision(base_dir, protocols)
     f.puts('}')
     f.puts('')
     f.puts(<<~DISPATCH_REQUEST)
-      pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+      pub fn dispatch_request(resource: Resource, session: crate::protocol::session::Session, sender_object_id: u32, opcode: u16, args: Vec<u8>) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
           match resource {
     DISPATCH_REQUEST
     protocols.each do |protocol|
@@ -128,7 +128,7 @@ def generate_vision(base_dir, protocols)
           #[allow(unused_variables)]
           #[allow(dead_code)]
         CODE
-        f.puts("pub fn dispatch_request(context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
+        f.puts("pub fn dispatch_request(context: crate::protocol::session::Context<#{interface.receiver_type}>, opcode: u16, args: Vec<u8>) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {")
         f.puts(interface.decode_vision)
         f.puts('}')
         f.puts(<<~INTO)
@@ -175,7 +175,7 @@ def generate_vision(base_dir, protocols)
               f.print("        _#{arg.name}: #{arg.rust_type}, // #{arg.type}: #{arg.summary}\n")
             end
             f.puts(<<FUNC_BODY)
-    ) -> Box<Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = Session, Error = ()> + Send> {
         context.invalid_method("#{interface.name}::#{request.name} is not implemented yet".to_string())
     }
 FUNC_BODY

@@ -45,7 +45,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::wayland::wl_shm_pool::WlShmPool>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -111,7 +111,7 @@ pub fn dispatch_request(
                 )
                 .and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -128,8 +128,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlShmPool::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -151,8 +153,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlShmPool::resize(context, arg_size).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }

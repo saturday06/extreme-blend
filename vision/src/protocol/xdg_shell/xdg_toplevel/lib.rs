@@ -48,7 +48,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -61,8 +61,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -85,7 +87,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::set_parent(context, arg_parent).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -132,8 +134,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::set_title(context, arg_title).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -177,7 +181,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::set_app_id(context, arg_app_id).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -229,7 +233,7 @@ pub fn dispatch_request(
                 super::XdgToplevel::show_window_menu(context, arg_seat, arg_serial, arg_x, arg_y)
                     .and_then(
                         |(session, next_action)| -> Box<
-                            futures::future::Future<
+                            dyn futures::future::Future<
                                     Item = crate::protocol::session::Session,
                                     Error = (),
                                 > + Send,
@@ -264,7 +268,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::move_fn(context, arg_seat, arg_serial).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -307,7 +311,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::resize(context, arg_seat, arg_serial, arg_edges).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -342,7 +346,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::set_max_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -377,7 +381,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::set_min_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -394,8 +398,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::set_maximized(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -408,8 +414,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::unset_maximized(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -432,7 +440,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgToplevel::set_fullscreen(context, arg_output).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -449,8 +457,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::unset_fullscreen(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -463,8 +473,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgToplevel::set_minimized(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }

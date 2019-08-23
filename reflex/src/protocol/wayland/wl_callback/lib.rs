@@ -47,7 +47,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::wayland::wl_callback::WlCallback>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     return context.invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, args));
 }
 

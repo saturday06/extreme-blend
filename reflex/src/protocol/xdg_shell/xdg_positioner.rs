@@ -66,7 +66,7 @@ impl XdgPositioner {
     // Notify the compositor that the xdg_positioner will no longer be used.
     pub fn destroy(
         context: Context<XdgPositioner>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::destroy is not implemented yet".to_string())
     }
 
@@ -81,7 +81,7 @@ impl XdgPositioner {
     pub fn set_anchor(
         context: Context<XdgPositioner>,
         _anchor: u32, // uint: anchor
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::set_anchor is not implemented yet".to_string())
     }
 
@@ -103,7 +103,7 @@ impl XdgPositioner {
         _y: i32,      // int: y position of anchor rectangle
         _width: i32,  // int: width of anchor rectangle
         _height: i32, // int: height of anchor rectangle
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::set_anchor_rect is not implemented yet".to_string())
     }
 
@@ -125,7 +125,7 @@ impl XdgPositioner {
     pub fn set_constraint_adjustment(
         context: Context<XdgPositioner>,
         _constraint_adjustment: u32, // uint: bit mask of constraint adjustments
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method(
             "xdg_positioner::set_constraint_adjustment is not implemented yet".to_string(),
         )
@@ -142,7 +142,7 @@ impl XdgPositioner {
     pub fn set_gravity(
         context: Context<XdgPositioner>,
         _gravity: u32, // uint: gravity direction
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::set_gravity is not implemented yet".to_string())
     }
 
@@ -163,7 +163,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         _x: i32, // int: surface position x offset
         _y: i32, // int: surface position y offset
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::set_offset is not implemented yet".to_string())
     }
 
@@ -178,7 +178,7 @@ impl XdgPositioner {
         context: Context<XdgPositioner>,
         _width: i32,  // int: width of positioned rectangle
         _height: i32, // int: height of positioned rectangle
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_positioner::set_size is not implemented yet".to_string())
     }
 }

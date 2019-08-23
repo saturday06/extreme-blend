@@ -108,7 +108,7 @@ impl XdgSurface {
     pub fn ack_configure(
         context: Context<XdgSurface>,
         _serial: u32, // uint: the serial from the configure event
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::ack_configure is not implemented yet".to_string())
     }
 
@@ -118,7 +118,7 @@ impl XdgSurface {
     // after its role object has been destroyed.
     pub fn destroy(
         context: Context<XdgSurface>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::destroy is not implemented yet".to_string())
     }
 
@@ -137,7 +137,7 @@ impl XdgSurface {
         _id: u32,         // new_id:
         _parent: u32,     // object:
         _positioner: u32, // object:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_surface::get_popup is not implemented yet".to_string())
     }
 
@@ -151,7 +151,7 @@ impl XdgSurface {
     pub fn get_toplevel(
         mut context: Context<XdgSurface>,
         id: u32, // new_id:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("XdgSurface::get_toplevel(id={})", id);
         context.resources.insert(
             id,
@@ -200,7 +200,7 @@ impl XdgSurface {
         _y: i32,      // int:
         _width: i32,  // int:
         _height: i32, // int:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context
             .invalid_method("xdg_surface::set_window_geometry is not implemented yet".to_string())
     }

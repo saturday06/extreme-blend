@@ -52,7 +52,7 @@ impl WlTouch {
     // release the touch object
     pub fn release(
         context: Context<WlTouch>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_touch::release is not implemented yet".to_string())
     }
 }

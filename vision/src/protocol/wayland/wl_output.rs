@@ -54,7 +54,7 @@ impl WlOutput {
     // use the output object anymore.
     pub fn release(
         context: Context<WlOutput>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_output::release is not implemented yet".to_string())
     }
 }

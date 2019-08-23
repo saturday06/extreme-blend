@@ -50,7 +50,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
@@ -86,8 +86,10 @@ pub fn dispatch_request(
             };
             return Box::new(super::XdgPositioner::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -150,7 +152,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgPositioner::set_size(context, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -238,7 +240,7 @@ pub fn dispatch_request(
                 super::XdgPositioner::set_anchor_rect(context, arg_x, arg_y, arg_width, arg_height)
                     .and_then(
                         |(session, next_action)| -> Box<
-                            futures::future::Future<
+                            dyn futures::future::Future<
                                     Item = crate::protocol::session::Session,
                                     Error = (),
                                 > + Send,
@@ -295,7 +297,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgPositioner::set_anchor(context, arg_anchor).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -352,7 +354,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgPositioner::set_gravity(context, arg_gravity).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -410,7 +412,7 @@ pub fn dispatch_request(
                 super::XdgPositioner::set_constraint_adjustment(context, arg_constraint_adjustment)
                     .and_then(
                         |(session, next_action)| -> Box<
-                            futures::future::Future<
+                            dyn futures::future::Future<
                                     Item = crate::protocol::session::Session,
                                     Error = (),
                                 > + Send,
@@ -477,7 +479,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgPositioner::set_offset(context, arg_x, arg_y).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

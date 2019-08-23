@@ -47,7 +47,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -60,8 +60,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSubsurface::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -92,7 +94,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSubsurface::set_position(context, arg_x, arg_y).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -119,7 +121,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSubsurface::place_above(context, arg_sibling).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -146,7 +148,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSubsurface::place_below(context, arg_sibling).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -163,8 +165,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSubsurface::set_sync(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -177,8 +181,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSubsurface::set_desync(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }

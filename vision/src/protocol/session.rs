@@ -26,7 +26,7 @@ pub struct Session {
     pub wl_registry: Arc<RwLock<WlRegistry>>,
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
-    pub tx: Sender<Box<Event + Send>>,
+    pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
 }
 
@@ -44,7 +44,7 @@ where
     pub wl_registry: Arc<RwLock<WlRegistry>>,
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
-    pub tx: Sender<Box<Event + Send>>,
+    pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
 }
 
@@ -70,7 +70,7 @@ where
 
     pub fn ok(
         self,
-    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("ok");
         Box::new(futures::future::ok((self.into(), NextAction::Relay)))
     }
@@ -90,7 +90,7 @@ where
     pub fn invalid_method(
         self,
         message: String,
-    ) -> Box<futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("invalid method {}", &message);
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);
@@ -105,7 +105,7 @@ where
     pub fn invalid_method_dispatch(
         self,
         message: String,
-    ) -> Box<futures::future::Future<Item = Session, Error = ()> + Send> {
+    ) -> Box<dyn futures::future::Future<Item = Session, Error = ()> + Send> {
         println!("invalid method {}", &message);
         let tx = self.tx.clone();
         let error = self.create_invalid_method_error(message);

@@ -36,7 +36,7 @@ pub fn dispatch_request(
     sender_object_id: u32,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     match resource {
         Resource::WlBuffer(object) => super::wayland::wl_buffer::dispatch_request(
             crate::protocol::session::Context::new(session, object, sender_object_id),

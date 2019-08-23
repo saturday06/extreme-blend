@@ -45,7 +45,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::wayland::wl_surface::WlSurface>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -58,8 +58,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSurface::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -98,7 +100,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::attach(context, arg_buffer, arg_x, arg_y).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -149,7 +151,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::damage(context, arg_x, arg_y, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -175,8 +177,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSurface::frame(context, arg_callback).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -199,7 +203,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::set_opaque_region(context, arg_region).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -226,7 +230,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::set_input_region(context, arg_region).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -243,8 +247,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::WlSurface::commit(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -267,7 +273,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::set_buffer_transform(context, arg_transform).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -294,7 +300,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlSurface::set_buffer_scale(context, arg_scale).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -346,7 +352,7 @@ pub fn dispatch_request(
                 super::WlSurface::damage_buffer(context, arg_x, arg_y, arg_width, arg_height)
                     .and_then(
                         |(session, next_action)| -> Box<
-                            futures::future::Future<
+                            dyn futures::future::Future<
                                     Item = crate::protocol::session::Session,
                                     Error = (),
                                 > + Send,

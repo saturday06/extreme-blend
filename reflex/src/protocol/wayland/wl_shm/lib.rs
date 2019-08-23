@@ -51,7 +51,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
@@ -65,7 +65,7 @@ pub fn dispatch_request(
                     opcode, args
                 ));
             };
-            if context.fds.len() == 0 {
+            if context.fds.is_empty() {
                 return context.invalid_method_dispatch(format!(
                     "opcode={} args={:?} not found",
                     opcode, args
@@ -123,7 +123,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlShm::create_pool(context, arg_id, arg_fd, arg_size).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

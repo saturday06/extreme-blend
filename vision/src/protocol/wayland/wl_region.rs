@@ -53,7 +53,7 @@ impl WlRegion {
         _y: i32,      // int: region-local y coordinate
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::add is not implemented yet".to_string())
     }
 
@@ -62,7 +62,7 @@ impl WlRegion {
     // Destroy the region.  This will invalidate the object ID.
     pub fn destroy(
         context: Context<WlRegion>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::destroy is not implemented yet".to_string())
     }
 
@@ -75,7 +75,7 @@ impl WlRegion {
         _y: i32,      // int: region-local y coordinate
         _width: i32,  // int: rectangle width
         _height: i32, // int: rectangle height
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_region::subtract is not implemented yet".to_string())
     }
 }

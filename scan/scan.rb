@@ -159,7 +159,7 @@ class Interface
               }
               let relay_buf = #{request.encode_vision};
               return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ', arg_' + arg.name }.join})
-                  .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+                  .and_then(|(session, next_action)| -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       match next_action {
                           NextAction::Nop => Box::new(futures::future::ok(session)),
                           NextAction::Relay => session.relay(relay_buf),
@@ -206,7 +206,7 @@ class Interface
                   ));
               }
               return Box::new(super::#{camel_case(@name)}::#{request.rust_name}(context#{request.args.map { |arg| ', arg_' + arg.name }.join})
-                  .and_then(|(session, next_action)| -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+                  .and_then(|(session, next_action)| -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
                       Box::new(futures::future::ok(session))
                   })
               );

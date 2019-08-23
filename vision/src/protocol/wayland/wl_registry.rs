@@ -41,7 +41,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     if opcode != 0 && args.len() <= 8 {
         return lib::dispatch_request(context, opcode, args);
     }
@@ -85,7 +85,8 @@ pub fn dispatch_request(
 
     Box::new(WlRegistry::bind(context, name, id).and_then(
         |(session, next_action)| -> Box<
-            futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send,
+            dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
+                + Send,
         > {
             match next_action {
                 NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -135,7 +136,7 @@ impl WlRegistry {
         mut context: Context<Arc<RwLock<WlRegistry>>>,
         name: u32, // uint: unique numeric name of the object
         id: u32,   // new_id: bounded object
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlRegistry::bind(name: {}, id: {})", name, id);
         let tx = context.tx.clone();
 

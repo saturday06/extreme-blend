@@ -64,7 +64,7 @@ impl XdgToplevel {
     // see "Unmapping" behavior in interface section for details.
     pub fn destroy(
         context: Context<XdgToplevel>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::destroy is not implemented yet".to_string())
     }
 
@@ -90,7 +90,7 @@ impl XdgToplevel {
         context: Context<XdgToplevel>,
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::move is not implemented yet".to_string())
     }
 
@@ -131,7 +131,7 @@ impl XdgToplevel {
         _seat: u32,   // object: the wl_seat of the user event
         _serial: u32, // uint: the serial of the user event
         _edges: u32,  // uint: which edge or corner is being dragged
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::resize is not implemented yet".to_string())
     }
 
@@ -160,7 +160,7 @@ impl XdgToplevel {
     pub fn set_app_id(
         context: Context<XdgToplevel>,
         _app_id: String, // string:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_app_id is not implemented yet".to_string())
     }
 
@@ -192,7 +192,7 @@ impl XdgToplevel {
     pub fn set_fullscreen(
         context: Context<XdgToplevel>,
         _output: u32, // object:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_fullscreen is not implemented yet".to_string())
     }
 
@@ -236,7 +236,7 @@ impl XdgToplevel {
         context: Context<XdgToplevel>,
         _width: i32,  // int:
         _height: i32, // int:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_max_size is not implemented yet".to_string())
     }
 
@@ -263,7 +263,7 @@ impl XdgToplevel {
     // unmaximized unless overridden by the compositor.
     pub fn set_maximized(
         context: Context<XdgToplevel>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_maximized is not implemented yet".to_string())
     }
 
@@ -307,7 +307,7 @@ impl XdgToplevel {
         context: Context<XdgToplevel>,
         _width: i32,  // int:
         _height: i32, // int:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_min_size is not implemented yet".to_string())
     }
 
@@ -323,7 +323,7 @@ impl XdgToplevel {
     // similar compositor features.
     pub fn set_minimized(
         context: Context<XdgToplevel>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_minimized is not implemented yet".to_string())
     }
 
@@ -348,7 +348,7 @@ impl XdgToplevel {
     pub fn set_parent(
         context: Context<XdgToplevel>,
         _parent: u32, // object:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_parent is not implemented yet".to_string())
     }
 
@@ -364,7 +364,7 @@ impl XdgToplevel {
     pub fn set_title(
         context: Context<XdgToplevel>,
         _title: String, // string:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::set_title is not implemented yet".to_string())
     }
 
@@ -387,7 +387,7 @@ impl XdgToplevel {
         _serial: u32, // uint: the serial of the user event
         _x: i32,      // int: the x position to pop up the window menu at
         _y: i32,      // int: the y position to pop up the window menu at
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::show_window_menu is not implemented yet".to_string())
     }
 
@@ -412,7 +412,7 @@ impl XdgToplevel {
     // content (see ack_configure).
     pub fn unset_fullscreen(
         context: Context<XdgToplevel>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::unset_fullscreen is not implemented yet".to_string())
     }
 
@@ -441,7 +441,7 @@ impl XdgToplevel {
     // unmaximized unless overridden by the compositor.
     pub fn unset_maximized(
         context: Context<XdgToplevel>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_toplevel::unset_maximized is not implemented yet".to_string())
     }
 }

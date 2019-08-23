@@ -46,7 +46,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::xdg_shell::xdg_popup::XdgPopup>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
     match opcode {
@@ -59,8 +59,10 @@ pub fn dispatch_request(
             }
             return Box::new(super::XdgPopup::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > { Box::new(futures::future::ok(session)) },
             ));
         }
@@ -91,7 +93,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgPopup::grab(context, arg_seat, arg_serial).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

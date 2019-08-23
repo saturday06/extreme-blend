@@ -51,7 +51,7 @@ pub fn dispatch_request(
     >,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
@@ -99,7 +99,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlCompositor::create_surface(context, arg_id).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -156,7 +156,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlCompositor::create_region(context, arg_id).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

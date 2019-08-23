@@ -71,7 +71,7 @@ impl WlShmPool {
         height: i32, // int: buffer height, in pixels
         stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
         format: u32, // uint: buffer pixel format
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.resources.insert(
             id,
             crate::protocol::wayland::wl_buffer::WlBuffer {
@@ -95,7 +95,7 @@ impl WlShmPool {
     // are gone.
     pub fn destroy(
         context: Context<WlShmPool>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_shm_pool::destroy is not implemented yet".to_string())
     }
 
@@ -108,7 +108,7 @@ impl WlShmPool {
     pub fn resize(
         context: Context<WlShmPool>,
         _size: i32, // int: new size of the pool, in bytes
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_shm_pool::resize is not implemented yet".to_string())
     }
 }

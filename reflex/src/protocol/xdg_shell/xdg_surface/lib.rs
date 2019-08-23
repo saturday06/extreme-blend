@@ -48,7 +48,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::xdg_shell::xdg_surface::XdgSurface>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
@@ -84,8 +84,10 @@ pub fn dispatch_request(
             };
             return Box::new(super::XdgSurface::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -137,8 +139,10 @@ pub fn dispatch_request(
             };
             return Box::new(super::XdgSurface::get_toplevel(context, arg_id).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -211,7 +215,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgSurface::get_popup(context, arg_id, arg_parent, arg_positioner).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -301,7 +305,7 @@ pub fn dispatch_request(
                 )
                 .and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -358,7 +362,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::XdgSurface::ack_configure(context, arg_serial).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

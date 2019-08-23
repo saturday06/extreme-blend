@@ -47,7 +47,7 @@ pub fn dispatch_request(
     context: crate::protocol::session::Context<crate::protocol::wayland::wl_region::WlRegion>,
     opcode: u16,
     args: Vec<u8>,
-) -> Box<futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
+) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
     let sender_object_id = context.sender_object_id;
     #[allow(unused_mut)]
     let mut cursor = Cursor::new(&args);
@@ -83,8 +83,10 @@ pub fn dispatch_request(
             };
             return Box::new(super::WlRegion::destroy(context).and_then(
                 |(session, next_action)| -> Box<
-                    futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
-                        + Send,
+                    dyn futures::future::Future<
+                            Item = crate::protocol::session::Session,
+                            Error = (),
+                        > + Send,
                 > {
                     match next_action {
                         NextAction::Nop => Box::new(futures::future::ok(session)),
@@ -167,7 +169,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlRegion::add(context, arg_x, arg_y, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,
@@ -254,7 +256,7 @@ pub fn dispatch_request(
             return Box::new(
                 super::WlRegion::subtract(context, arg_x, arg_y, arg_width, arg_height).and_then(
                     |(session, next_action)| -> Box<
-                        futures::future::Future<
+                        dyn futures::future::Future<
                                 Item = crate::protocol::session::Session,
                                 Error = (),
                             > + Send,

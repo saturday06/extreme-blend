@@ -56,7 +56,7 @@ impl XdgWmBase {
     pub fn create_positioner(
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _id: u32, // new_id:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::create_positioner is not implemented yet".to_string())
     }
 
@@ -69,7 +69,7 @@ impl XdgWmBase {
     // and will result in a protocol error.
     pub fn destroy(
         context: Context<Arc<RwLock<XdgWmBase>>>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::destroy is not implemented yet".to_string())
     }
 
@@ -90,7 +90,7 @@ impl XdgWmBase {
         mut context: Context<Arc<RwLock<XdgWmBase>>>,
         id: u32,      // new_id:
         surface: u32, // object:
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("XdgWmBase::get_xdg_surface(id={}, surface={})", id, surface);
         context.resources.insert(
             id,
@@ -109,7 +109,7 @@ impl XdgWmBase {
     pub fn pong(
         context: Context<Arc<RwLock<XdgWmBase>>>,
         _serial: u32, // uint: serial of the ping event
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("xdg_wm_base::pong is not implemented yet".to_string())
     }
 }

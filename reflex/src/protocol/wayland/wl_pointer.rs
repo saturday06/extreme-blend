@@ -59,7 +59,7 @@ impl WlPointer {
     // wl_pointer_destroy() after using this request.
     pub fn release(
         context: Context<WlPointer>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_pointer::release is not implemented yet".to_string())
     }
 
@@ -102,7 +102,7 @@ impl WlPointer {
         _surface: u32,   // object: pointer surface
         _hotspot_x: i32, // int: surface-local x coordinate
         _hotspot_y: i32, // int: surface-local y coordinate
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_pointer::set_cursor is not implemented yet".to_string())
     }
 }

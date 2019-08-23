@@ -99,7 +99,7 @@ impl WlSubsurface {
     // a sub-surface. The wl_surface is unmapped immediately.
     pub fn destroy(
         context: Context<WlSubsurface>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::destroy is not implemented yet".to_string())
     }
 
@@ -123,7 +123,7 @@ impl WlSubsurface {
     pub fn place_above(
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::place_above is not implemented yet".to_string())
     }
 
@@ -134,7 +134,7 @@ impl WlSubsurface {
     pub fn place_below(
         context: Context<WlSubsurface>,
         _sibling: u32, // object: the reference surface
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::place_below is not implemented yet".to_string())
     }
 
@@ -161,7 +161,7 @@ impl WlSubsurface {
     // the cached state is applied on set_desync.
     pub fn set_desync(
         context: Context<WlSubsurface>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::set_desync is not implemented yet".to_string())
     }
 
@@ -187,7 +187,7 @@ impl WlSubsurface {
         context: Context<WlSubsurface>,
         _x: i32, // int: x coordinate in the parent surface
         _y: i32, // int: y coordinate in the parent surface
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::set_position is not implemented yet".to_string())
     }
 
@@ -208,7 +208,7 @@ impl WlSubsurface {
     // See wl_subsurface for the recursive effect of this mode.
     pub fn set_sync(
         context: Context<WlSubsurface>,
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.invalid_method("wl_subsurface::set_sync is not implemented yet".to_string())
     }
 }

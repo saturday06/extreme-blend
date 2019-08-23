@@ -63,7 +63,7 @@ impl WlShm {
         id: u32,   // new_id: pool to create
         fd: i32,   // fd: file descriptor for the pool
         size: i32, // int: pool size, in bytes
-    ) -> Box<Future<Item = (Session, NextAction), Error = ()> + Send> {
+    ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         context.resources.insert(
             id,
             crate::protocol::wayland::wl_shm_pool::WlShmPool { fd, size }.into(),
