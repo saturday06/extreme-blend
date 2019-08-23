@@ -122,12 +122,10 @@ fn main() {
 
     let mut server_socket = ServerSocket::bind().unwrap();
     loop {
-        let stream = if let Some(x) = server_socket.accept() {
-            x
+        if let Some(stream) = server_socket.accept() {
+            handle_client(&mut runtime, stream, global.clone());
         } else {
             eprintln!("Oops!");
-            continue;
-        };
-        handle_client(&mut runtime, stream, global.clone());
+        }
     }
 }
