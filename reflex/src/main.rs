@@ -19,6 +19,7 @@ use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::net::UnixStream;
+use tokio::io::AsyncRead;
 
 mod protocol;
 
@@ -55,16 +56,14 @@ fn handle_client_input(
         return f;
     };
 
-    let f: Box<dyn Future<Item = Session, Error = ()> + Send> = Box::new(
+    let f: Box<dyn Future<Item = Session, Error = ()> + Send> =
         protocol::resource::dispatch_request(
             res,
             session,
             request.sender_object_id,
             request.opcode,
             request.args,
-        )
-        .map_err(|_| ()),
-    );
+        );
     f
 }
 
@@ -73,6 +72,7 @@ fn handle_client(
     global: Global,
     fd: i32,
 ) -> Box<dyn Future<Item = (), Error = std::io::Error> + Send> {
+    let (r, w) = stream.split();
     let fd_drop = Arc::new(FdDrop::new(fd));
     let tokio_registration = Arc::new(tokio::reactor::Registration::new());
     tokio_registration
@@ -99,7 +99,7 @@ fn handle_client(
         tx: tx0,
         callback_data: 0,
         fds: Vec::new(),
-        unix_stream: stream,
+        unix_stream: w,
     };
 
     session0

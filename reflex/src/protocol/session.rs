@@ -13,6 +13,7 @@ use std::os::unix::io::RawFd;
 use std::sync::{Arc, RwLock};
 use tokio::net::UnixStream;
 use tokio::sync::mpsc::Sender;
+use tokio::io::WriteHalf;
 
 pub enum NextAction {
     Nop,
@@ -31,7 +32,7 @@ pub struct Session {
     pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
-    pub unix_stream: UnixStream,
+    pub unix_stream: WriteHalf<UnixStream>,
 }
 
 pub struct Context<T>
@@ -51,7 +52,7 @@ where
     pub tx: Sender<Box<dyn Event + Send>>,
     pub callback_data: u32,
     pub fds: Vec<RawFd>,
-    pub unix_stream: UnixStream,
+    pub unix_stream: WriteHalf<UnixStream>,
 }
 
 impl<T> Context<T>
@@ -153,7 +154,7 @@ impl Session {
         Box::new(
             tokio::io::write_all(unix_stream, buf)
                 .map_err(|err| panic!("relay err: {:?}", err))
-                .and_then(|(u, _): (UnixStream, Vec<u8>)| {
+                .and_then(|(u, _): (WriteHalf<UnixStream>, Vec<u8>)| {
                     futures::future::ok(Session::from_relay_session(relay_session, u))
                 }),
         )
@@ -168,14 +169,14 @@ impl Session {
         Box::new(
             tokio::io::write_all(unix_stream, buf)
                 .map_err(|err| panic!("relay_wait err: {:?}", err))
-                .and_then(|(u, _): (UnixStream, Vec<u8>)| {
+                .and_then(|(u, _): (WriteHalf<UnixStream>, Vec<u8>)| {
                     futures::future::ok(Session::from_relay_session(relay_session, u))
                 }),
         )
         //Box::new(futures::future::ok(self))
     }
 
-    fn from_relay_session(relay_session: RelaySession, unix_stream: UnixStream) -> Session {
+    fn from_relay_session(relay_session: RelaySession, unix_stream: WriteHalf<UnixStream>) -> Session {
         Session {
             resources: relay_session.resources,
             wl_display: relay_session.wl_display,
@@ -191,7 +192,7 @@ impl Session {
         }
     }
 
-    fn into_relay_session(self) -> (RelaySession, UnixStream) {
+    fn into_relay_session(self) -> (RelaySession, WriteHalf<UnixStream>) {
         let unix_stream = self.unix_stream;
         let relay_session = RelaySession {
             resources: self.resources,
