@@ -21,6 +21,8 @@ impl tokio::codec::Encoder for Codec {
         res: Box<dyn Event + Send>,
         dst: &mut BytesMut,
     ) -> Result<(), Self::Error> {
+        let response_type: [u8; 4] = [0, 0, 0, 0];
+        dst.extend_from_slice(&response_type);
         res.encode(dst)
     }
 }

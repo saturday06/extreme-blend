@@ -42,7 +42,7 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    if opcode != 0 && args.len() <= 8 {
+    if opcode != 0 || args.len() <= 8 {
         return lib::dispatch_request(context, opcode, args);
     }
 

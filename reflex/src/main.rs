@@ -1,8 +1,11 @@
 use crate::protocol::connection_stream::ConnectionStream;
 use crate::protocol::event_sink::EventSink;
 use crate::protocol::fd_drop::FdDrop;
+use crate::protocol::raw_event::RawEvent;
 use crate::protocol::request_stream::RequestStream;
+use byteorder::{NativeEndian, ReadBytesExt};
 use futures::future::Future;
+use futures::future::{loop_fn, Loop};
 use futures::sink::Sink;
 use futures::stream::Stream;
 use protocol::event::Event;
@@ -18,8 +21,9 @@ use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use tokio::io::{AsyncRead, ReadHalf};
 use tokio::net::UnixStream;
-use tokio::io::AsyncRead;
+use tokio::sync::mpsc::Sender;
 
 mod protocol;
 
@@ -72,7 +76,7 @@ fn handle_client(
     global: Global,
     fd: i32,
 ) -> Box<dyn Future<Item = (), Error = std::io::Error> + Send> {
-    let (r, w) = stream.split();
+    let (r0, w0) = stream.split();
     let fd_drop = Arc::new(FdDrop::new(fd));
     let tokio_registration = Arc::new(tokio::reactor::Registration::new());
     tokio_registration
@@ -88,6 +92,53 @@ fn handle_client(
         .and_then(|_| Ok(()));
     tokio::spawn(output_session);
 
+    let r_loop = loop_fn((tx0.clone(), r0), |(tx, r)| {
+        let mut header_buf = Vec::new();
+        header_buf.resize(12, 0);
+        tokio::io::read_exact(r, header_buf)
+            .map_err(|_| ())
+            .and_then(|(r1, buf1)| {
+                let mut cursor = std::io::Cursor::new(&buf1);
+                let response_type = cursor.read_u32::<NativeEndian>().unwrap();
+                let message_size = if response_type == 0 {
+                    let _sender_object_id = cursor.read_u32::<NativeEndian>().unwrap();
+                    let message_size_and_opcode = cursor.read_u32::<NativeEndian>().unwrap();
+                    (message_size_and_opcode >> 16) as usize
+                } else {
+                    cursor.read_u32::<NativeEndian>().unwrap() as usize
+                };
+                let mut buf2: Vec<u8> = Vec::new();
+                buf2.resize(message_size - 8, 0);
+                tokio::io::read_exact(r1, buf2)
+                    .map_err(|_| ())
+                    .and_then(|(r2, buf3)| futures::future::ok((r2, buf1, buf3)))
+            })
+            .and_then(|(r1, buf1, buf2)| {
+                let mut cursor = std::io::Cursor::new(&buf1);
+                let response_type = cursor.read_u32::<NativeEndian>().unwrap();
+                let mut data = Vec::new();
+                data.extend_from_slice(&buf1[4..]);
+                data.extend_from_slice(&buf2[..]);
+                println!("[Vision Event] type={} data={:?}", response_type, &data);
+                let f: Box<
+                    dyn futures::future::Future<
+                            Item = Loop<_, (Sender<Box<dyn Event + Send>>, ReadHalf<UnixStream>)>,
+                            Error = (),
+                        > + Send,
+                > = if response_type == 0 {
+                    Box::new(
+                        tx.send(Box::new(RawEvent { data }))
+                            .map_err(|_| ())
+                            .and_then(|tx1| Ok(Loop::Continue((tx1, r1)))),
+                    )
+                } else {
+                    Box::new(futures::future::ok(Loop::Continue((tx, r1))))
+                };
+                f
+            })
+    });
+    tokio::spawn(r_loop);
+
     let mut session0 = Session {
         wl_display: global.wl_display,
         wl_registry: global.wl_registry,
@@ -97,9 +148,8 @@ fn handle_client(
         xdg_wm_base: global.xdg_wm_base,
         resources: HashMap::new(),
         tx: tx0,
-        callback_data: 0,
         fds: Vec::new(),
-        unix_stream: w,
+        unix_stream: w0,
     };
 
     session0

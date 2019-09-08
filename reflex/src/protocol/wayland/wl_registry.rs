@@ -24,7 +24,7 @@
 // SOFTWARE.
 
 use crate::protocol::session::{Context, NextAction, Session};
-use byteorder::{NativeEndian, ReadBytesExt};
+use byteorder::{ByteOrder, NativeEndian, ReadBytesExt};
 use futures::future::{ok, Future};
 use futures::sink::Sink;
 use std::convert::TryInto;
@@ -42,7 +42,7 @@ pub fn dispatch_request(
     opcode: u16,
     args: Vec<u8>,
 ) -> Box<dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()> + Send> {
-    if opcode != 0 && args.len() <= 8 {
+    if opcode != 0 || args.len() <= 8 {
         return lib::dispatch_request(context, opcode, args);
     }
 
@@ -83,6 +83,33 @@ pub fn dispatch_request(
             .invalid_method_dispatch(format!("opcode={} args={:?} not found", opcode, &args));
     }
 
+    let relay_buf = {
+        let total_len = 8 + 4 + 4;
+        if total_len > 0xffff {
+            println!("Oops! total_len={}", total_len);
+            return Box::new(futures::future::err(()));
+        }
+
+        let mut dst: Vec<u8> = Vec::new();
+        dst.resize(total_len, 0);
+
+        NativeEndian::write_u32(&mut dst[0..], context.sender_object_id);
+        NativeEndian::write_u32(
+            &mut dst[4..],
+            (total_len << 16) as u32 | u32::from(opcode),
+        );
+
+        #[allow(unused_mut)]
+            let mut encode_offset = 8;
+
+        NativeEndian::write_u32(&mut dst[encode_offset..], name);
+        encode_offset += 4;
+        NativeEndian::write_u32(&mut dst[encode_offset..], id);
+        encode_offset += 4;
+        let _ = encode_offset;
+        dst
+    };
+
     Box::new(WlRegistry::bind(context, name, id).and_then(
         |(session, next_action)| -> Box<
             dyn futures::future::Future<Item = crate::protocol::session::Session, Error = ()>
@@ -91,12 +118,11 @@ pub fn dispatch_request(
             match next_action {
                 NextAction::Nop => Box::new(futures::future::ok(session)),
                 NextAction::Relay => {
-                    let buf = Vec::new();
-                    session.relay(buf)
+                    println!("[WlRegistry Relay]: {:?}", &relay_buf);
+                    session.relay(relay_buf)
                 }
                 NextAction::RelayWait => {
-                    let buf = Vec::new();
-                    session.relay_wait(buf)
+                    session.relay_wait(relay_buf)
                 }
             }
         },
@@ -138,7 +164,6 @@ impl WlRegistry {
         id: u32,   // new_id: bounded object
     ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("WlRegistry::bind(name: {}, id: {})", name, id);
-        let tx = context.tx.clone();
 
         match name {
             crate::protocol::wayland::wl_registry::GLOBAL_SINGLETON_NAME => {
@@ -173,43 +198,11 @@ impl WlRegistry {
             }
             crate::protocol::wayland::wl_shm::GLOBAL_SINGLETON_NAME => {
                 context.resources.insert(id, context.wl_shm.clone().into());
-                return Box::new(
-                    ok(tx)
-                        .and_then(move |tx1| {
-                            tx1.send(Box::new(crate::protocol::wayland::wl_shm::events::Format {
-                                sender_object_id: id,
-                                format: crate::protocol::wayland::wl_shm::enums::Format::Argb8888
-                                    as u32,
-                            }))
-                        })
-                        .and_then(move |tx1| {
-                            tx1.send(Box::new(crate::protocol::wayland::wl_shm::events::Format {
-                                sender_object_id: id,
-                                format: crate::protocol::wayland::wl_shm::enums::Format::Xrgb8888
-                                    as u32,
-                            }))
-                        })
-                        .map_err(|_| ())
-                        .and_then(|_| context.ok()),
-                );
+                return context.ok();
             }
             _ => {}
         }
 
-        Box::new(
-            tx.send(Box::new(
-                crate::protocol::wayland::wl_display::events::Error {
-                    sender_object_id: 1,
-                    object_id: context.sender_object_id,
-                    code: crate::protocol::wayland::wl_display::enums::Error::InvalidMethod as u32,
-                    message: format!(
-                        "wl_registry@{} name={} id={} not found",
-                        context.sender_object_id, name, id
-                    ),
-                },
-            ))
-            .map_err(|_| ())
-            .and_then(|_| context.ok()),
-        )
+        context.ok()
     }
 }

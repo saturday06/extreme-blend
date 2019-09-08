@@ -49,7 +49,7 @@ impl super::super::super::event::Event for Release {
         let total_len = 8;
         if total_len > 0xffff {
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Oops!"));
-        }
+             }
 
         let mut encode_offset = dst.len();
         dst.resize(encode_offset + total_len, 0);

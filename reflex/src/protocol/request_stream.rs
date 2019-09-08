@@ -200,69 +200,6 @@ impl Stream for RequestStream {
                 }
             }
 
-            /*
-            println!("[Stream] ----- read loop -----");
-            let buf_len = buf.len();
-            let iov = [IoVec::from_mut_slice(&mut buf[..])];
-            let mut cmsgspace = cmsg_space!([RawFd; 8]);
-
-            let flags = fcntl(self.fd, F_GETFD);
-            println!("flags={:?}", flags);
-            let poll_msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::MSG_PEEK) {
-                Ok(ok) => ok,
-                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
-                    println!("[Stream] EAGAIN not ready");
-                    return Ok(Async::NotReady);
-                }
-                Err(err) => {
-                    println!("[Stream] err1: {:?}", err);
-                    return Err(());
-                }
-            };
-            println!(
-                "[Stream] msg flag={:?} bytes={}",
-                poll_msg.flags, poll_msg.bytes
-            );
-            if poll_msg.flags.intersects(MsgFlags::MSG_TRUNC) {
-                buf.resize(buf_len * 2, 0);
-                println!("[Stream] msg_trunc {} -> {}", buf_len, buf.len());
-                continue;
-            }
-            if poll_msg.bytes == buf_len {
-                buf.resize(buf_len * 2, 0);
-                println!("[Stream] msg_trunc WORKAROUND {} -> {}", buf_len, buf.len());
-                continue;
-            }
-            if poll_msg.flags.intersects(MsgFlags::MSG_CTRUNC) {
-                println!("[Stream] ctrunc ERROR");
-                return Err(());
-            }
-
-            let flags = fcntl(self.fd, F_GETFD);
-            println!("[Stream] flags={:?}", flags);
-            let msg = match recvmsg(self.fd, &iov, Some(&mut cmsgspace), MsgFlags::empty()) {
-                Ok(ok) => ok,
-                Err(nix::Error::Sys(nix::errno::Errno::EAGAIN)) => {
-                    println!("[Stream] EAGAIN not ready");
-                    return Ok(Async::NotReady);
-                }
-                Err(err) => {
-                    println!("[Stream] err2: {:?}", err);
-                    return Err(());
-                }
-            };
-
-            for cmsg in msg.cmsgs() {
-                if let ControlMessageOwned::ScmRights(fds) = cmsg {
-                    received_fds.extend(fds);
-                }
-            }
-            //assert_eq!(msg.bytes, 5);
-            assert!(!msg
-                .flags
-                .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
-            buf.resize(msg.bytes, 0);
-            */
             break;
         }
 

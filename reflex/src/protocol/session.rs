@@ -11,9 +11,9 @@ use futures::sink::Sink;
 use std::collections::HashMap;
 use std::os::unix::io::RawFd;
 use std::sync::{Arc, RwLock};
+use tokio::io::WriteHalf;
 use tokio::net::UnixStream;
 use tokio::sync::mpsc::Sender;
-use tokio::io::WriteHalf;
 
 pub enum NextAction {
     Nop,
@@ -30,7 +30,6 @@ pub struct Session {
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
     pub tx: Sender<Box<dyn Event + Send>>,
-    pub callback_data: u32,
     pub fds: Vec<RawFd>,
     pub unix_stream: WriteHalf<UnixStream>,
 }
@@ -50,7 +49,6 @@ where
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
     pub tx: Sender<Box<dyn Event + Send>>,
-    pub callback_data: u32,
     pub fds: Vec<RawFd>,
     pub unix_stream: WriteHalf<UnixStream>,
 }
@@ -69,7 +67,6 @@ where
             wl_data_device_manager: session.wl_data_device_manager,
             xdg_wm_base: session.xdg_wm_base,
             tx: session.tx,
-            callback_data: session.callback_data,
             fds: session.fds,
             sender_object_id,
             sender_object,
@@ -138,7 +135,6 @@ where
             wl_data_device_manager: self.wl_data_device_manager,
             xdg_wm_base: self.xdg_wm_base,
             tx: self.tx,
-            callback_data: self.callback_data,
             fds: self.fds,
             unix_stream: self.unix_stream,
         }
@@ -176,7 +172,10 @@ impl Session {
         //Box::new(futures::future::ok(self))
     }
 
-    fn from_relay_session(relay_session: RelaySession, unix_stream: WriteHalf<UnixStream>) -> Session {
+    fn from_relay_session(
+        relay_session: RelaySession,
+        unix_stream: WriteHalf<UnixStream>,
+    ) -> Session {
         Session {
             resources: relay_session.resources,
             wl_display: relay_session.wl_display,
@@ -186,7 +185,6 @@ impl Session {
             wl_data_device_manager: relay_session.wl_data_device_manager,
             xdg_wm_base: relay_session.xdg_wm_base,
             tx: relay_session.tx,
-            callback_data: relay_session.callback_data,
             fds: relay_session.fds,
             unix_stream,
         }
@@ -203,7 +201,6 @@ impl Session {
             wl_data_device_manager: self.wl_data_device_manager,
             xdg_wm_base: self.xdg_wm_base,
             tx: self.tx,
-            callback_data: self.callback_data,
             fds: self.fds,
         };
         (relay_session, unix_stream)
@@ -219,6 +216,5 @@ struct RelaySession {
     pub wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     pub xdg_wm_base: Arc<RwLock<XdgWmBase>>,
     pub tx: Sender<Box<dyn Event + Send>>,
-    pub callback_data: u32,
     pub fds: Vec<RawFd>,
 }

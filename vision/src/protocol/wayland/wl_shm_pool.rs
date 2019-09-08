@@ -72,6 +72,10 @@ impl WlShmPool {
         stride: i32, // int: number of bytes from the beginning of one row to the beginning of the next row
         format: u32, // uint: buffer pixel format
     ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
+        println!(
+            "WlShmPool::create_buffer({}, {}, {}, {}, {}, {})",
+            id, offset, width, height, stride, format
+        );
         context.resources.insert(
             id,
             crate::protocol::wayland::wl_buffer::WlBuffer {
