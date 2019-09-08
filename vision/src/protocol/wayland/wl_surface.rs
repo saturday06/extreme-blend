@@ -78,7 +78,9 @@ pub use lib::*;
 // wl_surface again, but it is not allowed to use the wl_surface as
 // a cursor (cursor is a different role than sub-surface, and role
 // switching is not allowed).
-pub struct WlSurface {}
+pub struct WlSurface {
+    pub xdg_surface_id: Option<u32>,
+}
 
 impl WlSurface {
     // set the surface contents

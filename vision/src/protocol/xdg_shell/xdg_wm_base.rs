@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+use crate::protocol::resource::Resource;
 #[allow(unused_imports)]
 use crate::protocol::session::{Context, NextAction, Session};
 #[allow(unused_imports)]
@@ -92,6 +93,11 @@ impl XdgWmBase {
         surface: u32, // object:
     ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
         println!("XdgWmBase::get_xdg_surface(id={}, surface={})", id, surface);
+        if let Some(Resource::WlSurface(wl_surface)) = context.resources.get_mut(&surface) {
+            wl_surface.xdg_surface_id = Some(id);
+        } else {
+            return context.invalid_method("unknown surface id".into());
+        };
         context.resources.insert(
             id,
             crate::protocol::xdg_shell::xdg_surface::XdgSurface {

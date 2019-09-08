@@ -61,9 +61,13 @@ impl WlCompositor {
         mut context: Context<Arc<RwLock<WlCompositor>>>,
         id: u32, // new_id: the new surface
     ) -> Box<dyn Future<Item = (Session, NextAction), Error = ()> + Send> {
-        context
-            .resources
-            .insert(id, wayland::wl_surface::WlSurface {}.into());
+        context.resources.insert(
+            id,
+            wayland::wl_surface::WlSurface {
+                xdg_surface_id: None,
+            }
+            .into(),
+        );
         return context.ok();
     }
 }

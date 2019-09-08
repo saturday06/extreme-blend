@@ -94,13 +94,10 @@ pub fn dispatch_request(
         dst.resize(total_len, 0);
 
         NativeEndian::write_u32(&mut dst[0..], context.sender_object_id);
-        NativeEndian::write_u32(
-            &mut dst[4..],
-            (total_len << 16) as u32 | u32::from(opcode),
-        );
+        NativeEndian::write_u32(&mut dst[4..], (total_len << 16) as u32 | u32::from(opcode));
 
         #[allow(unused_mut)]
-            let mut encode_offset = 8;
+        let mut encode_offset = 8;
 
         NativeEndian::write_u32(&mut dst[encode_offset..], name);
         encode_offset += 4;
@@ -121,9 +118,7 @@ pub fn dispatch_request(
                     println!("[WlRegistry Relay]: {:?}", &relay_buf);
                     session.relay(relay_buf)
                 }
-                NextAction::RelayWait => {
-                    session.relay_wait(relay_buf)
-                }
+                NextAction::RelayWait => session.relay_wait(relay_buf),
             }
         },
     ))
