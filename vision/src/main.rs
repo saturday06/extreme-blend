@@ -15,9 +15,17 @@ use protocol::wayland::wl_shm::WlShm;
 use protocol::xdg_shell::xdg_wm_base::XdgWmBase;
 use server_socket::ServerSocket;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::sync::{Arc, RwLock};
 use tokio::codec::Decoder;
 use tokio::runtime::Runtime;
+use winapi::shared::minwindef::TRUE;
+use winapi::shared::winerror::ERROR_NOT_ENOUGH_MEMORY;
+use winapi::um::winuser::{
+    DispatchMessageW, GetMessageW, IsGUIThread, TranslateMessage, MSG, WM_APP,
+};
+
+pub const WM_APP_CREATE_WINDOW: u32 = WM_APP + 1;
 
 mod protocol;
 mod server_socket;
@@ -30,6 +38,41 @@ struct Global {
     wl_shm: Arc<RwLock<WlShm>>,
     wl_data_device_manager: Arc<RwLock<WlDataDeviceManager>>,
     xdg_wm_base: Arc<RwLock<XdgWmBase>>,
+}
+
+unsafe fn gui_thread(gui_thread_init: tokio::sync::oneshot::Sender<()>) {
+    // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-isguithread
+    let conversion_result = IsGUIThread(TRUE);
+    if conversion_result == 0 {
+        panic!("Failed to convert thread to GUI thread");
+    } else if conversion_result == ERROR_NOT_ENOUGH_MEMORY.try_into().unwrap() {
+        panic!(
+            "Failed to convert thread to GUI thread: {}",
+            conversion_result
+        );
+    }
+    gui_thread_init.send(()).unwrap();
+
+    loop {
+        let mut msg = MSG::default();
+        match GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) {
+            0 => {
+                break;
+            }
+            -1 => {
+                // error
+                break;
+            }
+            _ => {}
+        }
+        if msg.hwnd == std::ptr::null_mut() {
+            if msg.message == WM_APP_CREATE_WINDOW {
+                //
+            }
+        }
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
 }
 
 fn handle_client_input(
@@ -88,6 +131,8 @@ fn handle_client(runtime: &mut Runtime, stream: tokio::net::TcpStream, global: G
         .and_then(|_| Ok(()));
     runtime.spawn(output_session);
 
+    let (gui_thread_init_tx0, gui_thread_init_rx0) = tokio::sync::oneshot::channel::<()>();
+
     let mut session0 = Session {
         wl_display: global.wl_display,
         wl_registry: global.wl_registry,
@@ -99,13 +144,21 @@ fn handle_client(runtime: &mut Runtime, stream: tokio::net::TcpStream, global: G
         tx: tx0,
         callback_data: 0,
     };
+
     session0
         .resources
         .insert(1, Resource::WlDisplay(session0.wl_display.clone()));
-    let input_session0 = reader0
-        .fold(session0, handle_client_input)
-        .map_err(|err| println!("err: {:?}", err))
-        .then(|_| futures::future::ok(()));
+
+    std::thread::spawn(move || unsafe { gui_thread(gui_thread_init_tx0) });
+
+    let input_session0 = gui_thread_init_rx0
+        .and_then(|_| {
+            reader0
+                .fold(session0, handle_client_input)
+                .map_err(|err| println!("err: {:?}", err))
+                .then(|_| futures::future::ok(()))
+        })
+        .map_err(|err| println!("err: {:?}", err));
     runtime.spawn(input_session0);
 }
 

@@ -16,5 +16,6 @@ winapi = { version = "*", features = [
     "impl-default",
     "minwindef",
     "winsock2",
+    "winuser",
     "ws2def",
 ] }
